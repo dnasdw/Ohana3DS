@@ -7,6 +7,12 @@ Module Common
             ((Data.ReadByte And &HFF) << 16) + _
             ((Data.ReadByte And &HFF) << 24)
     End Function
+    Public Function Read24(Data As FileStream, Address As Integer) As Integer
+        Data.Seek(Address, SeekOrigin.Begin)
+        Return (Data.ReadByte And &HFF) + _
+            ((Data.ReadByte And &HFF) << 8) + _
+            ((Data.ReadByte And &HFF) << 16)
+    End Function
     Public Function Read16(Data As FileStream, Address As Integer) As Integer
         Data.Seek(Address, SeekOrigin.Begin)
         Return (Data.ReadByte And &HFF) + _

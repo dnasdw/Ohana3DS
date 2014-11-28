@@ -1,12 +1,18 @@
 ﻿Imports System.IO
 Public Class Nako
-    Private Structure GARC_File
+    Public Structure GARC_File
         Dim Bits As Integer
         Dim Start_Offset As Integer
         Dim End_Offset As Integer
         Dim Length As Integer
+        Dim Uncompressed_Length As Integer
+        Dim Compressed As Boolean
     End Structure
-    Public Shared Sub Extract(File_Name As String, Output_Folder As String)
+    Public Files() As GARC_File
+    Private Data_Offset As Integer
+    Private Current_File As String
+    Public Sub Load(File_Name As String)
+        Current_File = File_Name
         Dim InFile As New FileStream(File_Name, FileMode.Open)
 
         Dim Magic As String = Nothing
@@ -18,7 +24,7 @@ Public Class Nako
             Exit Sub
         End If
 
-        Dim Data_Offset As Integer = Read32(InFile, &H10)
+        Data_Offset = Read32(InFile, &H10)
         Dim FATO_Length As Integer = Read32(InFile, &H20)
 
         '+======+
@@ -26,63 +32,67 @@ Public Class Nako
         '+======+
         Dim FATB_Offset As Integer = &H20 + FATO_Length
         Dim Total_Files As Integer = Read16(InFile, FATB_Offset + 4)
-        Dim Files(Total_Files - 1) As GARC_File
+        ReDim Files(Total_Files - 1)
         Dim Offset As Integer = FATB_Offset + 8
         For Current_File As Integer = 0 To Total_Files - 1
-            Files(Current_File).Bits = Read32(InFile, Offset)
-            Files(Current_File).Start_Offset = Read32(InFile, Offset + 4)
-            Files(Current_File).End_Offset = Read32(InFile, Offset + 8)
-            Files(Current_File).Length = Read32(InFile, Offset + 12)
+            With Files(Current_File)
+                .Bits = Read32(InFile, Offset)
+                .Start_Offset = Read32(InFile, Offset + 4)
+                .End_Offset = Read32(InFile, Offset + 8)
+                .Length = Read32(InFile, Offset + 12)
+                InFile.Seek(Data_Offset + .Start_Offset, SeekOrigin.Begin)
+                If InFile.ReadByte() = &H11 Then
+                    .Compressed = True
+                    .Uncompressed_Length = Read24(InFile, Data_Offset + .Start_Offset + 1)
+                Else
+                    .Uncompressed_Length = .Length
+                End If
+            End With
             Offset += 16
         Next
 
-        Dim Index As Integer
-        For Each File As GARC_File In Files
-            InFile.Seek(Data_Offset + File.Start_Offset, SeekOrigin.Begin)
-            Dim Data(File.Length - 1) As Byte
-            InFile.Read(Data, 0, File.Length)
+        InFile.Close()
+    End Sub
+    Public Sub Extract(Output_File As String, File_Index As Integer)
+        Dim InFile As New FileStream(Current_File, FileMode.Open)
 
-            Dim Compressed As Boolean = False
-            If Data(0) = &H11 Then Compressed = True
+        With Files(File_Index)
+            InFile.Seek(Data_Offset + .Start_Offset, SeekOrigin.Begin)
+            Dim Data(.Length - 1) As Byte
+            InFile.Read(Data, 0, .Length)
+
             Dim Format As String
-            Dim Suffix_Name As String = Nothing
-            Magic = Nothing
-            For i As Integer = If(Compressed, 5, 0) To If(Compressed, 8, 3)
+            Dim Magic As String = Nothing
+            For i As Integer = If(.Compressed, 5, 0) To If(.Compressed, 8, 3)
                 Magic &= Chr(Data(i))
             Next
             Dim Temp As String = Left(Magic, 2)
             Select Case Temp
-                Case "PC", "PT", "PB", "PF", "PK", "PO"
+                Case "PC", "PT", "PB", "PF", "PK", "PO", "GR"
                     Format = "." & LCase(Temp)
-                    If Temp = "PC" Then
-                        Suffix_Name = "_model"
-                    ElseIf Temp = "PT" Then
-                        Suffix_Name = "_texture"
-                    End If
                 Case Else
                     If Left(Magic, 3) = "BCH" Then
                         Format = ".bch"
                     ElseIf Left(Magic, 4) = "CGFX" Then
                         Format = ".cgfx"
-                        Suffix_Name = "_model"
                     Else
                         Format = ".bin"
                     End If
             End Select
 
-            Dim OutFile As New FileStream(Path.Combine(Output_Folder, "file_" & Index & Suffix_Name & Format), FileMode.Create)
+            Dim OutFile As New FileStream(Output_File & Format, FileMode.Create)
 
-            If Compressed Then
+            If .Compressed Then
                 Data = LZSS_Decompress(Data)
                 OutFile.Write(Data, 0, Data.Length)
             Else
-                OutFile.Write(Data, 0, File.Length)
+                OutFile.Write(Data, 0, .Length)
             End If
 
             OutFile.Close()
+        End With
 
-            Index += 1
-        Next
+        InFile.Close()
     End Sub
     Public Shared Function LZSS_Decompress(InData() As Byte) As Byte()
         If InData(0) <> &H11 Then MsgBox(Hex(InData(0)))
