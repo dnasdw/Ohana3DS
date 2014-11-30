@@ -228,6 +228,8 @@ Public Class FrmMain
     End Sub
     Private Sub BtnModelTexturesMore_Click(sender As Object, e As EventArgs) Handles BtnModelTexturesMore.Click
         If MyOhana.Model_Object IsNot Nothing Then
+            FrmTextureInfo.LstModelTextures.Clear()
+
             Dim Header_1 As MyListview.ListItem
             ReDim Header_1.Text(2)
             Header_1.Text(0).Text = "#"

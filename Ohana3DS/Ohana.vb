@@ -5,7 +5,6 @@ Imports System.Drawing.Imaging
 Imports System.Runtime.InteropServices
 Imports System.Text
 Imports System.Globalization
-
 Public Class Ohana
     Public Scale As Single = 32.0F
     Private Device As Device
@@ -140,7 +139,7 @@ Public Class Ohana
         Next
 
         Dim BCH_Offset As Integer
-        If Left(File_Magic, 2) = "PC" Then
+        If Left(File_Magic, 2) = "PC" Or Left(File_Magic, 2) = "MM" Then
             BCH_Offset = &H80
             Model_Type = ModelType.Character
         ElseIf File_Magic = "BCH" Then
@@ -198,15 +197,22 @@ Public Class Ohana
         End If
 
         Dim Vertex_Offsets As New List(Of Integer)
+        Dim Face_Offsets As New List(Of Integer)
         If Version = BCH_Version.ORAS Then
             For Entry As Integer = 0 To Entries - 1
-                Dim Vertex_Offset As Integer = Description_Offset + Read32(Data, Table_Offset + (Entry * &H38) + 8)
+                Dim Base_Offset As Integer = Table_Offset + (Entry * &H38)
+
+                Dim Vertex_Offset As Integer = Description_Offset + Read32(Data, Base_Offset + 8)
                 Vertex_Offsets.Add(Data_Offset + Read32(Data, Vertex_Offset + &H30))
+
+                Dim Face_Offset As Integer = Read32(Data, Base_Offset + &H10)
+                Face_Offset = Description_Offset + Read32(Data, Face_Offset + &H70)
+                Face_Offsets.Add(Data_Offset + Read32(Data, Face_Offset + &H10))
             Next
-            Dim Face_Offset As Integer = Read32(Data, Table_Offset + &H10)
-            Face_Offset = Description_Offset + Read32(Data, Face_Offset + &H70)
-            Vertex_Offsets.Add(Data_Offset + Read32(Data, Face_Offset + &H10))
+
             Vertex_Offsets.Sort()
+            Face_Offsets.Sort()
+            Vertex_Offsets.Add(Face_Offsets(0))
         End If
 
         Dim Texture_ID_List As New List(Of Integer)
@@ -296,16 +302,16 @@ Public Class Ohana
                                 End Select
                             End If
                         Case &H34
-                    .NX = BitConverter.ToSingle(Data, Offset + 12) / Scale
-                    .NY = BitConverter.ToSingle(Data, Offset + 16) / Scale
-                    .NZ = BitConverter.ToSingle(Data, Offset + 20) / Scale
+                            .NX = BitConverter.ToSingle(Data, Offset + 12) / Scale
+                            .NY = BitConverter.ToSingle(Data, Offset + 16) / Scale
+                            .NZ = BitConverter.ToSingle(Data, Offset + 20) / Scale
 
-                    .U = BitConverter.ToSingle(Data, Offset + 24)
-                    .V = BitConverter.ToSingle(Data, Offset + 28)
+                            .U = BitConverter.ToSingle(Data, Offset + 24)
+                            .V = BitConverter.ToSingle(Data, Offset + 28)
 
-                    If Version = BCH_Version.XY Then
-                        If Nodes(Current_Node).Count < 5 Then .Color = Read32(Data, Offset + 44)
-                    End If
+                            If Version = BCH_Version.XY Then
+                                If Nodes(Current_Node).Count < 5 Then .Color = Read32(Data, Offset + 44)
+                            End If
                     End Select
 
                     If Bone_Entries > 0 And Version = BCH_Version.XY Then
