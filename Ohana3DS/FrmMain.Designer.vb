@@ -29,6 +29,7 @@ Partial Class FrmMain
         Me.MainTabs = New Ohana3DS.MyTabcontrol()
         Me.ModelPage = New System.Windows.Forms.TabPage()
         Me.GrpOptions = New Ohana3DS.MyGroupbox()
+        Me.BtnModelMirror = New System.Windows.Forms.Button()
         Me.BtnModelScale = New System.Windows.Forms.Button()
         Me.ProgressModels = New Ohana3DS.MyProgressbar()
         Me.BtnModelExportAllFF = New System.Windows.Forms.Button()
@@ -185,6 +186,7 @@ Partial Class FrmMain
         'GrpOptions
         '
         Me.GrpOptions.BackColor = System.Drawing.Color.Transparent
+        Me.GrpOptions.Controls.Add(Me.BtnModelMirror)
         Me.GrpOptions.Controls.Add(Me.BtnModelScale)
         Me.GrpOptions.Controls.Add(Me.ProgressModels)
         Me.GrpOptions.Controls.Add(Me.BtnModelExportAllFF)
@@ -197,6 +199,18 @@ Partial Class FrmMain
         Me.GrpOptions.TabIndex = 23
         Me.GrpOptions.TabStop = False
         Me.GrpOptions.Text = "Options"
+        '
+        'BtnModelMirror
+        '
+        Me.BtnModelMirror.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
+        Me.BtnModelMirror.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
+        Me.BtnModelMirror.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        Me.BtnModelMirror.Location = New System.Drawing.Point(412, 18)
+        Me.BtnModelMirror.Name = "BtnModelMirror"
+        Me.BtnModelMirror.Size = New System.Drawing.Size(72, 24)
+        Me.BtnModelMirror.TabIndex = 5
+        Me.BtnModelMirror.Text = "Mirror-X"
+        Me.BtnModelMirror.UseVisualStyleBackColor = True
         '
         'BtnModelScale
         '
@@ -874,6 +888,7 @@ Partial Class FrmMain
         Me.Controls.Add(Me.Splash)
         Me.Font = New System.Drawing.Font("Segoe UI", 8.25!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None
+        Me.KeyPreview = True
         Me.MaximizeBox = False
         Me.Name = "FrmMain"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
@@ -974,5 +989,6 @@ Partial Class FrmMain
     Friend WithEvents BtnSearch As System.Windows.Forms.Button
     Friend WithEvents Splash As System.Windows.Forms.PictureBox
     Friend WithEvents LblModelName As System.Windows.Forms.Label
+    Friend WithEvents BtnModelMirror As System.Windows.Forms.Button
 
 End Class

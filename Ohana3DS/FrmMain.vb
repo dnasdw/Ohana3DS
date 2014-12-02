@@ -12,6 +12,8 @@ Public Class FrmMain
     Dim Rot_InitX, Rot_InitY, Rot_FinalX, Rot_FinalY As Integer
     Dim Mov_InitX, Mov_InitY, Mov_FinalX, Mov_FinalY As Integer
 
+    Dim Current_Model As String
+
     Private Enum TextureMode
         Original
         FlipY
@@ -19,9 +21,6 @@ Public Class FrmMain
         FlipY_Mirror
     End Enum
     Dim Texture_Mode As TextureMode = TextureMode.Original
-
-    Dim Mdl_BCH_Version As Ohana.BCH_Version = Ohana.BCH_Version.XY
-    Dim Tex_BCH_Version As Ohana.BCH_Version = Ohana.BCH_Version.XY
 
     Dim Model_Export_Thread As Thread
     Dim Texture_Export_Thread As Thread
@@ -39,7 +38,24 @@ Public Class FrmMain
     Private Sub FrmMain_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         MyOhana.Initialize(Screen)
         Show()
-        MyOhana.Render()
+    End Sub
+    Private Sub FrmMain_KeyDown(sender As Object, e As KeyEventArgs) Handles MyBase.KeyDown
+        If File.Exists(Current_Model) Then
+            If e.KeyCode = Keys.Left Or e.KeyCode = Keys.Right Then
+                Dim Model_Name As String = Path.GetFileName(Current_Model)
+                Dim Input_Files() As FileInfo = New DirectoryInfo(Path.GetDirectoryName(Current_Model)).GetFiles()
+                Select Case e.KeyCode
+                    Case Keys.Left
+                        For Index As Integer = 1 To Input_Files.Count - 1
+                            If Input_Files(Index).Name = Model_Name Then Load_Model(Input_Files(Index - 1).FullName)
+                        Next
+                    Case Keys.Right
+                        For Index As Integer = 0 To Input_Files.Count - 2
+                            If Input_Files(Index).Name = Model_Name Then Load_Model(Input_Files(Index + 1).FullName)
+                        Next
+                End Select
+            End If
+        End If
     End Sub
 
 #Region "GUI"
@@ -111,30 +127,53 @@ Public Class FrmMain
         OpenDlg.Title = "Open Pokémon BCH Model"
         OpenDlg.Filter = "BCH Model|*.*"
         If OpenDlg.ShowDialog = Windows.Forms.DialogResult.OK Then
-            Try
-                MyOhana.Load_Model(OpenDlg.FileName)
-                LblModelName.Text = Path.GetFileName(OpenDlg.FileName)
-                Update_Info()
-
-                Dim Temp() As Byte = File.ReadAllBytes(OpenDlg.FileName)
-                Dim File_Magic As String = Nothing
-                For i As Integer = 0 To 1
-                    File_Magic &= Chr(Temp(i))
-                Next
-                If File_Magic = "MM" Then
-                    LstTextures.Clear()
-                    ImgTexture.Image = Nothing
-
-                    For Index As Integer = 0 To MyOhana.Model_Texture.Count - 1
-                        LstTextures.AddItem(MyOhana.Model_Texture(Index).Name)
-                    Next
-                End If
-            Catch
-                MyOhana.Model_Object = Nothing
-                Screen.Refresh()
-                MsgBox("Sorry, something went wrong.", vbExclamation, "Error")
-            End Try
+            Load_Model(OpenDlg.FileName)
         End If
+    End Sub
+    Private Sub Load_Model(File_Name As String)
+        Try
+            Current_Model = File_Name
+            MyOhana.Load_Model(File_Name)
+            LblModelName.Text = Path.GetFileName(File_Name)
+            Update_Info()
+
+            Dim Temp() As Byte = File.ReadAllBytes(File_Name)
+            Dim File_Magic As String = Nothing
+            For i As Integer = 0 To 1
+                File_Magic &= Chr(Temp(i))
+            Next
+            If File_Magic = "MM" Then
+                LstTextures.Clear()
+                ImgTexture.Image = Nothing
+
+                For Index As Integer = 0 To MyOhana.Model_Texture.Count - 1
+                    LstTextures.AddItem(MyOhana.Model_Texture(Index).Name)
+                Next
+            End If
+
+            Rot_InitX = 0
+            Rot_InitY = 0
+            Rot_FinalX = 0
+            Rot_FinalY = 0
+            Mov_InitX = 0
+            Mov_InitY = 0
+            Mov_FinalX = 0
+            Mov_FinalY = 0
+
+            MyOhana.Rotation.X = 0
+            MyOhana.Rotation.Y = 0
+            MyOhana.Translation.X = 0
+            MyOhana.Translation.Y = 0
+
+            Application.DoEvents()
+            First_Click = False
+
+            MyOhana.Render()
+        Catch
+            MyOhana.Model_Object = Nothing
+            Screen.Refresh()
+            MsgBox("Sorry, something went wrong.", vbExclamation, "Error")
+        End Try
     End Sub
     Private Sub BtnModelExport_Click(sender As Object, e As EventArgs) Handles BtnModelExport.Click
         If MyOhana.Model_Object IsNot Nothing Then
@@ -178,7 +217,7 @@ Public Class FrmMain
             Try
                 Exporter.Load_Model(File.FullName, False)
                 If Exporter.Model_Object.Length > 0 Then
-                    Dim File_Name As String = Path.Combine(OutFolder, "model_" & Index & ".smd")
+                    Dim File_Name As String = Path.Combine(OutFolder, File.Name & ".smd")
                     Exporter.Export_SMD(File_Name)
                     Index += 1
                 End If
@@ -234,6 +273,14 @@ Public Class FrmMain
             FrmTextureInfo.LstModelTextures.Refresh()
         End If
     End Sub
+    Private Sub BtnModelMirror_Click(sender As Object, e As EventArgs) Handles BtnModelMirror.Click
+        MyOhana.Model_Mirror_X = Not MyOhana.Model_Mirror_X
+        If MyOhana.Model_Mirror_X Then
+            BtnModelMirror.Text = "Mirror-X"
+        Else
+            BtnModelMirror.Text = "Normal"
+        End If
+    End Sub
 
     Private Sub Update_Info()
         LblInfoVertices.Text = MyOhana.Info.Vertex_Count.ToString
@@ -266,9 +313,7 @@ Public Class FrmMain
     Private Sub Screen_MouseMove(sender As Object, e As System.Windows.Forms.MouseEventArgs) Handles Screen.MouseMove
         If Not Screen.Focused Then Screen.Select()
 
-        If First_Click Then
-            First_Click = False
-        Else
+        If Not First_Click Then
             If e.Button = MouseButtons.Left Then
                 MyOhana.Rotation.X = (Rot_InitX - MousePosition.X) + Rot_FinalX
                 MyOhana.Rotation.Y = (Rot_InitY - MousePosition.Y) + Rot_FinalY
