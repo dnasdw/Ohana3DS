@@ -68,7 +68,7 @@ Public Class Nako
             Next
             Dim Temp As String = Left(Magic, 2)
             Select Case Temp
-                Case "PC", "PT", "PB", "PF", "PK", "PO", "GR"
+                Case "PC", "PT", "PB", "PF", "PK", "PO", "GR", "MM"
                     Format = "." & LCase(Temp)
                 Case Else
                     If Left(Magic, 3) = "BCH" Then

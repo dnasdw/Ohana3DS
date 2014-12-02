@@ -66,6 +66,7 @@ Public Class Ohana
 
     Private Total_Vertex As Integer
 
+    Private SWidth, SHeight As Integer
     Public Zoom As Single = 1.0F
     Public Rotation As Vector2
     Public Translation As Vector2
@@ -88,13 +89,15 @@ Public Class Ohana
         {24, 80, -24, -80}, _
         {33, 106, -33, -106}, _
         {47, 183, -47, -183}}
-    Public Sub Initialize(Handle As IntPtr)
+    Public Sub Initialize(Picture As PictureBox)
         Dim Present As New PresentParameters
         With Present
             .BackBufferCount = 1
             .BackBufferFormat = Manager.Adapters(0).CurrentDisplayMode.Format
-            .BackBufferWidth = 640
-            .BackBufferHeight = 480
+            .BackBufferWidth = Picture.Width
+            .BackBufferHeight = Picture.Height
+            SWidth = Picture.Width
+            SHeight = Picture.Height
             .Windowed = True
             .SwapEffect = SwapEffect.Discard
             .EnableAutoDepthStencil = True
@@ -106,7 +109,7 @@ Public Class Ohana
             .MultiSample = Samples
         End With
 
-        Device = New Device(0, DeviceType.Hardware, Handle, CreateFlags.HardwareVertexProcessing, Present)
+        Device = New Device(0, DeviceType.Hardware, Picture.Handle, CreateFlags.HardwareVertexProcessing, Present)
         With Device
             .RenderState.Lighting = True
             .Lights(0).Type = LightType.Point
@@ -129,7 +132,9 @@ Public Class Ohana
             .SamplerState(0).MaxAnisotropy = 16
         End With
     End Sub
-    Public Sub Load_Model(File_Name As String, Optional Version As BCH_Version = BCH_Version.XY)
+    Public Sub Load_Model(File_Name As String, Optional Create_DX_Texture As Boolean = True)
+        Dim Version As BCH_Version
+
         Total_Vertex = 0
 
         Dim Temp() As Byte = File.ReadAllBytes(File_Name)
@@ -149,13 +154,16 @@ Public Class Ohana
             BCH_Offset = Read32(Temp, 8)
             Model_Type = ModelType.Map
         Else
+            MsgBox("Sorry, this file format is not supported.", vbExclamation, "Error")
             Exit Sub
         End If
 
         Dim Data(Temp.Length - BCH_Offset) As Byte
         Buffer.BlockCopy(Temp, BCH_Offset, Data, 0, Temp.Length - BCH_Offset)
 
-        Dim Bones_Offset As Integer = Read32(Data, 8)
+        Dim Header_Offset As Integer = Read32(Data, 8)
+        If Header_Offset = &H44 Then Version = BCH_Version.ORAS Else Version = BCH_Version.XY
+
         Dim Texture_Names_Offset As Integer = Read32(Data, &HC)
         Dim Description_Offset As Integer = Read32(Data, &H10)
         Dim Data_Offset As Integer = Read32(Data, &H14)
@@ -168,33 +176,19 @@ Public Class Ohana
         End If
         Dim Texture_Entries As Integer = Read32(Data, Table_Offset + 4)
         Dim Bone_Entries As Integer = Read32(Data, Table_Offset + &H40)
-        Bones_Offset += Read32(Data, Table_Offset + &H44)
+        Dim Bones_Offset As Integer = Header_Offset + Read32(Data, Table_Offset + &H44)
         Dim Texture_Table_Offset As Integer
         Dim Vertex_Table_Offset As Integer = Read32(Data, Table_Offset + &HC)
         Dim Entries As Integer = Read32(Data, Table_Offset + &H10)
 
-        Dim Nodes As New List(Of List(Of Integer))
-        If Version = BCH_Version.XY Then
-            Dim Node_ID_Offset As Integer = Read32(Data, Table_Offset + &H28) + &H38
-
-            For Node As Integer = 0 To Entries - 1
-                Dim Node_Count As Integer = Read16(Data, Node_ID_Offset + 2)
-                Nodes.Add(New List(Of Integer))
-                For Index As Integer = 0 To Node_Count - 1
-                    Nodes(Node).Add(Read16(Data, Node_ID_Offset + 4 + (Index * 2)))
-                Next
-                Node_ID_Offset += &H34
-                If Data(Node_ID_Offset) <> 1 Then Node_ID_Offset += &H48
-            Next
-        End If
-
+        Dim MM_Texture_Table_Offset As Integer = Header_Offset + Read32(Data, Header_Offset + &H24)
+        Dim MM_Texture_Count As Integer = Read32(Data, Header_Offset + &H28)
         If Version = BCH_Version.XY Then
             Texture_Table_Offset = &H78 + Read32(Data, Table_Offset)
-            Table_Offset = &H38 + Read32(Data, Table_Offset + &H14)
         ElseIf Version = BCH_Version.ORAS Then
             Texture_Table_Offset = &H48 + Read32(Data, Table_Offset)
-            Table_Offset = &H44 + Read32(Data, Table_Offset + &H14)
         End If
+        Table_Offset = Header_Offset + Read32(Data, Table_Offset + &H14)
 
         Dim Vertex_Offsets As New List(Of Integer)
         Dim Face_Offsets As New List(Of Integer)
@@ -240,10 +234,9 @@ Public Class Ohana
             Dim Vertex_Data_Offset As Integer = Data_Offset + Read32(Data, Vertex_Offset + &H30)
             Dim Vertex_Data_Format As Integer = Data(Vertex_Offset + &H3A)
             Dim Vertex_Bytes As Integer = Read32(Data, Face_Offset)
-            Dim Face_Data_Offset As Integer = Data_Offset + Read32(Data, Face_Offset + &H10)
-
             Dim Vertex_Data_Length As Integer
             If Version = BCH_Version.XY Then
+                Dim Face_Data_Offset As Integer = Data_Offset + Read32(Data, Face_Offset + &H10)
                 Vertex_Data_Length = Face_Data_Offset - Vertex_Data_Offset
             ElseIf Version = BCH_Version.ORAS Then
                 Vertex_Data_Length = Vertex_Offsets(Vertex_Offsets.IndexOf(Vertex_Data_Offset) + 1) - Vertex_Data_Offset
@@ -291,10 +284,6 @@ Public Class Ohana
                                     Case &H8E81, &H8E82, &HAA83, &HAADB, &HAC81, &HAE83
                                         .Color = Read32(Data, Offset + 32)
                                 End Select
-                            ElseIf Vertex_Data_Format = &H28 Then
-                                If Version = BCH_Version.XY Then
-                                    If Nodes(Current_Node).Count < 5 Then .Color = Read32(Data, Offset + 32)
-                                End If
                             Else
                                 Select Case Vertex_Bytes And &HFFFF
                                     Case &HAA83, &HAB83, &HAE83, &HAF83, &HEF83, &HEFD3
@@ -308,157 +297,7 @@ Public Class Ohana
 
                             .U = BitConverter.ToSingle(Data, Offset + 24)
                             .V = BitConverter.ToSingle(Data, Offset + 28)
-
-                            If Version = BCH_Version.XY Then
-                                If Nodes(Current_Node).Count < 5 Then .Color = Read32(Data, Offset + 44)
-                            End If
                     End Select
-
-                    If Bone_Entries > 0 And Version = BCH_Version.XY Then
-                        Select Case Vertex_Data_Format
-                            Case &HC, &H10, &H14, &H18, &H20
-                                .Bone_1 = Nodes(Current_Node)(0)
-
-                                .Weight_1 = 1
-                            Case &H1C
-                                If Data(Offset + 20) < Nodes(Current_Node).Count Then .Bone_1 = Nodes(Current_Node)(Data(Offset + 20))
-                                If Data(Offset + 21) < Nodes(Current_Node).Count Then .Bone_2 = Nodes(Current_Node)(Data(Offset + 21))
-                                If Data(Offset + 22) < Nodes(Current_Node).Count Then .Bone_3 = Nodes(Current_Node)(Data(Offset + 22))
-                                If Data(Offset + 23) < Nodes(Current_Node).Count Then .Bone_4 = Nodes(Current_Node)(Data(Offset + 23))
-
-                                .Weight_1 = Data(Offset + 24) / 100.0F
-                                .Weight_2 = Data(Offset + 25) / 100.0F
-                                .Weight_3 = Data(Offset + 26) / 100.0F
-                                .Weight_4 = Data(Offset + 27) / 100.0F
-                            Case &H24
-                                Select Case Vertex_Bytes And &HFFFF
-                                    Case &H8E82, &HAA83, &HAADB, &HAE83
-                                        .Bone_1 = Nodes(Current_Node)(0)
-
-                                        .Weight_1 = 1
-                                    Case &H8F03, &HAF03, &HEE03, &HEE83, &HEED3, &HEF03, &HEF53, &HEF83, &HEFD3
-                                        .Bone_1 = Nodes(Current_Node)(0)
-                                        .Bone_2 = Nodes(Current_Node)(1)
-                                        .Bone_3 = Nodes(Current_Node)(2)
-                                        .Bone_4 = Nodes(Current_Node)(3)
-
-                                        .Weight_1 = Data(Offset + 32) / 100.0F
-                                        .Weight_2 = Data(Offset + 33) / 100.0F
-                                        .Weight_3 = Data(Offset + 34) / 100.0F
-                                        .Weight_4 = Data(Offset + 35) / 100.0F
-                                    Case &HEEDB
-                                        If Data(Offset + 32) < Nodes(Current_Node).Count Then .Bone_1 = Nodes(Current_Node)(Data(Offset + 32))
-                                        If Data(Offset + 33) < Nodes(Current_Node).Count Then .Bone_2 = Nodes(Current_Node)(Data(Offset + 33))
-
-                                        .Weight_1 = Data(Offset + 34) / 100.0F
-                                        .Weight_2 = Data(Offset + 35) / 100.0F
-                                End Select
-                            Case &H28
-                                If Nodes(Current_Node).Count < 5 Then
-                                    .Bone_1 = Nodes(Current_Node)(0)
-                                    .Bone_2 = Nodes(Current_Node)(1)
-                                    .Bone_3 = Nodes(Current_Node)(2)
-                                    .Bone_4 = Nodes(Current_Node)(3)
-
-                                    .Weight_1 = Data(Offset + 36) / 100.0F
-                                    .Weight_2 = Data(Offset + 37) / 100.0F
-                                    .Weight_3 = Data(Offset + 38) / 100.0F
-                                    .Weight_4 = Data(Offset + 39) / 100.0F
-                                Else
-                                    If Data(Offset + 32) < Nodes(Current_Node).Count Then .Bone_1 = Nodes(Current_Node)(Data(Offset + 32))
-                                    If Data(Offset + 33) < Nodes(Current_Node).Count Then .Bone_2 = Nodes(Current_Node)(Data(Offset + 33))
-                                    If Data(Offset + 34) < Nodes(Current_Node).Count Then .Bone_3 = Nodes(Current_Node)(Data(Offset + 34))
-
-                                    .Weight_1 = Data(Offset + 35) / 100.0F
-                                    .Weight_2 = Data(Offset + 36) / 100.0F
-                                    .Weight_3 = Data(Offset + 37) / 100.0F
-                                End If
-                            Case &H2C
-                                Select Case Vertex_Bytes And &HFFFF
-                                    Case &HAA83, &HAE83
-                                        If Data(Offset + 36) < Nodes(Current_Node).Count Then .Bone_1 = Nodes(Current_Node)(Data(Offset + 36))
-                                        If Data(Offset + 37) < Nodes(Current_Node).Count Then .Bone_2 = Nodes(Current_Node)(Data(Offset + 37))
-                                        If Data(Offset + 38) < Nodes(Current_Node).Count Then .Bone_3 = Nodes(Current_Node)(Data(Offset + 38))
-
-                                        .Weight_1 = Data(Offset + 39) / 100.0F
-                                        .Weight_2 = Data(Offset + 40) / 100.0F
-                                        .Weight_3 = Data(Offset + 41) / 100.0F
-                                    Case &HAB83, &HAF83, &HEF83, &HEFD3
-                                        If Data(Offset + 36) < Nodes(Current_Node).Count Then .Bone_1 = Nodes(Current_Node)(Data(Offset + 36))
-                                        If Data(Offset + 37) < Nodes(Current_Node).Count Then .Bone_2 = Nodes(Current_Node)(Data(Offset + 37))
-                                        If Data(Offset + 38) < Nodes(Current_Node).Count Then .Bone_3 = Nodes(Current_Node)(Data(Offset + 38))
-                                        If Data(Offset + 39) < Nodes(Current_Node).Count Then .Bone_4 = Nodes(Current_Node)(Data(Offset + 39))
-
-                                        .Weight_1 = Data(Offset + 40) / 100.0F
-                                        .Weight_2 = Data(Offset + 41) / 100.0F
-                                        .Weight_3 = Data(Offset + 42) / 100.0F
-                                        .Weight_4 = Data(Offset + 43) / 100.0F
-                                    Case Else
-                                        .Bone_1 = Nodes(Current_Node)(0)
-
-                                        .Weight_1 = 1
-                                End Select
-                            Case &H30
-                                If Nodes(Current_Node).Count = 1 Then
-                                    .Bone_1 = Nodes(Current_Node)(0)
-
-                                    .Weight_1 = 1
-                                Else
-                                    .Bone_1 = Nodes(Current_Node)(0)
-                                    .Bone_2 = Nodes(Current_Node)(1)
-                                    .Bone_3 = Nodes(Current_Node)(2)
-                                    .Bone_4 = Nodes(Current_Node)(3)
-
-                                    .Weight_1 = Data(Offset + 44) / 100.0F
-                                    .Weight_2 = Data(Offset + 45) / 100.0F
-                                    .Weight_3 = Data(Offset + 46) / 100.0F
-                                    .Weight_4 = Data(Offset + 47) / 100.0F
-                                End If
-                            Case &H34
-                                If Nodes(Current_Node).Count < 5 Then
-                                    .Bone_1 = Nodes(Current_Node)(0)
-                                    .Bone_2 = Nodes(Current_Node)(1)
-                                    .Bone_3 = Nodes(Current_Node)(2)
-                                    .Bone_4 = Nodes(Current_Node)(3)
-
-                                    .Weight_1 = Data(Offset + 48) / 100.0F
-                                    .Weight_2 = Data(Offset + 49) / 100.0F
-                                    .Weight_3 = Data(Offset + 50) / 100.0F
-                                    .Weight_4 = Data(Offset + 51) / 100.0F
-                                Else
-                                    If Data(Offset + 44) < Nodes(Current_Node).Count Then .Bone_1 = Nodes(Current_Node)(Data(Offset + 44))
-                                    If Data(Offset + 45) < Nodes(Current_Node).Count Then .Bone_2 = Nodes(Current_Node)(Data(Offset + 45))
-                                    If Data(Offset + 46) < Nodes(Current_Node).Count Then .Bone_3 = Nodes(Current_Node)(Data(Offset + 46))
-                                    If Data(Offset + 47) < Nodes(Current_Node).Count Then .Bone_4 = Nodes(Current_Node)(Data(Offset + 47))
-
-                                    .Weight_1 = Data(Offset + 48) / 100.0F
-                                    .Weight_2 = Data(Offset + 49) / 100.0F
-                                    .Weight_3 = Data(Offset + 50) / 100.0F
-                                    .Weight_4 = Data(Offset + 51) / 100.0F
-                                End If
-                            Case &H38
-                                Select Case Vertex_Bytes And &HFFFF
-                                    Case &HEA83, &HEAD3, &HEE83, &HEED3, &HEEDB, &HEEE3, &HEEF3
-                                        If Data(Offset + 48) < Nodes(Current_Node).Count Then .Bone_1 = Nodes(Current_Node)(Data(Offset + 48))
-                                        If Data(Offset + 49) < Nodes(Current_Node).Count Then .Bone_2 = Nodes(Current_Node)(Data(Offset + 49))
-                                        If Data(Offset + 50) < Nodes(Current_Node).Count Then .Bone_3 = Nodes(Current_Node)(Data(Offset + 50))
-
-                                        .Weight_1 = Data(Offset + 51) / 100.0F
-                                        .Weight_2 = Data(Offset + 52) / 100.0F
-                                        .Weight_3 = Data(Offset + 53) / 100.0F
-                                    Case &HEB83, &HEBD3, &HEF83, &HEFD3, &HEFDB, &HEFE3, &HEFF3, &HEFFB
-                                        If Data(Offset + 48) < Nodes(Current_Node).Count Then .Bone_1 = Nodes(Current_Node)(Data(Offset + 48))
-                                        If Data(Offset + 49) < Nodes(Current_Node).Count Then .Bone_2 = Nodes(Current_Node)(Data(Offset + 49))
-                                        If Data(Offset + 50) < Nodes(Current_Node).Count Then .Bone_3 = Nodes(Current_Node)(Data(Offset + 50))
-                                        If Data(Offset + 51) < Nodes(Current_Node).Count Then .Bone_4 = Nodes(Current_Node)(Data(Offset + 51))
-
-                                        .Weight_1 = Data(Offset + 52) / 100.0F
-                                        .Weight_2 = Data(Offset + 53) / 100.0F
-                                        .Weight_3 = Data(Offset + 54) / 100.0F
-                                        .Weight_4 = Data(Offset + 55) / 100.0F
-                                End Select
-                        End Select
-                    End If
                 End With
 
                 Vertex_Count += 1
@@ -487,32 +326,91 @@ Public Class Ohana
             Name_Table_Length = &H2C
         End If
 
-        ReDim Model_Texture_Index(Texture_Entries - 1)
-        ReDim Model_Bump_Map_Index(Texture_Entries - 1)
-        For Index As Integer = 0 To Texture_Entries - 1
-            Dim Texture_Offset As Integer = Texture_Names_Offset + Read32(Data, (Texture_Table_Offset + Index * Name_Table_Length) + Name_Table_Base_Pointer)
-            Dim Normal_Offset As Integer = Texture_Names_Offset + Read32(Data, (Texture_Table_Offset + Index * Name_Table_Length) + Name_Table_Base_Pointer + 8)
+        If Left(File_Magic, 2) = "MM" Then
+            Model_Texture = New List(Of OhanaTexture)
 
-            'Textura
-            Dim Texture_Name As String = Nothing
-            Do
-                Dim Value As Integer = Data(Texture_Offset)
-                Texture_Offset += 1
-                If Value <> 0 Then Texture_Name &= Chr(Value) Else Exit Do
-            Loop
-            Model_Texture_Index(Index) = Texture_Name
+            ReDim Model_Texture_Index(MM_Texture_Count - 1)
+            ReDim Model_Bump_Map_Index(MM_Texture_Count - 1)
+            Dim Temp_Index As Integer
+            For Index = 0 To MM_Texture_Count - 1
+                Texture_Table_Offset = Header_Offset + Read32(Data, MM_Texture_Table_Offset + (Index * 4))
 
-            If Model_Type = ModelType.Character Then
-                'Mapa de Normals/Bump Map
-                Dim Normal_Name As String = Nothing
+                Dim Name_Offset As Integer = Texture_Names_Offset + Read32(Data, Texture_Table_Offset + &H1C)
+                Dim Texture_Name As String = Nothing
                 Do
-                    Dim Value As Integer = Data(Normal_Offset)
-                    Normal_Offset += 1
-                    If Value <> 0 Then Normal_Name &= Chr(Value) Else Exit Do
+                    Dim Value As Integer = Data(Name_Offset)
+                    Name_Offset += 1
+                    If Value <> 0 Then Texture_Name &= Chr(Value) Else Exit Do
                 Loop
-                Model_Bump_Map_Index(Index) = Normal_Name
-            End If
-        Next
+                Model_Texture_Index(Index) = Texture_Name
+
+                Dim Texture_Description As Integer = Description_Offset + Read32(Data, Texture_Table_Offset)
+                Dim Height As Integer = Read16(Data, Texture_Description)
+                Dim Width As Integer = Read16(Data, Texture_Description + 2)
+                Dim Texture_Offset As Integer = Data_Offset + Read32(Data, Texture_Description + If(Version = BCH_Version.XY, 8, &H10))
+                Dim Texture_Format As Integer = Read32(Data, Texture_Description + If(Version = BCH_Version.XY, &H10, &H18))
+
+                Dim Out() As Byte = Convert_Texture(Data, Texture_Offset, Texture_Format, Width, Height)
+
+                Dim MyTex As New OhanaTexture
+                Dim Img As New Bitmap(Width, Height, Imaging.PixelFormat.Format32bppArgb)
+                Dim ImgData As BitmapData = Img.LockBits(New Rectangle(0, 0, Img.Width, Img.Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb)
+                Marshal.Copy(Out, 0, ImgData.Scan0, Out.Length)
+                Img.UnlockBits(ImgData)
+                MyTex.Image = Img
+                MyTex.Image.RotateFlip(RotateFlipType.RotateNoneFlipY)
+
+                Dim Texture As Texture = Nothing
+                If Create_DX_Texture Then
+                    Texture = New Texture(Device, Width, Height, 1, Usage.None, Direct3D.Format.A8R8G8B8, Pool.Managed)
+                    Dim pData As GraphicsStream = Texture.LockRectangle(0, LockFlags.None)
+                    pData.Write(Out, 0, Out.Length)
+                    Texture.UnlockRectangle(0)
+                End If
+
+                With MyTex
+                    If Create_DX_Texture Then .Texture = Texture
+                    .Name = Texture_Name
+                    Select Case Texture_Format
+                        Case 0, 2, 4, 5, 13
+                            .Has_Alpha = True
+                    End Select
+
+                    .Format = Texture_Format
+                End With
+                Model_Texture.Add(MyTex)
+
+                Model_Texture_Index(Temp_Index) = Texture_Name
+                If Texture_Name <> "projection_dummy" Then Temp_Index += 1
+            Next
+        Else
+            ReDim Model_Texture_Index(Texture_Entries - 1)
+            ReDim Model_Bump_Map_Index(Texture_Entries - 1)
+            For Index As Integer = 0 To Texture_Entries - 1
+                Dim Texture_Offset As Integer = Texture_Names_Offset + Read32(Data, (Texture_Table_Offset + Index * Name_Table_Length) + Name_Table_Base_Pointer)
+                Dim Normal_Offset As Integer = Texture_Names_Offset + Read32(Data, (Texture_Table_Offset + Index * Name_Table_Length) + Name_Table_Base_Pointer + 8)
+
+                'Textura
+                Dim Texture_Name As String = Nothing
+                Do
+                    Dim Value As Integer = Data(Texture_Offset)
+                    Texture_Offset += 1
+                    If Value <> 0 Then Texture_Name &= Chr(Value) Else Exit Do
+                Loop
+                Model_Texture_Index(Index) = Texture_Name
+
+                If Model_Type = ModelType.Character Then
+                    'Mapa de Normals/Bump Map
+                    Dim Normal_Name As String = Nothing
+                    Do
+                        Dim Value As Integer = Data(Normal_Offset)
+                        Normal_Offset += 1
+                        If Value <> 0 Then Normal_Name &= Chr(Value) Else Exit Do
+                    Loop
+                    Model_Bump_Map_Index(Index) = Normal_Name
+                End If
+            Next
+        End If
 
         ReDim Model_Bone(Bone_Entries - 1)
         Bones_Offset += (Bone_Entries * &HC) + &HC
@@ -575,7 +473,9 @@ Public Class Ohana
             .Textures_Count = Texture_ID_List.Count - (Texture_Entries - TempLst.Count)
         End With
     End Sub
-    Public Sub Load_Textures(File_Name As String, Optional Version As BCH_Version = BCH_Version.XY, Optional Create_DX_Texture As Boolean = True)
+    Public Sub Load_Textures(File_Name As String, Optional Create_DX_Texture As Boolean = True)
+        Dim Version As BCH_Version
+
         Dim Data() As Byte = File.ReadAllBytes(File_Name)
         Dim File_Magic As String = Nothing
         For i As Integer = 0 To 1
@@ -583,6 +483,9 @@ Public Class Ohana
         Next
         Dim BCH_Table_Offset As Integer = If(File_Magic = "PT", 4, 8)
         Dim BCH_Offset As Integer = Read32(Data, BCH_Table_Offset)
+
+        Dim Header_Offset As Integer = Read32(Data, BCH_Offset + 8)
+        If Header_Offset = &H44 Then Version = BCH_Version.ORAS Else Version = BCH_Version.XY
 
         Dim Texture_Description_Length As Integer
         Dim Desc_Texture_Pointer As Integer
@@ -633,163 +536,10 @@ Public Class Ohana
                     If Read32(Data, Description_Offset + Desc_Texture_Pointer - Texture_Description_Length) <> Read32(Data, Description_Offset + Desc_Texture_Pointer) Then
                         Dim Width As Integer = Read16(Data, Description_Offset + 2)
                         Dim Height As Integer = Read16(Data, Description_Offset)
-
                         Dim Format As Integer = Data(Description_Offset + Desc_Texture_Format)
                         Dim Texture_Data_Offset As Integer = Data_Offset + Read32(Data, Description_Offset + Desc_Texture_Pointer)
 
-                        Dim Out((Width * Height * 4) - 1) As Byte
-                        Dim Offset As Integer = Texture_Data_Offset
-                        Dim Low_High_Toggle As Boolean = False
-
-                        If Format = 12 Or Format = 13 Then 'ETC1 (iPACKMAN)
-                            Dim Temp_Buffer(((Width * Height) \ 2) - 1) As Byte
-                            Dim Alphas(Temp_Buffer.Length - 1) As Byte
-                            If Format = 12 Then
-                                Buffer.BlockCopy(Data, Offset, Temp_Buffer, 0, Temp_Buffer.Length)
-                                For j As Integer = 0 To Alphas.Length - 1
-                                    Alphas(j) = &HFF
-                                Next
-                            Else
-                                Dim k As Integer = 0
-                                For j As Integer = 0 To (Width * Height) - 1
-                                    Buffer.BlockCopy(Data, Offset + j + 8, Temp_Buffer, k, 8)
-                                    Buffer.BlockCopy(Data, Offset + j, Alphas, k, 8)
-                                    k += 8
-                                    j += 15
-                                Next
-                            End If
-                            Dim Temp_2() As Byte = ETC1_Decompress(Temp_Buffer, Alphas, Width, Height)
-
-                            'Os tiles com compressão ETC1 no 3DS estão embaralhados
-                            Dim Tile_Scramble(((Width \ 4) * (Height \ 4)) - 1) As Integer
-                            Dim Base_Accumulator As Integer = 0, Line_Accumulator As Integer = 0
-                            Dim Base_Number As Integer = 0, Line_Number As Integer = 0
-
-                            For Tile As Integer = 0 To Tile_Scramble.Length - 1
-                                If (Tile Mod (Width \ 4) = 0) And Tile > 0 Then
-                                    If Line_Accumulator < 1 Then
-                                        Line_Accumulator += 1
-                                        Line_Number += 2
-                                        Base_Number = Line_Number
-                                    Else
-                                        Line_Accumulator = 0
-                                        Base_Number -= 2
-                                        Line_Number = Base_Number
-                                    End If
-                                End If
-
-                                Tile_Scramble(Tile) = Base_Number
-
-                                If Base_Accumulator < 1 Then
-                                    Base_Accumulator += 1
-                                    Base_Number += 1
-                                Else
-                                    Base_Accumulator = 0
-                                    Base_Number += 3
-                                End If
-                            Next
-
-                            Dim i As Integer = 0
-                            For Tile_Y As Integer = 0 To (Height \ 4) - 1
-                                For Tile_X As Integer = 0 To (Width \ 4) - 1
-                                    Dim TX As Integer = Tile_Scramble(i) Mod (Width \ 4)
-                                    Dim TY As Integer = (Tile_Scramble(i) - TX) \ (Width \ 4)
-                                    For Y As Integer = 0 To 3
-                                        For X As Integer = 0 To 3
-                                            Dim Out_Offset As Integer = ((Tile_X * 4) + X + (((Height - 1) - ((Tile_Y * 4) + Y)) * Width)) * 4
-                                            Dim Image_Offset As Integer = ((TX * 4) + X + (((TY * 4) + Y) * Width)) * 4
-
-                                            Out(Out_Offset) = Temp_2(Image_Offset)
-                                            Out(Out_Offset + 1) = Temp_2(Image_Offset + 1)
-                                            Out(Out_Offset + 2) = Temp_2(Image_Offset + 2)
-                                            Out(Out_Offset + 3) = Temp_2(Image_Offset + 3)
-                                        Next
-                                    Next
-                                    i += 1
-                                Next
-                            Next
-                        Else
-                            For Tile_Y As Integer = 0 To (Height \ 8) - 1
-                                For Tile_X As Integer = 0 To (Width \ 8) - 1
-                                    For i As Integer = 0 To 63
-                                        Dim X As Integer = Tile_Order(i) Mod 8
-                                        Dim Y As Integer = (Tile_Order(i) - X) \ 8
-                                        Dim Out_Offset As Integer = ((Tile_X * 8) + X + (((Height - 1) - ((Tile_Y * 8) + Y)) * Width)) * 4
-                                        Select Case Format
-                                            Case 0 'R8G8B8A8
-                                                Buffer.BlockCopy(Data, Offset + 1, Out, Out_Offset, 3)
-                                                Out(Out_Offset + 3) = Data(Offset)
-                                                Offset += 4
-                                            Case 1 'R8G8B8 (sem transparência)
-                                                Buffer.BlockCopy(Data, Offset, Out, Out_Offset, 3)
-                                                Out(Out_Offset + 3) = &HFF
-                                                Offset += 3
-                                            Case 2 'R5G5B5A1
-                                                Dim Pixel_Data As Integer = Read16(Data, Offset)
-                                                Out(Out_Offset) = Convert.ToByte(((Pixel_Data >> 11) And &H1F) * 8)
-                                                Out(Out_Offset + 1) = Convert.ToByte(((Pixel_Data >> 6) And &H1F) * 8)
-                                                Out(Out_Offset + 2) = Convert.ToByte(((Pixel_Data >> 1) And &H1F) * 8)
-                                                Out(Out_Offset + 3) = Convert.ToByte((Pixel_Data And 1) * &HFF)
-                                                Offset += 2
-                                            Case 3 'R5G6B5
-                                                Dim Pixel_Data As Integer = Read16(Data, Offset)
-                                                Out(Out_Offset) = Convert.ToByte(((Pixel_Data >> 11) And &H1F) * 8)
-                                                Out(Out_Offset + 1) = Convert.ToByte(((Pixel_Data >> 5) And &H3F) * 4)
-                                                Out(Out_Offset + 2) = Convert.ToByte(((Pixel_Data) And &H1F) * 8)
-                                                Out(Out_Offset + 3) = &HFF
-                                                Offset += 2
-                                            Case 4 'R4G4B4A4
-                                                Dim Pixel_Data As Integer = Read16(Data, Offset)
-                                                Out(Out_Offset) = Convert.ToByte(((Pixel_Data >> 12) And &HF) * &H11)
-                                                Out(Out_Offset + 1) = Convert.ToByte(((Pixel_Data >> 8) And &HF) * &H11)
-                                                Out(Out_Offset + 2) = Convert.ToByte(((Pixel_Data >> 4) And &HF) * &H11)
-                                                Out(Out_Offset + 3) = Convert.ToByte((Pixel_Data And &HF) * &H11)
-                                                Offset += 2
-                                            Case 5 'L8A8
-                                                Dim Pixel_Data As Byte = Data(Offset + 1)
-                                                Out(Out_Offset) = Pixel_Data
-                                                Out(Out_Offset + 1) = Pixel_Data
-                                                Out(Out_Offset + 2) = Pixel_Data
-                                                Out(Out_Offset + 3) = Data(Offset)
-                                                Offset += 2
-                                            Case 6 'HILO8
-                                            Case 7 'L8
-                                                Out(Out_Offset) = Data(Offset)
-                                                Out(Out_Offset + 1) = Data(Offset)
-                                                Out(Out_Offset + 2) = Data(Offset)
-                                                Out(Out_Offset + 3) = &HFF
-                                                Offset += 1
-                                            Case 8 'A8
-                                                Out(Out_Offset) = &HFF
-                                                Out(Out_Offset + 1) = &HFF
-                                                Out(Out_Offset + 2) = &HFF
-                                                Out(Out_Offset + 3) = Data(Offset)
-                                                Offset += 1
-                                            Case 9 'L4A4
-                                                Dim Luma As Integer = Data(Offset) And &HF
-                                                Dim Alpha As Integer = (Data(Offset) And &HF0) >> 4
-                                                Out(Out_Offset) = Convert.ToByte(Luma * &H11)
-                                                Out(Out_Offset + 1) = Convert.ToByte(Luma * &H11)
-                                                Out(Out_Offset + 2) = Convert.ToByte(Luma * &H11)
-                                                Out(Out_Offset + 3) = Convert.ToByte(Alpha * &H11)
-                                            Case 10 'L4
-                                                Dim Pixel_Data As Integer
-                                                If Low_High_Toggle Then
-                                                    Pixel_Data = Data(Offset) And &HF
-                                                    Offset += 1
-                                                Else
-                                                    Pixel_Data = (Data(Offset) And &HF0) >> 4
-                                                End If
-                                                Out(Out_Offset) = Convert.ToByte(Pixel_Data * &H11)
-                                                Out(Out_Offset + 1) = Convert.ToByte(Pixel_Data * &H11)
-                                                Out(Out_Offset + 2) = Convert.ToByte(Pixel_Data * &H11)
-                                                Out(Out_Offset + 3) = &HFF
-                                                Low_High_Toggle = Not Low_High_Toggle
-                                        End Select
-                                    Next
-                                Next
-                            Next
-                        End If
+                        Dim Out() As Byte = Convert_Texture(Data, Texture_Data_Offset, Format, Width, Height)
 
                         Dim MyTex As New OhanaTexture
                         Dim Img As New Bitmap(Width, Height, Imaging.PixelFormat.Format32bppArgb)
@@ -840,6 +590,163 @@ Public Class Ohana
             BCH_Offset = Read32(Data, BCH_Table_Offset)
         End While
     End Sub
+    Private Function Convert_Texture(Data() As Byte, Texture_Data_Offset As Integer, Format As Integer, Width As Integer, Height As Integer) As Byte()
+        Dim Out((Width * Height * 4) - 1) As Byte
+        Dim Offset As Integer = Texture_Data_Offset
+        Dim Low_High_Toggle As Boolean = False
+
+        If Format = 12 Or Format = 13 Then 'ETC1 (iPACKMAN)
+            Dim Temp_Buffer(((Width * Height) \ 2) - 1) As Byte
+            Dim Alphas(Temp_Buffer.Length - 1) As Byte
+            If Format = 12 Then
+                Buffer.BlockCopy(Data, Offset, Temp_Buffer, 0, Temp_Buffer.Length)
+                For j As Integer = 0 To Alphas.Length - 1
+                    Alphas(j) = &HFF
+                Next
+            Else
+                Dim k As Integer = 0
+                For j As Integer = 0 To (Width * Height) - 1
+                    Buffer.BlockCopy(Data, Offset + j + 8, Temp_Buffer, k, 8)
+                    Buffer.BlockCopy(Data, Offset + j, Alphas, k, 8)
+                    k += 8
+                    j += 15
+                Next
+            End If
+            Dim Temp_2() As Byte = ETC1_Decompress(Temp_Buffer, Alphas, Width, Height)
+
+            'Os tiles com compressão ETC1 no 3DS estão embaralhados
+            Dim Tile_Scramble(((Width \ 4) * (Height \ 4)) - 1) As Integer
+            Dim Base_Accumulator As Integer = 0, Line_Accumulator As Integer = 0
+            Dim Base_Number As Integer = 0, Line_Number As Integer = 0
+
+            For Tile As Integer = 0 To Tile_Scramble.Length - 1
+                If (Tile Mod (Width \ 4) = 0) And Tile > 0 Then
+                    If Line_Accumulator < 1 Then
+                        Line_Accumulator += 1
+                        Line_Number += 2
+                        Base_Number = Line_Number
+                    Else
+                        Line_Accumulator = 0
+                        Base_Number -= 2
+                        Line_Number = Base_Number
+                    End If
+                End If
+
+                Tile_Scramble(Tile) = Base_Number
+
+                If Base_Accumulator < 1 Then
+                    Base_Accumulator += 1
+                    Base_Number += 1
+                Else
+                    Base_Accumulator = 0
+                    Base_Number += 3
+                End If
+            Next
+
+            Dim i As Integer = 0
+            For Tile_Y As Integer = 0 To (Height \ 4) - 1
+                For Tile_X As Integer = 0 To (Width \ 4) - 1
+                    Dim TX As Integer = Tile_Scramble(i) Mod (Width \ 4)
+                    Dim TY As Integer = (Tile_Scramble(i) - TX) \ (Width \ 4)
+                    For Y As Integer = 0 To 3
+                        For X As Integer = 0 To 3
+                            Dim Out_Offset As Integer = ((Tile_X * 4) + X + (((Height - 1) - ((Tile_Y * 4) + Y)) * Width)) * 4
+                            Dim Image_Offset As Integer = ((TX * 4) + X + (((TY * 4) + Y) * Width)) * 4
+
+                            Out(Out_Offset) = Temp_2(Image_Offset)
+                            Out(Out_Offset + 1) = Temp_2(Image_Offset + 1)
+                            Out(Out_Offset + 2) = Temp_2(Image_Offset + 2)
+                            Out(Out_Offset + 3) = Temp_2(Image_Offset + 3)
+                        Next
+                    Next
+                    i += 1
+                Next
+            Next
+        Else
+            For Tile_Y As Integer = 0 To (Height \ 8) - 1
+                For Tile_X As Integer = 0 To (Width \ 8) - 1
+                    For i As Integer = 0 To 63
+                        Dim X As Integer = Tile_Order(i) Mod 8
+                        Dim Y As Integer = (Tile_Order(i) - X) \ 8
+                        Dim Out_Offset As Integer = ((Tile_X * 8) + X + (((Height - 1) - ((Tile_Y * 8) + Y)) * Width)) * 4
+                        Select Case Format
+                            Case 0 'R8G8B8A8
+                                Buffer.BlockCopy(Data, Offset + 1, Out, Out_Offset, 3)
+                                Out(Out_Offset + 3) = Data(Offset)
+                                Offset += 4
+                            Case 1 'R8G8B8 (sem transparência)
+                                Buffer.BlockCopy(Data, Offset, Out, Out_Offset, 3)
+                                Out(Out_Offset + 3) = &HFF
+                                Offset += 3
+                            Case 2 'R5G5B5A1
+                                Dim Pixel_Data As Integer = Read16(Data, Offset)
+                                Out(Out_Offset) = Convert.ToByte(((Pixel_Data >> 11) And &H1F) * 8)
+                                Out(Out_Offset + 1) = Convert.ToByte(((Pixel_Data >> 6) And &H1F) * 8)
+                                Out(Out_Offset + 2) = Convert.ToByte(((Pixel_Data >> 1) And &H1F) * 8)
+                                Out(Out_Offset + 3) = Convert.ToByte((Pixel_Data And 1) * &HFF)
+                                Offset += 2
+                            Case 3 'R5G6B5
+                                Dim Pixel_Data As Integer = Read16(Data, Offset)
+                                Out(Out_Offset) = Convert.ToByte(((Pixel_Data >> 11) And &H1F) * 8)
+                                Out(Out_Offset + 1) = Convert.ToByte(((Pixel_Data >> 5) And &H3F) * 4)
+                                Out(Out_Offset + 2) = Convert.ToByte(((Pixel_Data) And &H1F) * 8)
+                                Out(Out_Offset + 3) = &HFF
+                                Offset += 2
+                            Case 4 'R4G4B4A4
+                                Dim Pixel_Data As Integer = Read16(Data, Offset)
+                                Out(Out_Offset) = Convert.ToByte(((Pixel_Data >> 12) And &HF) * &H11)
+                                Out(Out_Offset + 1) = Convert.ToByte(((Pixel_Data >> 8) And &HF) * &H11)
+                                Out(Out_Offset + 2) = Convert.ToByte(((Pixel_Data >> 4) And &HF) * &H11)
+                                Out(Out_Offset + 3) = Convert.ToByte((Pixel_Data And &HF) * &H11)
+                                Offset += 2
+                            Case 5 'L8A8
+                                Dim Pixel_Data As Byte = Data(Offset + 1)
+                                Out(Out_Offset) = Pixel_Data
+                                Out(Out_Offset + 1) = Pixel_Data
+                                Out(Out_Offset + 2) = Pixel_Data
+                                Out(Out_Offset + 3) = Data(Offset)
+                                Offset += 2
+                            Case 6 'HILO8
+                            Case 7 'L8
+                                Out(Out_Offset) = Data(Offset)
+                                Out(Out_Offset + 1) = Data(Offset)
+                                Out(Out_Offset + 2) = Data(Offset)
+                                Out(Out_Offset + 3) = &HFF
+                                Offset += 1
+                            Case 8 'A8
+                                Out(Out_Offset) = &HFF
+                                Out(Out_Offset + 1) = &HFF
+                                Out(Out_Offset + 2) = &HFF
+                                Out(Out_Offset + 3) = Data(Offset)
+                                Offset += 1
+                            Case 9 'L4A4
+                                Dim Luma As Integer = Data(Offset) And &HF
+                                Dim Alpha As Integer = (Data(Offset) And &HF0) >> 4
+                                Out(Out_Offset) = Convert.ToByte(Luma * &H11)
+                                Out(Out_Offset + 1) = Convert.ToByte(Luma * &H11)
+                                Out(Out_Offset + 2) = Convert.ToByte(Luma * &H11)
+                                Out(Out_Offset + 3) = Convert.ToByte(Alpha * &H11)
+                            Case 10 'L4
+                                Dim Pixel_Data As Integer
+                                If Low_High_Toggle Then
+                                    Pixel_Data = Data(Offset) And &HF
+                                    Offset += 1
+                                Else
+                                    Pixel_Data = (Data(Offset) And &HF0) >> 4
+                                End If
+                                Out(Out_Offset) = Convert.ToByte(Pixel_Data * &H11)
+                                Out(Out_Offset + 1) = Convert.ToByte(Pixel_Data * &H11)
+                                Out(Out_Offset + 2) = Convert.ToByte(Pixel_Data * &H11)
+                                Out(Out_Offset + 3) = &HFF
+                                Low_High_Toggle = Not Low_High_Toggle
+                        End Select
+                    Next
+                Next
+            Next
+        End If
+
+        Return Out
+    End Function
     Public Sub Export_SMD(File_Name As String)
         Dim Info As New NumberFormatInfo
         Info.NumberDecimalSeparator = "."
@@ -1073,9 +980,29 @@ Public Class Ohana
         If (Short_To_Convert < &H8000) Then Return Short_To_Convert
         Return Short_To_Convert - &H10000
     End Function
-    Private Sub Parse_Faces(Data() As Byte, Entry As Integer, Data_Offset As Integer, Face_Offset As Integer, Fmt As Integer)
-        Dim Face_Data_Format As Integer = 1
-        If Fmt > &HFF Then Face_Data_Format = 2
+    Private Sub Parse_Faces(Data() As Byte, Entry As Integer, Data_Offset As Integer, Face_Offset As Integer, Vertex_Count As Integer)
+        Dim Face_Data_Format As Integer = 2
+
+        Dim Temp_Data_Offset As Integer = Data_Offset + Read32(Data, Face_Offset + &H10)
+        Dim Temp_Data_Length As Integer = Read32(Data, Face_Offset + &H18)
+        Dim Temp As Integer = Temp_Data_Offset
+        For Index As Integer = 0 To Temp_Data_Length - 1 Step 3
+            If Temp + 6 < Data.Length Then
+                Dim Temp_1 As Integer = Convert.ToInt32(Read16(Data, Temp))
+                Dim Temp_2 As Integer = Convert.ToInt32(Read16(Data, Temp + 2))
+                Dim Temp_3 As Integer = Convert.ToInt32(Read16(Data, Temp + 4))
+
+                If Temp_1 > Vertex_Count Or Temp_2 > Vertex_Count Or Temp_3 > Vertex_Count Then
+                    Face_Data_Format = 1
+                    Exit For
+                End If
+                Temp += 6
+            Else
+                Face_Data_Format = 1
+                Exit For
+            End If
+        Next
+
         With Model_Object(Entry)
             Dim Face_Data_Offset As Integer = Data_Offset + Read32(Data, Face_Offset + &H10)
             Dim Face_Data_Length As Integer = Read32(Data, Face_Offset + &H18)
@@ -1100,7 +1027,7 @@ Public Class Ohana
     End Sub
     Public Sub Render()
         'Define a posição da "câmera"
-        Device.Transform.Projection = Matrix.PerspectiveFovLH(Math.PI / 4, CSng(640 / 480), 0.1F, 200.0F)
+        Device.Transform.Projection = Matrix.PerspectiveFovLH(Math.PI / 4, CSng(SWidth / SHeight), 0.1F, 200.0F)
         Device.Transform.View = Matrix.LookAtLH(New Vector3(0.0F, 0.0F, 20.0F), New Vector3(0.0F, 0.0F, 0.0F), New Vector3(0.0F, 1.0F, 0.0F))
 
         Do
@@ -1127,7 +1054,7 @@ Public Class Ohana
                                 Dim Texture_Name As String = Model_Texture_Index(ModelObj.Texture_ID)
                                 If Model_Texture IsNot Nothing Then
                                     For Each Current_Texture As OhanaTexture In Model_Texture
-                                        If Current_Texture.Name = Texture_Name And InStr(Texture_Name, "dummy") = False Then
+                                        If Current_Texture.Name = Texture_Name Then
                                             Has_Alpha = Current_Texture.Has_Alpha
                                             If Not Has_Alpha Or (Has_Alpha And Phase > 0) Then Device.SetTexture(0, Current_Texture.Texture)
                                         End If

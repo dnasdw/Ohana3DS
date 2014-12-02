@@ -25,20 +25,17 @@ Partial Class FrmMain
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(FrmMain))
         Me.BtnClose = New System.Windows.Forms.Label()
         Me.BtnMinimize = New System.Windows.Forms.Label()
-        Me.PanelModel = New System.Windows.Forms.Panel()
-        Me.Screen = New System.Windows.Forms.PictureBox()
-        Me.PanelTextures = New System.Windows.Forms.Panel()
-        Me.PanelGARC = New System.Windows.Forms.Panel()
-        Me.PanelSearch = New System.Windows.Forms.Panel()
-        Me.PanelSplash = New System.Windows.Forms.Panel()
+        Me.Splash = New System.Windows.Forms.PictureBox()
+        Me.MainTabs = New Ohana3DS.MyTabcontrol()
+        Me.ModelPage = New System.Windows.Forms.TabPage()
         Me.GrpOptions = New Ohana3DS.MyGroupbox()
         Me.BtnModelScale = New System.Windows.Forms.Button()
         Me.ProgressModels = New Ohana3DS.MyProgressbar()
-        Me.BtnModelBCHVer = New System.Windows.Forms.Button()
         Me.BtnModelExportAllFF = New System.Windows.Forms.Button()
         Me.BtnModelExport = New System.Windows.Forms.Button()
         Me.BtnModelOpen = New System.Windows.Forms.Button()
         Me.GrpInfo = New Ohana3DS.MyGroupbox()
+        Me.LblModelName = New System.Windows.Forms.Label()
         Me.BtnModelTexturesMore = New System.Windows.Forms.Button()
         Me.LblInfoTextures = New System.Windows.Forms.Label()
         Me.LblInfoBones = New System.Windows.Forms.Label()
@@ -48,17 +45,12 @@ Partial Class FrmMain
         Me.LblInfoBonesDummy = New System.Windows.Forms.Label()
         Me.LblInfoTrianglesDummy = New System.Windows.Forms.Label()
         Me.LblInfoVerticesDummy = New System.Windows.Forms.Label()
-        Me.GrpTexturePreview = New Ohana3DS.MyGroupbox()
-        Me.ImgTexture_Container = New System.Windows.Forms.Panel()
-        Me.ImgTexture = New System.Windows.Forms.PictureBox()
-        Me.GrpTextures = New Ohana3DS.MyGroupbox()
-        Me.LstTextures_Container = New System.Windows.Forms.Panel()
-        Me.LstTextures = New Ohana3DS.MyListview()
+        Me.Screen = New System.Windows.Forms.PictureBox()
+        Me.TexturePage = New System.Windows.Forms.TabPage()
         Me.GrpTexOptions = New Ohana3DS.MyGroupbox()
         Me.BtnTextureMode = New System.Windows.Forms.Button()
         Me.BtnTextureExportAllFF = New System.Windows.Forms.Button()
         Me.ProgressTextures = New Ohana3DS.MyProgressbar()
-        Me.BtnTextureBCHVer = New System.Windows.Forms.Button()
         Me.BtnTextureExportAll = New System.Windows.Forms.Button()
         Me.BtnTextureExport = New System.Windows.Forms.Button()
         Me.BtnTextureOpen = New System.Windows.Forms.Button()
@@ -71,6 +63,14 @@ Partial Class FrmMain
         Me.LblInfoTextureResolutionDummy = New System.Windows.Forms.Label()
         Me.LblInfoTextureIndex = New System.Windows.Forms.Label()
         Me.LblInfoTextureIndexDummy = New System.Windows.Forms.Label()
+        Me.GrpTexturePreview = New Ohana3DS.MyGroupbox()
+        Me.ImgTexture_Container = New System.Windows.Forms.Panel()
+        Me.ImgTexture = New System.Windows.Forms.PictureBox()
+        Me.GrpTextures = New Ohana3DS.MyGroupbox()
+        Me.LstTextures_Container = New System.Windows.Forms.Panel()
+        Me.LstTextures = New Ohana3DS.MyListview()
+        Me.TextPage = New System.Windows.Forms.TabPage()
+        Me.GARCPage = New System.Windows.Forms.TabPage()
         Me.GrpGARCOptions = New Ohana3DS.MyGroupbox()
         Me.ProgressGARC = New Ohana3DS.MyProgressbar()
         Me.BtnGARCExtractAll = New System.Windows.Forms.Button()
@@ -79,6 +79,7 @@ Partial Class FrmMain
         Me.GrpFiles = New Ohana3DS.MyGroupbox()
         Me.LstFiles_Container = New System.Windows.Forms.Panel()
         Me.LstFiles = New Ohana3DS.MyListview()
+        Me.SearchPage = New System.Windows.Forms.TabPage()
         Me.GrpMatches = New Ohana3DS.MyGroupbox()
         Me.LstMatches_Container = New System.Windows.Forms.Panel()
         Me.LstMatches = New Ohana3DS.MyListview()
@@ -86,25 +87,27 @@ Partial Class FrmMain
         Me.TxtSearch = New System.Windows.Forms.TextBox()
         Me.ProgressSearch = New Ohana3DS.MyProgressbar()
         Me.BtnSearch = New System.Windows.Forms.Button()
+        Me.ROMPage = New System.Windows.Forms.TabPage()
         Me.Title = New Ohana3DS.MyWindowTitle()
-        Me.SideBar = New Ohana3DS.MyListview()
-        Me.PanelModel.SuspendLayout()
-        CType(Me.Screen, System.ComponentModel.ISupportInitialize).BeginInit()
-        Me.PanelTextures.SuspendLayout()
-        Me.PanelGARC.SuspendLayout()
-        Me.PanelSearch.SuspendLayout()
+        CType(Me.Splash, System.ComponentModel.ISupportInitialize).BeginInit()
+        Me.MainTabs.SuspendLayout()
+        Me.ModelPage.SuspendLayout()
         Me.GrpOptions.SuspendLayout()
         Me.GrpInfo.SuspendLayout()
+        CType(Me.Screen, System.ComponentModel.ISupportInitialize).BeginInit()
+        Me.TexturePage.SuspendLayout()
+        Me.GrpTexOptions.SuspendLayout()
+        Me.GrpTexInfo.SuspendLayout()
         Me.GrpTexturePreview.SuspendLayout()
         Me.ImgTexture_Container.SuspendLayout()
         CType(Me.ImgTexture, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.GrpTextures.SuspendLayout()
         Me.LstTextures_Container.SuspendLayout()
-        Me.GrpTexOptions.SuspendLayout()
-        Me.GrpTexInfo.SuspendLayout()
+        Me.GARCPage.SuspendLayout()
         Me.GrpGARCOptions.SuspendLayout()
         Me.GrpFiles.SuspendLayout()
         Me.LstFiles_Container.SuspendLayout()
+        Me.SearchPage.SuspendLayout()
         Me.GrpMatches.SuspendLayout()
         Me.LstMatches_Container.SuspendLayout()
         Me.GrpSearchOptions.SuspendLayout()
@@ -134,85 +137,64 @@ Partial Class FrmMain
         Me.BtnMinimize.Text = "_"
         Me.BtnMinimize.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
         '
-        'PanelModel
+        'Splash
         '
-        Me.PanelModel.BackColor = System.Drawing.Color.Transparent
-        Me.PanelModel.Controls.Add(Me.GrpOptions)
-        Me.PanelModel.Controls.Add(Me.GrpInfo)
-        Me.PanelModel.Controls.Add(Me.Screen)
-        Me.PanelModel.Location = New System.Drawing.Point(146, 32)
-        Me.PanelModel.Name = "PanelModel"
-        Me.PanelModel.Size = New System.Drawing.Size(654, 568)
-        Me.PanelModel.TabIndex = 0
-        Me.PanelModel.Visible = False
+        Me.Splash.Image = CType(resources.GetObject("Splash.Image"), System.Drawing.Image)
+        Me.Splash.Location = New System.Drawing.Point(0, 32)
+        Me.Splash.Name = "Splash"
+        Me.Splash.Size = New System.Drawing.Size(800, 568)
+        Me.Splash.TabIndex = 20
+        Me.Splash.TabStop = False
         '
-        'Screen
+        'MainTabs
         '
-        Me.Screen.BackColor = System.Drawing.Color.Black
-        Me.Screen.Location = New System.Drawing.Point(7, 0)
-        Me.Screen.Name = "Screen"
-        Me.Screen.Size = New System.Drawing.Size(640, 480)
-        Me.Screen.TabIndex = 18
-        Me.Screen.TabStop = False
+        Me.MainTabs.Alignment = System.Windows.Forms.TabAlignment.Left
+        Me.MainTabs.BackgroundImage = CType(resources.GetObject("MainTabs.BackgroundImage"), System.Drawing.Image)
+        Me.MainTabs.Controls.Add(Me.ModelPage)
+        Me.MainTabs.Controls.Add(Me.TexturePage)
+        Me.MainTabs.Controls.Add(Me.TextPage)
+        Me.MainTabs.Controls.Add(Me.GARCPage)
+        Me.MainTabs.Controls.Add(Me.SearchPage)
+        Me.MainTabs.Controls.Add(Me.ROMPage)
+        Me.MainTabs.DrawMode = System.Windows.Forms.TabDrawMode.OwnerDrawFixed
+        Me.MainTabs.Font = New System.Drawing.Font("Segoe UI", 8.25!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+        Me.MainTabs.ItemSize = New System.Drawing.Size(56, 24)
+        Me.MainTabs.Location = New System.Drawing.Point(0, 32)
+        Me.MainTabs.Multiline = True
+        Me.MainTabs.Name = "MainTabs"
+        Me.MainTabs.SelectedIndex = 0
+        Me.MainTabs.Size = New System.Drawing.Size(800, 568)
+        Me.MainTabs.SizeMode = System.Windows.Forms.TabSizeMode.Fixed
+        Me.MainTabs.TabIndex = 19
+        Me.MainTabs.Visible = False
         '
-        'PanelTextures
+        'ModelPage
         '
-        Me.PanelTextures.BackColor = System.Drawing.Color.Transparent
-        Me.PanelTextures.Controls.Add(Me.GrpTexturePreview)
-        Me.PanelTextures.Controls.Add(Me.GrpTextures)
-        Me.PanelTextures.Controls.Add(Me.GrpTexOptions)
-        Me.PanelTextures.Controls.Add(Me.GrpTexInfo)
-        Me.PanelTextures.Location = New System.Drawing.Point(146, 32)
-        Me.PanelTextures.Name = "PanelTextures"
-        Me.PanelTextures.Size = New System.Drawing.Size(654, 568)
-        Me.PanelTextures.TabIndex = 0
-        Me.PanelTextures.Visible = False
-        '
-        'PanelGARC
-        '
-        Me.PanelGARC.BackColor = System.Drawing.Color.Transparent
-        Me.PanelGARC.Controls.Add(Me.GrpGARCOptions)
-        Me.PanelGARC.Controls.Add(Me.GrpFiles)
-        Me.PanelGARC.Location = New System.Drawing.Point(146, 32)
-        Me.PanelGARC.Name = "PanelGARC"
-        Me.PanelGARC.Size = New System.Drawing.Size(654, 568)
-        Me.PanelGARC.TabIndex = 0
-        Me.PanelGARC.Visible = False
-        '
-        'PanelSearch
-        '
-        Me.PanelSearch.BackColor = System.Drawing.Color.Transparent
-        Me.PanelSearch.Controls.Add(Me.GrpMatches)
-        Me.PanelSearch.Controls.Add(Me.GrpSearchOptions)
-        Me.PanelSearch.Location = New System.Drawing.Point(146, 32)
-        Me.PanelSearch.Name = "PanelSearch"
-        Me.PanelSearch.Size = New System.Drawing.Size(654, 568)
-        Me.PanelSearch.TabIndex = 0
-        Me.PanelSearch.Visible = False
-        '
-        'PanelSplash
-        '
-        Me.PanelSplash.BackColor = System.Drawing.Color.Transparent
-        Me.PanelSplash.BackgroundImage = CType(resources.GetObject("PanelSplash.BackgroundImage"), System.Drawing.Image)
-        Me.PanelSplash.Location = New System.Drawing.Point(146, 32)
-        Me.PanelSplash.Name = "PanelSplash"
-        Me.PanelSplash.Size = New System.Drawing.Size(654, 568)
-        Me.PanelSplash.TabIndex = 0
+        Me.ModelPage.BackColor = System.Drawing.Color.Transparent
+        Me.ModelPage.Controls.Add(Me.GrpOptions)
+        Me.ModelPage.Controls.Add(Me.GrpInfo)
+        Me.ModelPage.Controls.Add(Me.Screen)
+        Me.ModelPage.ForeColor = System.Drawing.Color.White
+        Me.ModelPage.Location = New System.Drawing.Point(28, 4)
+        Me.ModelPage.Name = "ModelPage"
+        Me.ModelPage.Padding = New System.Windows.Forms.Padding(3)
+        Me.ModelPage.Size = New System.Drawing.Size(768, 560)
+        Me.ModelPage.TabIndex = 0
+        Me.ModelPage.Text = "Model"
         '
         'GrpOptions
         '
         Me.GrpOptions.BackColor = System.Drawing.Color.Transparent
         Me.GrpOptions.Controls.Add(Me.BtnModelScale)
         Me.GrpOptions.Controls.Add(Me.ProgressModels)
-        Me.GrpOptions.Controls.Add(Me.BtnModelBCHVer)
         Me.GrpOptions.Controls.Add(Me.BtnModelExportAllFF)
         Me.GrpOptions.Controls.Add(Me.BtnModelExport)
         Me.GrpOptions.Controls.Add(Me.BtnModelOpen)
         Me.GrpOptions.ForeColor = System.Drawing.Color.White
-        Me.GrpOptions.Location = New System.Drawing.Point(213, 486)
+        Me.GrpOptions.Location = New System.Drawing.Point(206, 480)
         Me.GrpOptions.Name = "GrpOptions"
-        Me.GrpOptions.Size = New System.Drawing.Size(434, 82)
-        Me.GrpOptions.TabIndex = 20
+        Me.GrpOptions.Size = New System.Drawing.Size(562, 80)
+        Me.GrpOptions.TabIndex = 23
         Me.GrpOptions.TabStop = False
         Me.GrpOptions.Text = "Options"
         '
@@ -221,7 +203,7 @@ Partial Class FrmMain
         Me.BtnModelScale.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
         Me.BtnModelScale.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
         Me.BtnModelScale.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        Me.BtnModelScale.Location = New System.Drawing.Point(284, 18)
+        Me.BtnModelScale.Location = New System.Drawing.Point(490, 18)
         Me.BtnModelScale.Name = "BtnModelScale"
         Me.BtnModelScale.Size = New System.Drawing.Size(72, 24)
         Me.BtnModelScale.TabIndex = 4
@@ -235,18 +217,6 @@ Partial Class FrmMain
         Me.ProgressModels.Percentage = 0.0!
         Me.ProgressModels.Size = New System.Drawing.Size(278, 24)
         Me.ProgressModels.TabIndex = 0
-        '
-        'BtnModelBCHVer
-        '
-        Me.BtnModelBCHVer.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
-        Me.BtnModelBCHVer.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
-        Me.BtnModelBCHVer.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        Me.BtnModelBCHVer.Location = New System.Drawing.Point(362, 18)
-        Me.BtnModelBCHVer.Name = "BtnModelBCHVer"
-        Me.BtnModelBCHVer.Size = New System.Drawing.Size(72, 24)
-        Me.BtnModelBCHVer.TabIndex = 5
-        Me.BtnModelBCHVer.Text = "X/Y"
-        Me.BtnModelBCHVer.UseVisualStyleBackColor = True
         '
         'BtnModelExportAllFF
         '
@@ -287,6 +257,7 @@ Partial Class FrmMain
         'GrpInfo
         '
         Me.GrpInfo.BackColor = System.Drawing.Color.Transparent
+        Me.GrpInfo.Controls.Add(Me.LblModelName)
         Me.GrpInfo.Controls.Add(Me.BtnModelTexturesMore)
         Me.GrpInfo.Controls.Add(Me.LblInfoTextures)
         Me.GrpInfo.Controls.Add(Me.LblInfoBones)
@@ -297,12 +268,21 @@ Partial Class FrmMain
         Me.GrpInfo.Controls.Add(Me.LblInfoTrianglesDummy)
         Me.GrpInfo.Controls.Add(Me.LblInfoVerticesDummy)
         Me.GrpInfo.ForeColor = System.Drawing.Color.White
-        Me.GrpInfo.Location = New System.Drawing.Point(7, 486)
+        Me.GrpInfo.Location = New System.Drawing.Point(0, 480)
         Me.GrpInfo.Name = "GrpInfo"
-        Me.GrpInfo.Size = New System.Drawing.Size(200, 82)
-        Me.GrpInfo.TabIndex = 19
+        Me.GrpInfo.Size = New System.Drawing.Size(200, 80)
+        Me.GrpInfo.TabIndex = 22
         Me.GrpInfo.TabStop = False
         Me.GrpInfo.Text = "Info"
+        '
+        'LblModelName
+        '
+        Me.LblModelName.Font = New System.Drawing.Font("Segoe UI Light", 8.25!)
+        Me.LblModelName.Location = New System.Drawing.Point(112, 18)
+        Me.LblModelName.Name = "LblModelName"
+        Me.LblModelName.Size = New System.Drawing.Size(88, 13)
+        Me.LblModelName.TabIndex = 8
+        Me.LblModelName.TextAlign = System.Drawing.ContentAlignment.TopRight
         '
         'BtnModelTexturesMore
         '
@@ -396,63 +376,29 @@ Partial Class FrmMain
         Me.LblInfoVerticesDummy.TabIndex = 0
         Me.LblInfoVerticesDummy.Text = "Vertices:"
         '
-        'GrpTexturePreview
+        'Screen
         '
-        Me.GrpTexturePreview.Controls.Add(Me.ImgTexture_Container)
-        Me.GrpTexturePreview.ForeColor = System.Drawing.Color.White
-        Me.GrpTexturePreview.Location = New System.Drawing.Point(213, 3)
-        Me.GrpTexturePreview.Name = "GrpTexturePreview"
-        Me.GrpTexturePreview.Size = New System.Drawing.Size(434, 478)
-        Me.GrpTexturePreview.TabIndex = 24
-        Me.GrpTexturePreview.TabStop = False
-        Me.GrpTexturePreview.Text = "View"
+        Me.Screen.BackColor = System.Drawing.Color.Black
+        Me.Screen.Location = New System.Drawing.Point(0, 0)
+        Me.Screen.Name = "Screen"
+        Me.Screen.Size = New System.Drawing.Size(768, 480)
+        Me.Screen.TabIndex = 21
+        Me.Screen.TabStop = False
         '
-        'ImgTexture_Container
+        'TexturePage
         '
-        Me.ImgTexture_Container.AutoScroll = True
-        Me.ImgTexture_Container.Controls.Add(Me.ImgTexture)
-        Me.ImgTexture_Container.Location = New System.Drawing.Point(0, 18)
-        Me.ImgTexture_Container.Name = "ImgTexture_Container"
-        Me.ImgTexture_Container.Size = New System.Drawing.Size(434, 460)
-        Me.ImgTexture_Container.TabIndex = 0
-        '
-        'ImgTexture
-        '
-        Me.ImgTexture.Location = New System.Drawing.Point(0, 0)
-        Me.ImgTexture.Name = "ImgTexture"
-        Me.ImgTexture.Size = New System.Drawing.Size(128, 128)
-        Me.ImgTexture.SizeMode = System.Windows.Forms.PictureBoxSizeMode.AutoSize
-        Me.ImgTexture.TabIndex = 1
-        Me.ImgTexture.TabStop = False
-        '
-        'GrpTextures
-        '
-        Me.GrpTextures.Controls.Add(Me.LstTextures_Container)
-        Me.GrpTextures.ForeColor = System.Drawing.Color.White
-        Me.GrpTextures.Location = New System.Drawing.Point(7, 3)
-        Me.GrpTextures.Name = "GrpTextures"
-        Me.GrpTextures.Size = New System.Drawing.Size(200, 478)
-        Me.GrpTextures.TabIndex = 23
-        Me.GrpTextures.TabStop = False
-        Me.GrpTextures.Text = "Textures"
-        '
-        'LstTextures_Container
-        '
-        Me.LstTextures_Container.AutoScroll = True
-        Me.LstTextures_Container.Controls.Add(Me.LstTextures)
-        Me.LstTextures_Container.Location = New System.Drawing.Point(0, 18)
-        Me.LstTextures_Container.Name = "LstTextures_Container"
-        Me.LstTextures_Container.Size = New System.Drawing.Size(200, 460)
-        Me.LstTextures_Container.TabIndex = 0
-        '
-        'LstTextures
-        '
-        Me.LstTextures.Location = New System.Drawing.Point(0, 0)
-        Me.LstTextures.MinHeight = 460
-        Me.LstTextures.Name = "LstTextures"
-        Me.LstTextures.Size = New System.Drawing.Size(183, 460)
-        Me.LstTextures.TabIndex = 0
-        Me.LstTextures.TileHeight = 16
+        Me.TexturePage.BackColor = System.Drawing.Color.Transparent
+        Me.TexturePage.Controls.Add(Me.GrpTexOptions)
+        Me.TexturePage.Controls.Add(Me.GrpTexInfo)
+        Me.TexturePage.Controls.Add(Me.GrpTexturePreview)
+        Me.TexturePage.Controls.Add(Me.GrpTextures)
+        Me.TexturePage.ForeColor = System.Drawing.Color.White
+        Me.TexturePage.Location = New System.Drawing.Point(28, 4)
+        Me.TexturePage.Name = "TexturePage"
+        Me.TexturePage.Padding = New System.Windows.Forms.Padding(3)
+        Me.TexturePage.Size = New System.Drawing.Size(768, 560)
+        Me.TexturePage.TabIndex = 1
+        Me.TexturePage.Text = "Textures"
         '
         'GrpTexOptions
         '
@@ -460,15 +406,14 @@ Partial Class FrmMain
         Me.GrpTexOptions.Controls.Add(Me.BtnTextureMode)
         Me.GrpTexOptions.Controls.Add(Me.BtnTextureExportAllFF)
         Me.GrpTexOptions.Controls.Add(Me.ProgressTextures)
-        Me.GrpTexOptions.Controls.Add(Me.BtnTextureBCHVer)
         Me.GrpTexOptions.Controls.Add(Me.BtnTextureExportAll)
         Me.GrpTexOptions.Controls.Add(Me.BtnTextureExport)
         Me.GrpTexOptions.Controls.Add(Me.BtnTextureOpen)
         Me.GrpTexOptions.ForeColor = System.Drawing.Color.White
-        Me.GrpTexOptions.Location = New System.Drawing.Point(213, 486)
+        Me.GrpTexOptions.Location = New System.Drawing.Point(206, 480)
         Me.GrpTexOptions.Name = "GrpTexOptions"
-        Me.GrpTexOptions.Size = New System.Drawing.Size(434, 81)
-        Me.GrpTexOptions.TabIndex = 22
+        Me.GrpTexOptions.Size = New System.Drawing.Size(562, 80)
+        Me.GrpTexOptions.TabIndex = 26
         Me.GrpTexOptions.TabStop = False
         Me.GrpTexOptions.Text = "Options"
         '
@@ -477,7 +422,7 @@ Partial Class FrmMain
         Me.BtnTextureMode.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
         Me.BtnTextureMode.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
         Me.BtnTextureMode.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        Me.BtnTextureMode.Location = New System.Drawing.Point(284, 18)
+        Me.BtnTextureMode.Location = New System.Drawing.Point(490, 18)
         Me.BtnTextureMode.Name = "BtnTextureMode"
         Me.BtnTextureMode.Size = New System.Drawing.Size(72, 24)
         Me.BtnTextureMode.TabIndex = 5
@@ -503,18 +448,6 @@ Partial Class FrmMain
         Me.ProgressTextures.Percentage = 0.0!
         Me.ProgressTextures.Size = New System.Drawing.Size(278, 24)
         Me.ProgressTextures.TabIndex = 0
-        '
-        'BtnTextureBCHVer
-        '
-        Me.BtnTextureBCHVer.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
-        Me.BtnTextureBCHVer.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
-        Me.BtnTextureBCHVer.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        Me.BtnTextureBCHVer.Location = New System.Drawing.Point(362, 18)
-        Me.BtnTextureBCHVer.Name = "BtnTextureBCHVer"
-        Me.BtnTextureBCHVer.Size = New System.Drawing.Size(72, 24)
-        Me.BtnTextureBCHVer.TabIndex = 6
-        Me.BtnTextureBCHVer.Text = "X/Y"
-        Me.BtnTextureBCHVer.UseVisualStyleBackColor = True
         '
         'BtnTextureExportAll
         '
@@ -564,10 +497,10 @@ Partial Class FrmMain
         Me.GrpTexInfo.Controls.Add(Me.LblInfoTextureIndex)
         Me.GrpTexInfo.Controls.Add(Me.LblInfoTextureIndexDummy)
         Me.GrpTexInfo.ForeColor = System.Drawing.Color.White
-        Me.GrpTexInfo.Location = New System.Drawing.Point(7, 486)
+        Me.GrpTexInfo.Location = New System.Drawing.Point(0, 480)
         Me.GrpTexInfo.Name = "GrpTexInfo"
-        Me.GrpTexInfo.Size = New System.Drawing.Size(200, 81)
-        Me.GrpTexInfo.TabIndex = 21
+        Me.GrpTexInfo.Size = New System.Drawing.Size(200, 80)
+        Me.GrpTexInfo.TabIndex = 25
         Me.GrpTexInfo.TabStop = False
         Me.GrpTexInfo.Text = "Info"
         '
@@ -651,6 +584,86 @@ Partial Class FrmMain
         Me.LblInfoTextureIndexDummy.TabIndex = 0
         Me.LblInfoTextureIndexDummy.Text = "Num.:"
         '
+        'GrpTexturePreview
+        '
+        Me.GrpTexturePreview.Controls.Add(Me.ImgTexture_Container)
+        Me.GrpTexturePreview.ForeColor = System.Drawing.Color.White
+        Me.GrpTexturePreview.Location = New System.Drawing.Point(206, 0)
+        Me.GrpTexturePreview.Name = "GrpTexturePreview"
+        Me.GrpTexturePreview.Size = New System.Drawing.Size(562, 480)
+        Me.GrpTexturePreview.TabIndex = 28
+        Me.GrpTexturePreview.TabStop = False
+        Me.GrpTexturePreview.Text = "View"
+        '
+        'ImgTexture_Container
+        '
+        Me.ImgTexture_Container.AutoScroll = True
+        Me.ImgTexture_Container.Controls.Add(Me.ImgTexture)
+        Me.ImgTexture_Container.Location = New System.Drawing.Point(0, 18)
+        Me.ImgTexture_Container.Name = "ImgTexture_Container"
+        Me.ImgTexture_Container.Size = New System.Drawing.Size(562, 460)
+        Me.ImgTexture_Container.TabIndex = 0
+        '
+        'ImgTexture
+        '
+        Me.ImgTexture.Location = New System.Drawing.Point(0, 0)
+        Me.ImgTexture.Name = "ImgTexture"
+        Me.ImgTexture.Size = New System.Drawing.Size(128, 128)
+        Me.ImgTexture.SizeMode = System.Windows.Forms.PictureBoxSizeMode.AutoSize
+        Me.ImgTexture.TabIndex = 1
+        Me.ImgTexture.TabStop = False
+        '
+        'GrpTextures
+        '
+        Me.GrpTextures.Controls.Add(Me.LstTextures_Container)
+        Me.GrpTextures.ForeColor = System.Drawing.Color.White
+        Me.GrpTextures.Location = New System.Drawing.Point(0, 0)
+        Me.GrpTextures.Name = "GrpTextures"
+        Me.GrpTextures.Size = New System.Drawing.Size(200, 480)
+        Me.GrpTextures.TabIndex = 27
+        Me.GrpTextures.TabStop = False
+        Me.GrpTextures.Text = "Textures"
+        '
+        'LstTextures_Container
+        '
+        Me.LstTextures_Container.AutoScroll = True
+        Me.LstTextures_Container.Controls.Add(Me.LstTextures)
+        Me.LstTextures_Container.Location = New System.Drawing.Point(0, 18)
+        Me.LstTextures_Container.Name = "LstTextures_Container"
+        Me.LstTextures_Container.Size = New System.Drawing.Size(200, 460)
+        Me.LstTextures_Container.TabIndex = 0
+        '
+        'LstTextures
+        '
+        Me.LstTextures.Location = New System.Drawing.Point(0, 0)
+        Me.LstTextures.MinHeight = 460
+        Me.LstTextures.Name = "LstTextures"
+        Me.LstTextures.Size = New System.Drawing.Size(183, 460)
+        Me.LstTextures.TabIndex = 0
+        Me.LstTextures.TileHeight = 16
+        '
+        'TextPage
+        '
+        Me.TextPage.BackColor = System.Drawing.Color.Transparent
+        Me.TextPage.ForeColor = System.Drawing.Color.White
+        Me.TextPage.Location = New System.Drawing.Point(28, 4)
+        Me.TextPage.Name = "TextPage"
+        Me.TextPage.Size = New System.Drawing.Size(768, 560)
+        Me.TextPage.TabIndex = 2
+        Me.TextPage.Text = "Text"
+        '
+        'GARCPage
+        '
+        Me.GARCPage.BackColor = System.Drawing.Color.Transparent
+        Me.GARCPage.Controls.Add(Me.GrpGARCOptions)
+        Me.GARCPage.Controls.Add(Me.GrpFiles)
+        Me.GARCPage.ForeColor = System.Drawing.Color.White
+        Me.GARCPage.Location = New System.Drawing.Point(28, 4)
+        Me.GARCPage.Name = "GARCPage"
+        Me.GARCPage.Size = New System.Drawing.Size(768, 560)
+        Me.GARCPage.TabIndex = 3
+        Me.GARCPage.Text = "GARC"
+        '
         'GrpGARCOptions
         '
         Me.GrpGARCOptions.BackColor = System.Drawing.Color.Transparent
@@ -659,10 +672,10 @@ Partial Class FrmMain
         Me.GrpGARCOptions.Controls.Add(Me.BtnGARCExtract)
         Me.GrpGARCOptions.Controls.Add(Me.BtnOpenGARC)
         Me.GrpGARCOptions.ForeColor = System.Drawing.Color.White
-        Me.GrpGARCOptions.Location = New System.Drawing.Point(7, 486)
+        Me.GrpGARCOptions.Location = New System.Drawing.Point(0, 480)
         Me.GrpGARCOptions.Name = "GrpGARCOptions"
-        Me.GrpGARCOptions.Size = New System.Drawing.Size(640, 81)
-        Me.GrpGARCOptions.TabIndex = 23
+        Me.GrpGARCOptions.Size = New System.Drawing.Size(768, 80)
+        Me.GrpGARCOptions.TabIndex = 25
         Me.GrpGARCOptions.TabStop = False
         Me.GrpGARCOptions.Text = "Options"
         '
@@ -714,10 +727,10 @@ Partial Class FrmMain
         '
         Me.GrpFiles.Controls.Add(Me.LstFiles_Container)
         Me.GrpFiles.ForeColor = System.Drawing.Color.White
-        Me.GrpFiles.Location = New System.Drawing.Point(7, 3)
+        Me.GrpFiles.Location = New System.Drawing.Point(0, 0)
         Me.GrpFiles.Name = "GrpFiles"
-        Me.GrpFiles.Size = New System.Drawing.Size(640, 478)
-        Me.GrpFiles.TabIndex = 1
+        Me.GrpFiles.Size = New System.Drawing.Size(768, 480)
+        Me.GrpFiles.TabIndex = 24
         Me.GrpFiles.TabStop = False
         Me.GrpFiles.Text = "Files"
         '
@@ -727,7 +740,7 @@ Partial Class FrmMain
         Me.LstFiles_Container.Controls.Add(Me.LstFiles)
         Me.LstFiles_Container.Location = New System.Drawing.Point(0, 18)
         Me.LstFiles_Container.Name = "LstFiles_Container"
-        Me.LstFiles_Container.Size = New System.Drawing.Size(640, 460)
+        Me.LstFiles_Container.Size = New System.Drawing.Size(768, 460)
         Me.LstFiles_Container.TabIndex = 0
         '
         'LstFiles
@@ -735,19 +748,30 @@ Partial Class FrmMain
         Me.LstFiles.Location = New System.Drawing.Point(0, 0)
         Me.LstFiles.MinHeight = 250
         Me.LstFiles.Name = "LstFiles"
-        Me.LstFiles.Size = New System.Drawing.Size(623, 460)
+        Me.LstFiles.Size = New System.Drawing.Size(751, 460)
         Me.LstFiles.TabIndex = 0
-        Me.LstFiles.Text = "MyListview1"
         Me.LstFiles.TileHeight = 16
+        '
+        'SearchPage
+        '
+        Me.SearchPage.BackColor = System.Drawing.Color.Transparent
+        Me.SearchPage.Controls.Add(Me.GrpMatches)
+        Me.SearchPage.Controls.Add(Me.GrpSearchOptions)
+        Me.SearchPage.ForeColor = System.Drawing.Color.White
+        Me.SearchPage.Location = New System.Drawing.Point(28, 4)
+        Me.SearchPage.Name = "SearchPage"
+        Me.SearchPage.Size = New System.Drawing.Size(768, 560)
+        Me.SearchPage.TabIndex = 4
+        Me.SearchPage.Text = "Search"
         '
         'GrpMatches
         '
         Me.GrpMatches.Controls.Add(Me.LstMatches_Container)
         Me.GrpMatches.ForeColor = System.Drawing.Color.White
-        Me.GrpMatches.Location = New System.Drawing.Point(7, 3)
+        Me.GrpMatches.Location = New System.Drawing.Point(0, 0)
         Me.GrpMatches.Name = "GrpMatches"
-        Me.GrpMatches.Size = New System.Drawing.Size(640, 478)
-        Me.GrpMatches.TabIndex = 26
+        Me.GrpMatches.Size = New System.Drawing.Size(768, 480)
+        Me.GrpMatches.TabIndex = 28
         Me.GrpMatches.TabStop = False
         Me.GrpMatches.Text = "Matches"
         '
@@ -757,7 +781,7 @@ Partial Class FrmMain
         Me.LstMatches_Container.Controls.Add(Me.LstMatches)
         Me.LstMatches_Container.Location = New System.Drawing.Point(0, 18)
         Me.LstMatches_Container.Name = "LstMatches_Container"
-        Me.LstMatches_Container.Size = New System.Drawing.Size(640, 460)
+        Me.LstMatches_Container.Size = New System.Drawing.Size(768, 460)
         Me.LstMatches_Container.TabIndex = 0
         '
         'LstMatches
@@ -765,9 +789,8 @@ Partial Class FrmMain
         Me.LstMatches.Location = New System.Drawing.Point(0, 0)
         Me.LstMatches.MinHeight = 250
         Me.LstMatches.Name = "LstMatches"
-        Me.LstMatches.Size = New System.Drawing.Size(623, 460)
+        Me.LstMatches.Size = New System.Drawing.Size(751, 460)
         Me.LstMatches.TabIndex = 2
-        Me.LstMatches.Text = "MyListview1"
         Me.LstMatches.TileHeight = 16
         '
         'GrpSearchOptions
@@ -777,10 +800,10 @@ Partial Class FrmMain
         Me.GrpSearchOptions.Controls.Add(Me.ProgressSearch)
         Me.GrpSearchOptions.Controls.Add(Me.BtnSearch)
         Me.GrpSearchOptions.ForeColor = System.Drawing.Color.White
-        Me.GrpSearchOptions.Location = New System.Drawing.Point(7, 486)
+        Me.GrpSearchOptions.Location = New System.Drawing.Point(0, 480)
         Me.GrpSearchOptions.Name = "GrpSearchOptions"
-        Me.GrpSearchOptions.Size = New System.Drawing.Size(640, 81)
-        Me.GrpSearchOptions.TabIndex = 27
+        Me.GrpSearchOptions.Size = New System.Drawing.Size(768, 80)
+        Me.GrpSearchOptions.TabIndex = 29
         Me.GrpSearchOptions.TabStop = False
         Me.GrpSearchOptions.Text = "Options"
         '
@@ -815,29 +838,27 @@ Partial Class FrmMain
         Me.BtnSearch.Text = "Search"
         Me.BtnSearch.UseVisualStyleBackColor = True
         '
+        'ROMPage
+        '
+        Me.ROMPage.BackColor = System.Drawing.Color.Transparent
+        Me.ROMPage.ForeColor = System.Drawing.Color.White
+        Me.ROMPage.Location = New System.Drawing.Point(28, 4)
+        Me.ROMPage.Name = "ROMPage"
+        Me.ROMPage.Size = New System.Drawing.Size(768, 560)
+        Me.ROMPage.TabIndex = 5
+        Me.ROMPage.Text = "ROM"
+        '
         'Title
         '
         Me.Title.AutoSize = True
         Me.Title.BackColor = System.Drawing.Color.Transparent
         Me.Title.Font = New System.Drawing.Font("Segoe UI Semibold", 14.25!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.Title.ForeColor = System.Drawing.Color.White
-        Me.Title.Location = New System.Drawing.Point(327, 4)
+        Me.Title.Location = New System.Drawing.Point(355, 4)
         Me.Title.Name = "Title"
-        Me.Title.Size = New System.Drawing.Size(146, 25)
+        Me.Title.Size = New System.Drawing.Size(91, 25)
         Me.Title.TabIndex = 18
-        Me.Title.Text = "OhanaXY Alpha"
-        '
-        'SideBar
-        '
-        Me.SideBar.BackColor = System.Drawing.Color.Transparent
-        Me.SideBar.Font = New System.Drawing.Font("Segoe UI", 12.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.SideBar.ForeColor = System.Drawing.Color.White
-        Me.SideBar.Location = New System.Drawing.Point(0, 32)
-        Me.SideBar.MinHeight = 568
-        Me.SideBar.Name = "SideBar"
-        Me.SideBar.Size = New System.Drawing.Size(146, 568)
-        Me.SideBar.TabIndex = 0
-        Me.SideBar.TileHeight = 32
+        Me.Title.Text = "OhanaXY"
         '
         'FrmMain
         '
@@ -846,41 +867,39 @@ Partial Class FrmMain
         Me.BackColor = System.Drawing.SystemColors.Control
         Me.BackgroundImage = CType(resources.GetObject("$this.BackgroundImage"), System.Drawing.Image)
         Me.ClientSize = New System.Drawing.Size(800, 600)
-        Me.Controls.Add(Me.PanelSplash)
-        Me.Controls.Add(Me.PanelModel)
-        Me.Controls.Add(Me.PanelTextures)
-        Me.Controls.Add(Me.PanelGARC)
-        Me.Controls.Add(Me.PanelSearch)
+        Me.Controls.Add(Me.MainTabs)
         Me.Controls.Add(Me.Title)
         Me.Controls.Add(Me.BtnMinimize)
         Me.Controls.Add(Me.BtnClose)
-        Me.Controls.Add(Me.SideBar)
+        Me.Controls.Add(Me.Splash)
         Me.Font = New System.Drawing.Font("Segoe UI", 8.25!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None
         Me.MaximizeBox = False
         Me.Name = "FrmMain"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
         Me.Text = "OhanaXY by gdkchan"
-        Me.PanelModel.ResumeLayout(False)
-        CType(Me.Screen, System.ComponentModel.ISupportInitialize).EndInit()
-        Me.PanelTextures.ResumeLayout(False)
-        Me.PanelGARC.ResumeLayout(False)
-        Me.PanelSearch.ResumeLayout(False)
+        CType(Me.Splash, System.ComponentModel.ISupportInitialize).EndInit()
+        Me.MainTabs.ResumeLayout(False)
+        Me.ModelPage.ResumeLayout(False)
         Me.GrpOptions.ResumeLayout(False)
         Me.GrpInfo.ResumeLayout(False)
         Me.GrpInfo.PerformLayout()
+        CType(Me.Screen, System.ComponentModel.ISupportInitialize).EndInit()
+        Me.TexturePage.ResumeLayout(False)
+        Me.GrpTexOptions.ResumeLayout(False)
+        Me.GrpTexInfo.ResumeLayout(False)
+        Me.GrpTexInfo.PerformLayout()
         Me.GrpTexturePreview.ResumeLayout(False)
         Me.ImgTexture_Container.ResumeLayout(False)
         Me.ImgTexture_Container.PerformLayout()
         CType(Me.ImgTexture, System.ComponentModel.ISupportInitialize).EndInit()
         Me.GrpTextures.ResumeLayout(False)
         Me.LstTextures_Container.ResumeLayout(False)
-        Me.GrpTexOptions.ResumeLayout(False)
-        Me.GrpTexInfo.ResumeLayout(False)
-        Me.GrpTexInfo.PerformLayout()
+        Me.GARCPage.ResumeLayout(False)
         Me.GrpGARCOptions.ResumeLayout(False)
         Me.GrpFiles.ResumeLayout(False)
         Me.LstFiles_Container.ResumeLayout(False)
+        Me.SearchPage.ResumeLayout(False)
         Me.GrpMatches.ResumeLayout(False)
         Me.LstMatches_Container.ResumeLayout(False)
         Me.GrpSearchOptions.ResumeLayout(False)
@@ -889,16 +908,24 @@ Partial Class FrmMain
         Me.PerformLayout()
 
     End Sub
-    Friend WithEvents SideBar As Ohana3DS.MyListview
     Friend WithEvents BtnClose As System.Windows.Forms.Label
     Friend WithEvents BtnMinimize As System.Windows.Forms.Label
     Friend WithEvents Title As Ohana3DS.MyWindowTitle
-    Friend WithEvents PanelModel As System.Windows.Forms.Panel
+    Friend WithEvents MainTabs As Ohana3DS.MyTabcontrol
+    Friend WithEvents ModelPage As System.Windows.Forms.TabPage
+    Friend WithEvents TexturePage As System.Windows.Forms.TabPage
+    Friend WithEvents TextPage As System.Windows.Forms.TabPage
+    Friend WithEvents GARCPage As System.Windows.Forms.TabPage
+    Friend WithEvents SearchPage As System.Windows.Forms.TabPage
+    Friend WithEvents ROMPage As System.Windows.Forms.TabPage
     Friend WithEvents GrpOptions As Ohana3DS.MyGroupbox
+    Friend WithEvents BtnModelScale As System.Windows.Forms.Button
+    Friend WithEvents ProgressModels As Ohana3DS.MyProgressbar
     Friend WithEvents BtnModelExportAllFF As System.Windows.Forms.Button
     Friend WithEvents BtnModelExport As System.Windows.Forms.Button
     Friend WithEvents BtnModelOpen As System.Windows.Forms.Button
     Friend WithEvents GrpInfo As Ohana3DS.MyGroupbox
+    Friend WithEvents BtnModelTexturesMore As System.Windows.Forms.Button
     Friend WithEvents LblInfoTextures As System.Windows.Forms.Label
     Friend WithEvents LblInfoBones As System.Windows.Forms.Label
     Friend WithEvents LblInfoTriangles As System.Windows.Forms.Label
@@ -908,51 +935,44 @@ Partial Class FrmMain
     Friend WithEvents LblInfoTrianglesDummy As System.Windows.Forms.Label
     Friend WithEvents LblInfoVerticesDummy As System.Windows.Forms.Label
     Friend WithEvents Screen As System.Windows.Forms.PictureBox
-    Friend WithEvents PanelTextures As System.Windows.Forms.Panel
     Friend WithEvents GrpTexOptions As Ohana3DS.MyGroupbox
+    Friend WithEvents BtnTextureMode As System.Windows.Forms.Button
+    Friend WithEvents BtnTextureExportAllFF As System.Windows.Forms.Button
+    Friend WithEvents ProgressTextures As Ohana3DS.MyProgressbar
     Friend WithEvents BtnTextureExportAll As System.Windows.Forms.Button
     Friend WithEvents BtnTextureExport As System.Windows.Forms.Button
     Friend WithEvents BtnTextureOpen As System.Windows.Forms.Button
     Friend WithEvents GrpTexInfo As Ohana3DS.MyGroupbox
-    Friend WithEvents LblInfoTextureIndex As System.Windows.Forms.Label
-    Friend WithEvents LblInfoTextureIndexDummy As System.Windows.Forms.Label
-    Friend WithEvents GrpTextures As Ohana3DS.MyGroupbox
-    Friend WithEvents GrpTexturePreview As Ohana3DS.MyGroupbox
-    Friend WithEvents LstTextures_Container As System.Windows.Forms.Panel
-    Friend WithEvents LstTextures As Ohana3DS.MyListview
-    Friend WithEvents LblInfoTextureCDDummy As System.Windows.Forms.Label
-    Friend WithEvents LblInfoTextureFormatDummy As System.Windows.Forms.Label
-    Friend WithEvents LblInfoTextureResolutionDummy As System.Windows.Forms.Label
     Friend WithEvents LblInfoTextureCD As System.Windows.Forms.Label
     Friend WithEvents LblInfoTextureFormat As System.Windows.Forms.Label
     Friend WithEvents LblInfoTextureResolution As System.Windows.Forms.Label
-    Friend WithEvents BtnTextureBCHVer As System.Windows.Forms.Button
-    Friend WithEvents ProgressTextures As Ohana3DS.MyProgressbar
+    Friend WithEvents LblInfoTextureCDDummy As System.Windows.Forms.Label
+    Friend WithEvents LblInfoTextureFormatDummy As System.Windows.Forms.Label
+    Friend WithEvents LblInfoTextureResolutionDummy As System.Windows.Forms.Label
+    Friend WithEvents LblInfoTextureIndex As System.Windows.Forms.Label
+    Friend WithEvents LblInfoTextureIndexDummy As System.Windows.Forms.Label
+    Friend WithEvents GrpTexturePreview As Ohana3DS.MyGroupbox
     Friend WithEvents ImgTexture_Container As System.Windows.Forms.Panel
     Friend WithEvents ImgTexture As System.Windows.Forms.PictureBox
-    Friend WithEvents BtnTextureExportAllFF As System.Windows.Forms.Button
-    Friend WithEvents BtnTextureMode As System.Windows.Forms.Button
-    Friend WithEvents ProgressModels As Ohana3DS.MyProgressbar
-    Friend WithEvents BtnModelBCHVer As System.Windows.Forms.Button
-    Friend WithEvents BtnModelTexturesMore As System.Windows.Forms.Button
-    Friend WithEvents PanelGARC As System.Windows.Forms.Panel
-    Friend WithEvents GrpFiles As Ohana3DS.MyGroupbox
-    Friend WithEvents LstFiles As Ohana3DS.MyListview
-    Friend WithEvents LstFiles_Container As System.Windows.Forms.Panel
+    Friend WithEvents GrpTextures As Ohana3DS.MyGroupbox
+    Friend WithEvents LstTextures_Container As System.Windows.Forms.Panel
+    Friend WithEvents LstTextures As Ohana3DS.MyListview
     Friend WithEvents GrpGARCOptions As Ohana3DS.MyGroupbox
     Friend WithEvents ProgressGARC As Ohana3DS.MyProgressbar
     Friend WithEvents BtnGARCExtractAll As System.Windows.Forms.Button
     Friend WithEvents BtnGARCExtract As System.Windows.Forms.Button
     Friend WithEvents BtnOpenGARC As System.Windows.Forms.Button
-    Friend WithEvents PanelSearch As System.Windows.Forms.Panel
+    Friend WithEvents GrpFiles As Ohana3DS.MyGroupbox
+    Friend WithEvents LstFiles_Container As System.Windows.Forms.Panel
+    Friend WithEvents LstFiles As Ohana3DS.MyListview
+    Friend WithEvents GrpMatches As Ohana3DS.MyGroupbox
+    Friend WithEvents LstMatches_Container As System.Windows.Forms.Panel
+    Friend WithEvents LstMatches As Ohana3DS.MyListview
     Friend WithEvents GrpSearchOptions As Ohana3DS.MyGroupbox
     Friend WithEvents TxtSearch As System.Windows.Forms.TextBox
     Friend WithEvents ProgressSearch As Ohana3DS.MyProgressbar
     Friend WithEvents BtnSearch As System.Windows.Forms.Button
-    Friend WithEvents GrpMatches As Ohana3DS.MyGroupbox
-    Friend WithEvents LstMatches_Container As System.Windows.Forms.Panel
-    Friend WithEvents LstMatches As Ohana3DS.MyListview
-    Friend WithEvents BtnModelScale As System.Windows.Forms.Button
-    Friend WithEvents PanelSplash As System.Windows.Forms.Panel
+    Friend WithEvents Splash As System.Windows.Forms.PictureBox
+    Friend WithEvents LblModelName As System.Windows.Forms.Label
 
 End Class

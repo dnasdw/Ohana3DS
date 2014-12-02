@@ -2,6 +2,12 @@
     Inherits GroupBox
     Public Sub New()
         Me.DoubleBuffered = True
+        SetStyle(ControlStyles.AllPaintingInWmPaint Or _
+            ControlStyles.DoubleBuffer Or _
+            ControlStyles.ResizeRedraw Or _
+            ControlStyles.UserPaint Or _
+            ControlStyles.OptimizedDoubleBuffer Or _
+            ControlStyles.SupportsTransparentBackColor, True)
     End Sub
     Protected Overrides Sub OnPaint(ByVal e As PaintEventArgs)
         Dim Text_Size As Size = TextRenderer.MeasureText(Me.Text, Me.Font)

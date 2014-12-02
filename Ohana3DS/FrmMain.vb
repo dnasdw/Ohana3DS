@@ -29,6 +29,7 @@ Public Class FrmMain
     Dim Search_Thread As Thread
 
     Dim Old_Index As Integer = -1
+    Dim First_Click As Boolean
     Protected Overrides Sub WndProc(ByRef m As System.Windows.Forms.Message)
         If m.Msg <> &HA3 Then MyBase.WndProc(m)
         Select Case m.Msg
@@ -36,15 +37,7 @@ Public Class FrmMain
         End Select
     End Sub
     Private Sub FrmMain_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-        SideBar.AddItem("Model")
-        SideBar.AddItem("Textures")
-        SideBar.AddItem("Text")
-        SideBar.AddItem("-")
-        SideBar.AddItem("GARC Explorer")
-        SideBar.AddItem("Search Tool")
-        SideBar.AddItem("ROM Tool")
-
-        MyOhana.Initialize(Screen.Handle)
+        MyOhana.Initialize(Screen)
         Show()
         MyOhana.Render()
     End Sub
@@ -52,6 +45,10 @@ Public Class FrmMain
 #Region "GUI"
 
 #Region "General"
+    Private Sub Splash_Click(sender As Object, e As EventArgs) Handles Splash.Click
+        MainTabs.Visible = True
+        Splash.Visible = False
+    End Sub
     Private Sub BtnClose_Click(sender As Object, e As EventArgs) Handles BtnClose.Click
         End
     End Sub
@@ -72,32 +69,6 @@ Public Class FrmMain
         Dim Lbl As Label = CType(sender, Label)
         Lbl.BackColor = Color.Transparent
         Lbl.ForeColor = Color.White
-    End Sub
-
-    '---
-
-    Private Sub Hide_Panels()
-        'Esconda todos os paineis aqui!
-        PanelSplash.Visible = False
-        PanelModel.Visible = False
-        PanelTextures.Visible = False
-        PanelGARC.Visible = False
-        PanelSearch.Visible = False
-    End Sub
-    Private Sub SideBar_SelectedIndexChanged(sender As Object, e As EventArgs) Handles SideBar.Click
-        If SideBar.SelectedIndex > -1 And SideBar.SelectedIndex <> Old_Index Then
-            Hide_Panels()
-            Select Case SideBar.SelectedIndex
-                Case 0 'Model
-                    Screen.Select()
-                    PanelModel.Visible = True
-                Case 1 : PanelTextures.Visible = True 'Textures
-                Case 3 : PanelGARC.Visible = True
-                Case 4 : PanelSearch.Visible = True
-            End Select
-
-            Old_Index = SideBar.SelectedIndex
-        End If
     End Sub
 #End Region
 
@@ -134,17 +105,34 @@ Public Class FrmMain
 
 #Region "Model"
     Private Sub BtnModelOpen_Click(sender As Object, e As EventArgs) Handles BtnModelOpen.Click
+        First_Click = True
+
         Dim OpenDlg As New OpenFileDialog
         OpenDlg.Title = "Open Pokémon BCH Model"
         OpenDlg.Filter = "BCH Model|*.*"
         If OpenDlg.ShowDialog = Windows.Forms.DialogResult.OK Then
             Try
-                MyOhana.Load_Model(OpenDlg.FileName, Mdl_BCH_Version)
+                MyOhana.Load_Model(OpenDlg.FileName)
+                LblModelName.Text = Path.GetFileName(OpenDlg.FileName)
                 Update_Info()
+
+                Dim Temp() As Byte = File.ReadAllBytes(OpenDlg.FileName)
+                Dim File_Magic As String = Nothing
+                For i As Integer = 0 To 1
+                    File_Magic &= Chr(Temp(i))
+                Next
+                If File_Magic = "MM" Then
+                    LstTextures.Clear()
+                    ImgTexture.Image = Nothing
+
+                    For Index As Integer = 0 To MyOhana.Model_Texture.Count - 1
+                        LstTextures.AddItem(MyOhana.Model_Texture(Index).Name)
+                    Next
+                End If
             Catch
                 MyOhana.Model_Object = Nothing
                 Screen.Refresh()
-                MsgBox("Sorry, something went wrong." & vbCrLf & "Make sure you selected the correct BCH Version (X/Y or OR/AS).", vbExclamation, "Error")
+                MsgBox("Sorry, something went wrong.", vbExclamation, "Error")
             End Try
         End If
     End Sub
@@ -188,7 +176,7 @@ Public Class FrmMain
         Dim Total_Index, Index As Integer
         For Each File As FileInfo In Input_Files
             Try
-                Exporter.Load_Model(File.FullName, Mdl_BCH_Version)
+                Exporter.Load_Model(File.FullName, False)
                 If Exporter.Model_Object.Length > 0 Then
                     Dim File_Name As String = Path.Combine(OutFolder, "model_" & Index & ".smd")
                     Exporter.Export_SMD(File_Name)
@@ -203,15 +191,6 @@ Public Class FrmMain
 
         Update_Progress(ProgressModels, 0, Nothing)
         Update_Button_Text(BtnModelExportAllFF, "Export all from folder")
-    End Sub
-    Private Sub BtnModelBCHVer_Click(sender As Object, e As EventArgs) Handles BtnModelBCHVer.Click
-        If Mdl_BCH_Version = Ohana.BCH_Version.XY Then
-            Mdl_BCH_Version = Ohana.BCH_Version.ORAS
-            BtnModelBCHVer.Text = "OR/AS"
-        ElseIf Mdl_BCH_Version = Ohana.BCH_Version.ORAS Then
-            Mdl_BCH_Version = Ohana.BCH_Version.XY
-            BtnModelBCHVer.Text = "X/Y"
-        End If
     End Sub
     Private Sub BtnModelScale_Click(sender As Object, e As EventArgs) Handles BtnModelScale.Click
         If MyOhana.Scale = 1 Then
@@ -252,6 +231,7 @@ Public Class FrmMain
             Next
 
             FrmTextureInfo.Show()
+            FrmTextureInfo.LstModelTextures.Refresh()
         End If
     End Sub
 
@@ -261,36 +241,44 @@ Public Class FrmMain
         LblInfoBones.Text = MyOhana.Info.Bones_Count.ToString
         LblInfoTextures.Text = MyOhana.Info.Textures_Count.ToString
     End Sub
-    Private Sub PicMouseDown(sender As Object, e As System.Windows.Forms.MouseEventArgs) Handles Screen.MouseDown
-        If e.Button = MouseButtons.Left Then
-            Rot_InitX = MousePosition.X
-            Rot_InitY = MousePosition.Y
-        ElseIf e.Button = MouseButtons.Right Then
-            Mov_InitX = MousePosition.X
-            Mov_InitY = MousePosition.Y
+    Private Sub Screen_MouseDown(sender As Object, e As System.Windows.Forms.MouseEventArgs) Handles Screen.MouseDown
+        If Not First_Click Then
+            If e.Button = MouseButtons.Left Then
+                Rot_InitX = MousePosition.X
+                Rot_InitY = MousePosition.Y
+            ElseIf e.Button = MouseButtons.Right Then
+                Mov_InitX = MousePosition.X
+                Mov_InitY = MousePosition.Y
+            End If
         End If
     End Sub
-    Private Sub PicMouseUp(sender As Object, e As System.Windows.Forms.MouseEventArgs) Handles Screen.MouseUp
-        If e.Button = MouseButtons.Left Then
-            Rot_FinalX += (Rot_InitX - MousePosition.X)
-            Rot_FinalY += (Rot_InitY - MousePosition.Y)
-        ElseIf e.Button = MouseButtons.Right Then
-            Mov_FinalX += (Mov_InitX - MousePosition.X)
-            Mov_FinalY += (Mov_InitY - MousePosition.Y)
+    Private Sub Screen_MouseUp(sender As Object, e As System.Windows.Forms.MouseEventArgs) Handles Screen.MouseUp
+        If Not First_Click Then
+            If e.Button = MouseButtons.Left Then
+                Rot_FinalX += (Rot_InitX - MousePosition.X)
+                Rot_FinalY += (Rot_InitY - MousePosition.Y)
+            ElseIf e.Button = MouseButtons.Right Then
+                Mov_FinalX += (Mov_InitX - MousePosition.X)
+                Mov_FinalY += (Mov_InitY - MousePosition.Y)
+            End If
         End If
     End Sub
-    Private Sub PicMouseMove(sender As Object, e As System.Windows.Forms.MouseEventArgs) Handles Screen.MouseMove
+    Private Sub Screen_MouseMove(sender As Object, e As System.Windows.Forms.MouseEventArgs) Handles Screen.MouseMove
         If Not Screen.Focused Then Screen.Select()
 
-        If e.Button = MouseButtons.Left Then
-            MyOhana.Rotation.X = (Rot_InitX - MousePosition.X) + Rot_FinalX
-            MyOhana.Rotation.Y = (Rot_InitY - MousePosition.Y) + Rot_FinalY
-        ElseIf e.Button = MouseButtons.Right Then
-            MyOhana.Translation.X = (Mov_InitX - MousePosition.X) + Mov_FinalX
-            MyOhana.Translation.Y = (Mov_InitY - MousePosition.Y) + Mov_FinalY
+        If First_Click Then
+            First_Click = False
+        Else
+            If e.Button = MouseButtons.Left Then
+                MyOhana.Rotation.X = (Rot_InitX - MousePosition.X) + Rot_FinalX
+                MyOhana.Rotation.Y = (Rot_InitY - MousePosition.Y) + Rot_FinalY
+            ElseIf e.Button = MouseButtons.Right Then
+                MyOhana.Translation.X = (Mov_InitX - MousePosition.X) + Mov_FinalX
+                MyOhana.Translation.Y = (Mov_InitY - MousePosition.Y) + Mov_FinalY
+            End If
         End If
     End Sub
-    Private Sub PicZoom(sender As Object, e As System.Windows.Forms.MouseEventArgs) Handles Screen.MouseWheel
+    Private Sub Screen_MouseWheel(sender As Object, e As System.Windows.Forms.MouseEventArgs) Handles Screen.MouseWheel
         If e.Delta > 0 Then
             MyOhana.Zoom += 1.5F
         Else
@@ -307,7 +295,10 @@ Public Class FrmMain
         If OpenDlg.ShowDialog = Windows.Forms.DialogResult.OK Then
             Try
                 LstTextures.Clear()
-                MyOhana.Load_Textures(OpenDlg.FileName, Tex_BCH_Version)
+                ImgTexture.Image = Nothing
+                ImgTexture_Container.Refresh()
+
+                MyOhana.Load_Textures(OpenDlg.FileName)
                 For Each Texture As Ohana.OhanaTexture In MyOhana.Model_Texture
                     LstTextures.AddItem(Texture.Name)
                 Next
@@ -322,6 +313,7 @@ Public Class FrmMain
         If LstTextures.SelectedIndex > -1 Then
             With MyOhana.Model_Texture(LstTextures.SelectedIndex)
                 ImgTexture.Image = .Image
+                ImgTexture_Container.Refresh()
 
                 LblInfoTextureIndex.Text = LstTextures.SelectedIndex + 1 & "/" & MyOhana.Model_Texture.Count
                 LblInfoTextureResolution.Text = .Image.Width & "x" & .Image.Height
@@ -428,7 +420,7 @@ Public Class FrmMain
         Dim Total_Index, Index As Integer
         For Each File As FileInfo In Input_Files
             Try
-                Exporter.Load_Textures(File.FullName, Tex_BCH_Version, False)
+                Exporter.Load_Textures(File.FullName, False)
                 If Exporter.Model_Texture.Count > 0 Then
                     Dim Output_Folder As String = Path.Combine(OutFolder, "group_" & Index)
                     Directory.CreateDirectory(Output_Folder)
@@ -454,15 +446,6 @@ Public Class FrmMain
 
         Update_Progress(ProgressTextures, 0, Nothing)
         Update_Button_Text(BtnTextureExportAllFF, "Export all from folder")
-    End Sub
-    Private Sub BtnTextureBCHVer_Click(sender As Object, e As EventArgs) Handles BtnTextureBCHVer.Click
-        If Tex_BCH_Version = Ohana.BCH_Version.XY Then
-            Tex_BCH_Version = Ohana.BCH_Version.ORAS
-            BtnTextureBCHVer.Text = "OR/AS"
-        ElseIf Tex_BCH_Version = Ohana.BCH_Version.ORAS Then
-            Tex_BCH_Version = Ohana.BCH_Version.XY
-            BtnTextureBCHVer.Text = "X/Y"
-        End If
     End Sub
     Private Sub BtnTextureMode_Click(sender As Object, e As EventArgs) Handles BtnTextureMode.Click
         Select Case Texture_Mode

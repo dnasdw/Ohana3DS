@@ -26,8 +26,13 @@ Public Class MyListview
     Dim Mouse_Position As Point
     Private First_Click As Boolean
     Public Sub New()
-        SetStyle(ControlStyles.SupportsTransparentBackColor, True)
         Me.DoubleBuffered = True
+        SetStyle(ControlStyles.AllPaintingInWmPaint Or _
+            ControlStyles.DoubleBuffer Or _
+            ControlStyles.ResizeRedraw Or _
+            ControlStyles.UserPaint Or _
+            ControlStyles.OptimizedDoubleBuffer Or _
+            ControlStyles.SupportsTransparentBackColor, True)
     End Sub
     Public Property TileHeight() As Integer
         Get
