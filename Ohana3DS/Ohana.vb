@@ -1,6 +1,7 @@
-﻿Imports System.IO
-Imports Microsoft.DirectX
+﻿Imports Microsoft.DirectX
 Imports Microsoft.DirectX.Direct3D
+
+Imports System.IO
 Imports System.Drawing.Imaging
 Imports System.Runtime.InteropServices
 Imports System.Text
@@ -136,7 +137,7 @@ Public Class Ohana
             .SamplerState(0).MaxAnisotropy = 16
         End With
     End Sub
-    Public Sub Load_Model(File_Name As String, Optional Create_DX_Texture As Boolean = True)
+    Public Sub Load_Model(File_Name As String, Optional Create_DX_Texture As Boolean = True, Optional Show_Warning As Boolean = True)
         Dim Version As BCH_Version
 
         Total_Vertex = 0
@@ -158,7 +159,8 @@ Public Class Ohana
             BCH_Offset = Read32(Temp, 8)
             Model_Type = ModelType.Map
         Else
-            MsgBox("Sorry, this file format is not supported.", vbExclamation, "Error")
+            Model_Object = Nothing
+            If Show_Warning Then MsgBox("Sorry, this file format is not supported.", vbExclamation, "Error")
             Exit Sub
         End If
 
@@ -262,7 +264,6 @@ Public Class Ohana
             Dim Count As Integer = Vertex_Data_Length \ Vertex_Data_Format
             ReDim Model_Object(Entry).Vertice(Count - 1)
             Dim Offset As Integer = Vertex_Data_Offset
-            Dim Current_Node As Integer = Entry
             For Index As Integer = 0 To Count - 1
                 With Model_Object(Entry).Vertice(Index)
                     .X = (BitConverter.ToSingle(Data, Offset) / Scale) * If(Model_Mirror_X, -1, 1)
@@ -1006,6 +1007,9 @@ Public Class Ohana
     Private Function Signed_Short(Short_To_Convert As Integer) As Integer
         If (Short_To_Convert < &H8000) Then Return Short_To_Convert
         Return Short_To_Convert - &H10000
+    End Function
+    Public Function Get_Texture(Image As Bitmap) As Texture
+        Return New Texture(Device, Image, Usage.None, Pool.Managed)
     End Function
     Private Sub Parse_Faces(Data() As Byte, Entry As Integer, Data_Offset As Integer, Face_Offset As Integer, Vertex_Count As Integer)
         Dim Face_Data_Format As Integer = 2

@@ -53,6 +53,66 @@ Namespace My
                 Return defaultInstance
             End Get
         End Property
+        
+        <Global.System.Configuration.UserScopedSettingAttribute(),  _
+         Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
+         Global.System.Configuration.DefaultSettingValueAttribute("32")>  _
+        Public Property ModelScale() As Integer
+            Get
+                Return CType(Me("ModelScale"),Integer)
+            End Get
+            Set
+                Me("ModelScale") = value
+            End Set
+        End Property
+        
+        <Global.System.Configuration.UserScopedSettingAttribute(),  _
+         Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
+         Global.System.Configuration.DefaultSettingValueAttribute("True")>  _
+        Public Property ModelMirror() As Boolean
+            Get
+                Return CType(Me("ModelMirror"),Boolean)
+            End Get
+            Set
+                Me("ModelMirror") = value
+            End Set
+        End Property
+        
+        <Global.System.Configuration.UserScopedSettingAttribute(),  _
+         Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
+         Global.System.Configuration.DefaultSettingValueAttribute("0")>  _
+        Public Property TextureFlipMirror() As Integer
+            Get
+                Return CType(Me("TextureFlipMirror"),Integer)
+            End Get
+            Set
+                Me("TextureFlipMirror") = value
+            End Set
+        End Property
+        
+        <Global.System.Configuration.UserScopedSettingAttribute(),  _
+         Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
+         Global.System.Configuration.DefaultSettingValueAttribute("")>  _
+        Public Property ModelDefaultPath() As String
+            Get
+                Return CType(Me("ModelDefaultPath"),String)
+            End Get
+            Set
+                Me("ModelDefaultPath") = value
+            End Set
+        End Property
+        
+        <Global.System.Configuration.UserScopedSettingAttribute(),  _
+         Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
+         Global.System.Configuration.DefaultSettingValueAttribute("")>  _
+        Public Property TextureDefaultPath() As String
+            Get
+                Return CType(Me("TextureDefaultPath"),String)
+            End Get
+            Set
+                Me("TextureDefaultPath") = value
+            End Set
+        End Property
     End Class
 End Namespace
 

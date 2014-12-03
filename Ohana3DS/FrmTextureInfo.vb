@@ -59,6 +59,12 @@ Public Class FrmTextureInfo
         Lbl.BackColor = Color.Transparent
         Lbl.ForeColor = Color.White
     End Sub
+
+    Private Sub LstModelTextures_Click(sender As Object, e As EventArgs) Handles LstModelTextures.Click
+        If LstModelTextures.SelectedIndex > -1 Then
+            FrmMain.TxtSearch.Text = FrmMain.MyOhana.Model_Texture_Index(LstModelTextures.SelectedIndex)
+        End If
+    End Sub
 #End Region
 
 End Class

@@ -9,6 +9,7 @@ Public Class MyListview
     Public Structure ListText
         Dim Text As String
         Dim Left As Integer
+        Dim ForeColor As Color
         Dim Vertical_Line As Boolean
     End Structure
     Public Structure ListItem
@@ -93,7 +94,8 @@ Public Class MyListview
                     Dim Temp As Integer = 0
                     For Each SubData As ListText In Item.Text
                         Dim TxtHeight As Integer = Convert.ToInt32(e.Graphics.MeasureString(SubData.Text, Me.Font).Height)
-                        e.Graphics.DrawString(SubData.Text, Me.Font, New SolidBrush(Me.ForeColor), New Point(SubData.Left, (Start_Y + (TileHeight \ 2) - (TxtHeight \ 2))))
+                        If SubData.ForeColor = Nothing Then SubData.ForeColor = Me.ForeColor
+                        e.Graphics.DrawString(SubData.Text, Me.Font, New SolidBrush(SubData.ForeColor), New Point(SubData.Left, (Start_Y + (TileHeight \ 2) - (TxtHeight \ 2))))
 
                         If Item.Header Then
                             Dim ItemW As Integer

@@ -5,7 +5,7 @@ Imports System.Runtime.InteropServices
 Imports System.Text
 Public Class FrmMain
     'Classes de gerenciamento 3D e compressão/extração
-    Dim MyOhana As New Ohana
+    Public MyOhana As New Ohana
     Dim MyNako As New Nako
 
     'Movimentação do modelo
@@ -37,6 +37,26 @@ Public Class FrmMain
     End Sub
     Private Sub FrmMain_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         MyOhana.Initialize(Screen)
+
+        MyOhana.Scale = My.Settings.ModelScale
+        BtnModelScale.Text = "Scale 1:" & My.Settings.ModelScale
+        MyOhana.Model_Mirror_X = My.Settings.ModelMirror
+        If My.Settings.ModelMirror Then BtnModelMirror.Text = "Mirror-X" Else BtnModelMirror.Text = "Normal"
+        Select Case My.Settings.TextureFlipMirror
+            Case 0
+                BtnTextureMode.Text = "Original"
+                Texture_Mode = TextureMode.Original
+            Case 1
+                BtnTextureMode.Text = "Flip-Y"
+                Texture_Mode = TextureMode.FlipY
+            Case 2
+                BtnTextureMode.Text = "Mirror-X"
+                Texture_Mode = TextureMode.Mirror
+            Case 3
+                BtnTextureMode.Text = "Flip/Mirror"
+                Texture_Mode = TextureMode.FlipY_Mirror
+        End Select
+
         Show()
     End Sub
     Private Sub FrmMain_KeyDown(sender As Object, e As KeyEventArgs) Handles MyBase.KeyDown
@@ -167,13 +187,13 @@ Public Class FrmMain
 
             Application.DoEvents()
             First_Click = False
-
-            MyOhana.Render()
         Catch
             MyOhana.Model_Object = Nothing
             Screen.Refresh()
             MsgBox("Sorry, something went wrong.", vbExclamation, "Error")
         End Try
+
+        MyOhana.Render()
     End Sub
     Private Sub BtnModelExport_Click(sender As Object, e As EventArgs) Handles BtnModelExport.Click
         If MyOhana.Model_Object IsNot Nothing Then
@@ -211,15 +231,18 @@ Public Class FrmMain
     End Sub
     Private Sub Model_Exporter(InFolder As String, OutFolder As String)
         Dim Exporter As New Ohana
+        Exporter.Model_Mirror_X = MyOhana.Model_Mirror_X
         Dim Input_Files() As FileInfo = New DirectoryInfo(InFolder).GetFiles()
         Dim Total_Index, Index As Integer
         For Each File As FileInfo In Input_Files
             Try
-                Exporter.Load_Model(File.FullName, False)
-                If Exporter.Model_Object.Length > 0 Then
-                    Dim File_Name As String = Path.Combine(OutFolder, File.Name & ".smd")
-                    Exporter.Export_SMD(File_Name)
-                    Index += 1
+                Exporter.Load_Model(File.FullName, False, False)
+                If Exporter.Model_Object IsNot Nothing Then
+                    If Exporter.Model_Object.Length > 0 Then
+                        Dim File_Name As String = Path.Combine(OutFolder, File.Name & ".smd")
+                        Exporter.Export_SMD(File_Name)
+                        Index += 1
+                    End If
                 End If
             Catch ex As Exception
                 Debug.WriteLine("Model Exporter -> Erro ao exportar modelo: " & Path.GetFileName(File.FullName))
@@ -235,6 +258,7 @@ Public Class FrmMain
         If MyOhana.Scale = 1 Then
             MyOhana.Scale = 32
             BtnModelScale.Text = "Scale 1:32"
+
         ElseIf MyOhana.Scale = 32 Then
             MyOhana.Scale = 64
             BtnModelScale.Text = "Scale 1:64"
@@ -242,6 +266,8 @@ Public Class FrmMain
             MyOhana.Scale = 1
             BtnModelScale.Text = "Scale 1:1"
         End If
+        My.Settings.ModelScale = Convert.ToInt32(MyOhana.Scale)
+        My.Settings.Save()
         BtnModelScale.Refresh()
     End Sub
     Private Sub BtnModelTexturesMore_Click(sender As Object, e As EventArgs) Handles BtnModelTexturesMore.Click
@@ -261,9 +287,23 @@ Public Class FrmMain
             For Index As Integer = 0 To MyOhana.Model_Texture_Index.Length - 1
                 Dim Item As MyListview.ListItem
                 ReDim Item.Text(2)
+
                 Item.Text(0).Text = Index.ToString
                 Item.Text(1).Left = 40
                 Item.Text(1).Text = MyOhana.Model_Texture_Index(Index)
+                If MyOhana.Model_Texture IsNot Nothing Then
+                    Dim Found As Boolean = False
+                    For Texture_Index As Integer = 0 To MyOhana.Model_Texture.Count - 1
+                        If MyOhana.Model_Texture(Texture_Index).Name = MyOhana.Model_Texture_Index(Index) Then
+                            Found = True
+                            Exit For
+                        End If
+                    Next
+                    If Not Found Then Item.Text(1).ForeColor = Color.Crimson
+                Else
+                    Item.Text(1).ForeColor = Color.Crimson
+                End If
+
                 Item.Text(2).Left = 280
                 Item.Text(2).Text = MyOhana.Model_Bump_Map_Index(Index)
                 FrmTextureInfo.LstModelTextures.AddItem(Item)
@@ -280,6 +320,9 @@ Public Class FrmMain
         Else
             BtnModelMirror.Text = "Normal"
         End If
+
+        My.Settings.ModelMirror = MyOhana.Model_Mirror_X
+        My.Settings.Save()
     End Sub
 
     Private Sub Update_Info()
@@ -349,7 +392,7 @@ Public Class FrmMain
                 Next
                 LstTextures.Refresh()
             Catch
-                MsgBox("Sorry, something went wrong." & vbCrLf & "Make sure you selected the correct BCH Version (X/Y or OR/AS).", vbExclamation, "Error")
+                MsgBox("Sorry, something went wrong.", vbExclamation, "Error")
             End Try
         End If
     End Sub
@@ -492,21 +535,55 @@ Public Class FrmMain
         Update_Progress(ProgressTextures, 0, Nothing)
         Update_Button_Text(BtnTextureExportAllFF, "Export all from folder")
     End Sub
+    Private Sub BtnTextureImport_Click(sender As Object, e As EventArgs) Handles BtnTextureImport.Click
+        Dim InputDlg As New FolderBrowserDialog
+        If InputDlg.ShowDialog = Windows.Forms.DialogResult.OK Then
+            MyOhana.Model_Texture = New List(Of Ohana.OhanaTexture)
+            LstTextures.Clear()
+            ImgTexture.Image = Nothing
+
+            Dim Input_Files() As FileInfo = New DirectoryInfo(InputDlg.SelectedPath).GetFiles()
+            For Each File As FileInfo In Input_Files
+                If LCase(Path.GetExtension(File.Name)) = ".png" Then
+                    Dim MyTex As New Ohana.OhanaTexture
+
+                    With MyTex
+                        .Name = Path.GetFileNameWithoutExtension(File.Name)
+                        LstTextures.AddItem(.Name)
+                        .Image = Bitmap.FromFile(File.FullName)
+                        Dim Temp As New Bitmap(.Image)
+                        Temp.RotateFlip(RotateFlipType.RotateNoneFlipY)
+                        .Texture = MyOhana.Get_Texture(Temp)
+                    End With
+
+                    MyOhana.Model_Texture.Add(MyTex)
+                End If
+            Next
+
+            ImgTexture_Container.Refresh()
+            LstTextures.Refresh()
+        End If
+    End Sub
     Private Sub BtnTextureMode_Click(sender As Object, e As EventArgs) Handles BtnTextureMode.Click
         Select Case Texture_Mode
             Case TextureMode.Original
                 Texture_Mode = TextureMode.FlipY
                 BtnTextureMode.Text = "Flip-Y"
+                My.Settings.TextureFlipMirror = 1
             Case TextureMode.FlipY
                 Texture_Mode = TextureMode.Mirror
                 BtnTextureMode.Text = "Mirror-X"
+                My.Settings.TextureFlipMirror = 2
             Case TextureMode.Mirror
                 Texture_Mode = TextureMode.FlipY_Mirror
                 BtnTextureMode.Text = "Flip/Mirror"
+                My.Settings.TextureFlipMirror = 3
             Case TextureMode.FlipY_Mirror
                 Texture_Mode = TextureMode.Original
                 BtnTextureMode.Text = "Original"
+                My.Settings.TextureFlipMirror = 0
         End Select
+        My.Settings.Save()
     End Sub
 
     Private Function Mirror_Image(Img As Bitmap) As Bitmap
