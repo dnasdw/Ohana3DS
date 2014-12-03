@@ -707,16 +707,16 @@ Public Class Ohana
                                 Offset += 3
                             Case 2 'R5G5B5A1
                                 Dim Pixel_Data As Integer = Read16(Data, Offset)
-                                Out(Out_Offset) = Convert.ToByte(((Pixel_Data >> 11) And &H1F) * 8)
+                                Out(Out_Offset + 2) = Convert.ToByte(((Pixel_Data >> 11) And &H1F) * 8)
                                 Out(Out_Offset + 1) = Convert.ToByte(((Pixel_Data >> 6) And &H1F) * 8)
-                                Out(Out_Offset + 2) = Convert.ToByte(((Pixel_Data >> 1) And &H1F) * 8)
+                                Out(Out_Offset) = Convert.ToByte(((Pixel_Data >> 1) And &H1F) * 8)
                                 Out(Out_Offset + 3) = Convert.ToByte((Pixel_Data And 1) * &HFF)
                                 Offset += 2
                             Case 3 'R5G6B5
                                 Dim Pixel_Data As Integer = Read16(Data, Offset)
-                                Out(Out_Offset) = Convert.ToByte(((Pixel_Data >> 11) And &H1F) * 8)
+                                Out(Out_Offset + 2) = Convert.ToByte(((Pixel_Data >> 11) And &H1F) * 8)
                                 Out(Out_Offset + 1) = Convert.ToByte(((Pixel_Data >> 5) And &H3F) * 4)
-                                Out(Out_Offset + 2) = Convert.ToByte(((Pixel_Data) And &H1F) * 8)
+                                Out(Out_Offset) = Convert.ToByte(((Pixel_Data) And &H1F) * 8)
                                 Out(Out_Offset + 3) = &HFF
                                 Offset += 2
                             Case 4 'R4G4B4A4
