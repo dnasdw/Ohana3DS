@@ -31,9 +31,11 @@ Public Class Ohana
         Dim Name As String
         Dim Image As Bitmap
         Dim Image_Mirrored As Bitmap
-        Dim Format As Integer
         Dim Texture As Texture
         Dim Has_Alpha As Boolean
+
+        Dim Offset As Integer
+        Dim Format As Integer
     End Structure
     Public Structure OhanaBone
         Dim Name As String
@@ -74,7 +76,10 @@ Public Class Ohana
     Public Rotation As Vector2
     Public Translation As Vector2
 
+    Private Max_Y As Single
+
     Public Rendering As Boolean
+    Private Current_Texture As String
 
     Private Tile_Order() As Integer = _
         {0, 1, 8, 9, 2, 3, 10, 11, _
@@ -141,6 +146,7 @@ Public Class Ohana
         Dim Version As BCH_Version
 
         Total_Vertex = 0
+        Max_Y = 0
 
         Dim Temp() As Byte = File.ReadAllBytes(File_Name)
         Dim File_Magic As String = Nothing
@@ -316,6 +322,8 @@ Public Class Ohana
                             .U = BitConverter.ToSingle(Data, Offset + 24)
                             .V = BitConverter.ToSingle(Data, Offset + 28)
                     End Select
+
+                    If .Y > 0 And .Y > Max_Y Then Max_Y = .Y
                 End With
 
                 Vertex_Count += 1
@@ -351,6 +359,7 @@ Public Class Ohana
         End If
 
         If Left(File_Magic, 2) = "MM" Then
+            Current_Texture = File_Name
             Model_Texture = New List(Of OhanaTexture)
 
             ReDim Model_Texture_Index(Texture_Entries - 1)
@@ -407,6 +416,7 @@ Public Class Ohana
                             .Has_Alpha = True
                     End Select
 
+                    .Offset = Texture_Offset + BCH_Offset
                     .Format = Texture_Format
                 End With
                 Model_Texture.Add(MyTex)
@@ -775,6 +785,325 @@ Public Class Ohana
 
         Return Out
     End Function
+    Public Sub Insert_Texture(Image As Bitmap, Offset As Integer, Format As Integer)
+        'Dim ImgData As BitmapData = Image.LockBits(New Rectangle(0, 0, Image.Width, Image.Height), ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb)
+        'Dim Data(ImgData.Height * ImgData.Stride) As Byte
+        'Marshal.Copy(ImgData.Scan0, Data, 0, Data.Length)
+        'Image.UnlockBits(ImgData)
+        'File.WriteAllBytes("D:\teste.bin", Data)
+        Dim Data() As Byte = File.ReadAllBytes("D:\ohana.bin")
+
+        'Os tiles com compressão ETC1 no 3DS estão embaralhados
+        Dim Out((Image.Width * Image.Height * 4) - 1) As Byte
+        Dim Tile_Scramble(((Image.Width \ 4) * (Image.Height \ 4)) - 1) As Integer
+        Dim Base_Accumulator As Integer = 0, Line_Accumulator As Integer = 0
+        Dim Base_Number As Integer = 0, Line_Number As Integer = 0
+
+        For Tile As Integer = 0 To Tile_Scramble.Length - 1
+            If (Tile Mod (Image.Width \ 4) = 0) And Tile > 0 Then
+                If Line_Accumulator < 1 Then
+                    Line_Accumulator += 1
+                    Line_Number += 2
+                    Base_Number = Line_Number
+                Else
+                    Line_Accumulator = 0
+                    Base_Number -= 2
+                    Line_Number = Base_Number
+                End If
+            End If
+
+            Tile_Scramble(Tile) = Base_Number
+
+            If Base_Accumulator < 1 Then
+                Base_Accumulator += 1
+                Base_Number += 1
+            Else
+                Base_Accumulator = 0
+                Base_Number += 3
+            End If
+        Next
+
+        Dim i As Integer = 0
+        For Tile_Y As Integer = 0 To (Image.Height \ 4) - 1
+            For Tile_X As Integer = 0 To (Image.Width \ 4) - 1
+                Dim TX As Integer = Tile_Scramble(i) Mod (Image.Width \ 4)
+                Dim TY As Integer = (Tile_Scramble(i) - TX) \ (Image.Width \ 4)
+                For Y As Integer = 0 To 3
+                    For X As Integer = 0 To 3
+                        Dim Out_Offset As Integer = ((TX * 4) + X + ((((TY * 4) + Y)) * Image.Width)) * 4
+                        Dim Image_Offset As Integer = ((Tile_X * 4) + X + (((Image.Height - 1) - ((Tile_Y * 4) + Y)) * Image.Width)) * 3
+
+                        Out(Out_Offset) = Data(Image_Offset + 2)
+                        Out(Out_Offset + 1) = Data(Image_Offset + 1)
+                        Out(Out_Offset + 2) = Data(Image_Offset)
+                        Out(Out_Offset + 3) = &HFF
+                    Next
+                Next
+                i += 1
+            Next
+        Next
+
+        Select Case Format
+            Case 12
+                Dim Out_Data(((Image.Width * Image.Height) \ 2) - 1) As Byte
+                Dim Out_Offset As Integer
+
+                For Tile_Y As Integer = 0 To (Image.Height \ 4) - 1
+                    For Tile_X As Integer = 0 To (Image.Width \ 4) - 1
+                        Dim Flip As Boolean = False
+
+                        Dim Test_R1 As Integer = 0, Test_G1 As Integer = 0, Test_B1 As Integer = 0
+                        Dim Test_R2 As Integer = 0, Test_G2 As Integer = 0, Test_B2 As Integer = 0
+                        For Y As Integer = 0 To 1
+                            For X As Integer = 0 To 1
+                                Dim Image_Offset_1 As Integer = ((Tile_X * 4) + X + (((Tile_Y * 4) + Y) * Image.Width)) * 4
+                                Dim Image_Offset_2 As Integer = ((Tile_X * 4) + X + (((Tile_Y * 4) + (2 + Y)) * Image.Width)) * 4
+
+                                Test_R1 += Out(Image_Offset_1)
+                                Test_G1 += Out(Image_Offset_1 + 1)
+                                Test_B1 += Out(Image_Offset_1 + 2)
+
+                                Test_R2 += Out(Image_Offset_2)
+                                Test_G2 += Out(Image_Offset_2 + 1)
+                                Test_B2 += Out(Image_Offset_2 + 2)
+                            Next
+                        Next
+
+                        Test_R1 \= 8
+                        Test_G1 \= 8
+                        Test_B1 \= 8
+
+                        Test_R2 \= 8
+                        Test_G2 \= 8
+                        Test_B2 \= 8
+
+                        Dim Test_Luma_1 As Integer = Convert.ToInt32(0.299F * Test_R1 + 0.587F * Test_G1 + 0.114F * Test_B1)
+                        Dim Test_Luma_2 As Integer = Convert.ToInt32(0.299F * Test_R2 + 0.587F * Test_G2 + 0.114F * Test_B2)
+                        Dim Test_Flip_Diff As Integer = Math.Abs(Test_Luma_1 - Test_Luma_2)
+                        If Test_Flip_Diff > 48 Then Flip = True
+
+                        'Primeiro, cálcula a média de cores de cada bloco
+                        Dim Avg_R1 As Integer = 0, Avg_G1 As Integer = 0, Avg_B1 As Integer = 0
+                        Dim Avg_R2 As Integer = 0, Avg_G2 As Integer = 0, Avg_B2 As Integer = 0
+
+                        If Flip Then
+                            For Y As Integer = 0 To 1
+                                For X As Integer = 0 To 3
+                                    Dim Image_Offset_1 As Integer = ((Tile_X * 4) + X + (((Tile_Y * 4) + Y) * Image.Width)) * 4
+                                    Dim Image_Offset_2 As Integer = ((Tile_X * 4) + X + (((Tile_Y * 4) + (2 + Y)) * Image.Width)) * 4
+
+                                    Avg_R1 += Out(Image_Offset_1)
+                                    Avg_G1 += Out(Image_Offset_1 + 1)
+                                    Avg_B1 += Out(Image_Offset_1 + 2)
+
+                                    Avg_R2 += Out(Image_Offset_2)
+                                    Avg_G2 += Out(Image_Offset_2 + 1)
+                                    Avg_B2 += Out(Image_Offset_2 + 2)
+                                Next
+                            Next
+                        Else
+                            For Y As Integer = 0 To 3
+                                For X As Integer = 0 To 1
+                                    Dim Image_Offset_1 As Integer = ((Tile_X * 4) + X + (((Tile_Y * 4) + Y) * Image.Width)) * 4
+                                    Dim Image_Offset_2 As Integer = ((Tile_X * 4) + (2 + X) + (((Tile_Y * 4) + Y) * Image.Width)) * 4
+
+                                    Avg_R1 += Out(Image_Offset_1)
+                                    Avg_G1 += Out(Image_Offset_1 + 1)
+                                    Avg_B1 += Out(Image_Offset_1 + 2)
+
+                                    Avg_R2 += Out(Image_Offset_2)
+                                    Avg_G2 += Out(Image_Offset_2 + 1)
+                                    Avg_B2 += Out(Image_Offset_2 + 2)
+                                Next
+                            Next
+                        End If
+
+                        Avg_R1 \= 8
+                        Avg_G1 \= 8
+                        Avg_B1 \= 8
+
+                        Avg_R2 \= 8
+                        Avg_G2 \= 8
+                        Avg_B2 \= 8
+
+                        Dim Block_Top As Integer = 0
+                        Dim Block_Bottom As Integer = 0
+
+                        Block_Top = ((Avg_R2 And &HF0) >> 4) Or (Avg_R1 And &HF0)
+                        Block_Top = Block_Top Or (((Avg_G2 And &HF0) << 4) Or ((Avg_G1 And &HF0) << 8))
+                        Block_Top = Block_Top Or (((Avg_B2 And &HF0) << 12) Or ((Avg_B1 And &HF0) << 16))
+
+                        If Flip Then Block_Top = Block_Top Or &H1000000
+
+                        Avg_R1 = (Avg_R1 And &HF0) + ((Avg_R1 And &HF0) >> 4)
+                        Avg_G1 = (Avg_G1 And &HF0) + ((Avg_G1 And &HF0) >> 4)
+                        Avg_B1 = (Avg_B1 And &HF0) + ((Avg_B1 And &HF0) >> 4)
+
+                        Avg_R2 = (Avg_R2 And &HF0) + ((Avg_R2 And &HF0) >> 4)
+                        Avg_G2 = (Avg_G2 And &HF0) + ((Avg_G2 And &HF0) >> 4)
+                        Avg_B2 = (Avg_B2 And &HF0) + ((Avg_B2 And &HF0) >> 4)
+
+                        Dim Mod_Table_1 As Integer = 0
+                        Dim Min_Diff_1(7) As Integer
+                        For a As Integer = 0 To 7
+                            Min_Diff_1(a) = 0
+                        Next
+                        For Y As Integer = 0 To If(Flip, 1, 3)
+                            For X As Integer = 0 To If(Flip, 3, 1)
+                                Dim Image_Offset As Integer = ((Tile_X * 4) + X + (((Tile_Y * 4) + Y) * Image.Width)) * 4
+                                Dim Luma As Integer = Convert.ToInt32(0.299F * Out(Image_Offset) + 0.587F * Out(Image_Offset + 1) + 0.114F * Out(Image_Offset + 2))
+
+                                For a As Integer = 0 To 7
+                                    Dim Optiomal_Diff As Integer = 255 * 4
+                                    For b As Integer = 0 To 3
+                                        Dim CR As Integer = Avg_R1 + Modulation_Table(a, b)
+                                        Dim CG As Integer = Avg_G1 + Modulation_Table(a, b)
+                                        Dim CB As Integer = Avg_B1 + Modulation_Table(a, b)
+
+                                        Dim Test_Luma As Integer = Convert.ToInt32(0.299F * CR + 0.587F * CG + 0.114F * CB)
+                                        Dim Diff As Integer = Math.Abs(Luma - Test_Luma)
+                                        If Diff < Optiomal_Diff Then Optiomal_Diff = Diff
+                                    Next
+                                    Min_Diff_1(a) += Optiomal_Diff
+                                Next
+                            Next
+                        Next
+
+                        Dim Temp_1 As Integer = 255 * 32
+                        For a As Integer = 0 To 7
+                            If Min_Diff_1(a) < Temp_1 Then
+                                Temp_1 = Min_Diff_1(a)
+                                Mod_Table_1 = a
+                            End If
+                        Next
+
+                        Dim Mod_Table_2 As Integer = 0
+                        Dim Min_Diff_2(7) As Integer
+                        For a As Integer = 0 To 7
+                            Min_Diff_2(a) = 0
+                        Next
+                        For Y As Integer = If(Flip, 2, 0) To 3
+                            For X As Integer = If(Flip, 0, 2) To 3
+                                Dim Image_Offset As Integer = ((Tile_X * 4) + X + (((Tile_Y * 4) + Y) * Image.Width)) * 4
+                                Dim Luma As Integer = Convert.ToInt32(0.299F * Out(Image_Offset) + 0.587F * Out(Image_Offset + 1) + 0.114F * Out(Image_Offset + 2))
+
+                                For a As Integer = 0 To 7
+                                    Dim Optiomal_Diff As Integer = 255 * 4
+                                    For b As Integer = 0 To 3
+                                        Dim CR As Integer = Avg_R2 + Modulation_Table(a, b)
+                                        Dim CG As Integer = Avg_G2 + Modulation_Table(a, b)
+                                        Dim CB As Integer = Avg_B2 + Modulation_Table(a, b)
+
+                                        Dim Test_Luma As Integer = Convert.ToInt32(0.299F * CR + 0.587F * CG + 0.114F * CB)
+                                        Dim Diff As Integer = Math.Abs(Luma - Test_Luma)
+                                        If Diff < Optiomal_Diff Then Optiomal_Diff = Diff
+                                    Next
+                                    Min_Diff_2(a) += Optiomal_Diff
+                                Next
+                            Next
+                        Next
+
+                        Dim Temp_2 As Integer = 255 * 32
+                        For a As Integer = 0 To 7
+                            If Min_Diff_2(a) < Temp_2 Then
+                                Temp_2 = Min_Diff_2(a)
+                                Mod_Table_2 = a
+                            End If
+                        Next
+
+                        Block_Top = Block_Top Or (Mod_Table_1 << 29)
+                        Block_Top = Block_Top Or (Mod_Table_2 << 26)
+
+                        For Y As Integer = 0 To If(Flip, 1, 3)
+                            For X As Integer = 0 To If(Flip, 3, 1)
+                                Dim Image_Offset As Integer = ((Tile_X * 4) + X + (((Tile_Y * 4) + Y) * Image.Width)) * 4
+                                Dim Luma As Integer = Convert.ToInt32(0.299F * Out(Image_Offset) + 0.587F * Out(Image_Offset + 1) + 0.114F * Out(Image_Offset + 2))
+
+                                Dim Col_Diff As Integer = 255
+                                Dim Pix_Table_Index As Integer = 0
+                                For b As Integer = 0 To 3
+                                    Dim CR As Integer = Clip(Avg_R1 + Modulation_Table(Mod_Table_1, b))
+                                    Dim CG As Integer = Clip(Avg_G1 + Modulation_Table(Mod_Table_1, b))
+                                    Dim CB As Integer = Clip(Avg_B1 + Modulation_Table(Mod_Table_1, b))
+
+                                    Dim Test_Luma As Integer = Convert.ToInt32(0.299F * CR + 0.587F * CG + 0.114F * CB)
+                                    Dim Diff As Integer = Math.Abs(Luma - Test_Luma)
+                                    If Diff < Col_Diff Then
+                                        Col_Diff = Diff
+                                        Pix_Table_Index = b
+                                    End If
+                                Next
+
+                                Dim Index As Integer = X * 4 + Y
+                                If Index < 8 Then
+                                    Block_Bottom = Block_Bottom Or (((Pix_Table_Index And 2) >> 1) << (Index + 8))
+                                    Block_Bottom = Block_Bottom Or ((Pix_Table_Index And 1) << (Index + 24))
+                                Else
+                                    Block_Bottom = Block_Bottom Or (((Pix_Table_Index And 2) >> 1) << (Index - 8))
+                                    Block_Bottom = Block_Bottom Or ((Pix_Table_Index And 1) << (Index + 8))
+                                End If
+                            Next
+                        Next
+
+                        For Y As Integer = If(Flip, 2, 0) To 3
+                            For X As Integer = If(Flip, 0, 2) To 3
+                                Dim Image_Offset As Integer = ((Tile_X * 4) + X + (((Tile_Y * 4) + Y) * Image.Width)) * 4
+                                Dim Luma As Integer = Convert.ToInt32(0.299F * Out(Image_Offset) + 0.587F * Out(Image_Offset + 1) + 0.114F * Out(Image_Offset + 2))
+
+                                Dim Col_Diff As Integer = 255
+                                Dim Pix_Table_Index As Integer = 0
+                                For b As Integer = 0 To 3
+                                    Dim CR As Integer = Clip(Avg_R2 + Modulation_Table(Mod_Table_2, b))
+                                    Dim CG As Integer = Clip(Avg_G2 + Modulation_Table(Mod_Table_2, b))
+                                    Dim CB As Integer = Clip(Avg_B2 + Modulation_Table(Mod_Table_2, b))
+
+                                    Dim Test_Luma As Integer = Convert.ToInt32(0.299F * CR + 0.587F * CG + 0.114F * CB)
+                                    Dim Diff As Integer = Math.Abs(Luma - Test_Luma)
+                                    If Diff < Col_Diff Then
+                                        Col_Diff = Diff
+                                        Pix_Table_Index = b
+                                    End If
+                                Next
+
+                                Dim Index As Integer = X * 4 + Y
+                                If Index < 8 Then
+                                    Block_Bottom = Block_Bottom Or (((Pix_Table_Index And 2) >> 1) << (Index + 8))
+                                    Block_Bottom = Block_Bottom Or ((Pix_Table_Index And 1) << (Index + 24))
+                                Else
+                                    Block_Bottom = Block_Bottom Or (((Pix_Table_Index And 2) >> 1) << (Index - 8))
+                                    Block_Bottom = Block_Bottom Or ((Pix_Table_Index And 1) << (Index + 8))
+                                End If
+                            Next
+                        Next
+
+                        Dim Block(7) As Byte
+                        Buffer.BlockCopy(BitConverter.GetBytes(Block_Top), 0, Block, 0, 4)
+                        Buffer.BlockCopy(BitConverter.GetBytes(Block_Bottom), 0, Block, 4, 4)
+                        Dim New_Block(7) As Byte
+                        For j As Integer = 0 To 7
+                            New_Block(7 - j) = Block(j)
+                        Next
+                        Buffer.BlockCopy(New_Block, 0, Out_Data, Out_Offset, 8)
+                        Out_Offset += 8
+                    Next
+                Next
+
+                Dim Temp() As Byte = Convert_Texture(Out_Data, 0, 12, Image.Width, Image.Height)
+                Dim Img As New Bitmap(Image.Width, Image.Height, Imaging.PixelFormat.Format32bppArgb)
+                Dim ImgData2 As BitmapData = Img.LockBits(New Rectangle(0, 0, Img.Width, Img.Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb)
+                Marshal.Copy(Temp, 0, ImgData2.Scan0, Temp.Length)
+                Img.UnlockBits(ImgData2)
+
+                Model_Texture = New List(Of OhanaTexture)
+                Dim MyTex As New OhanaTexture
+                MyTex.Format = 12
+                MyTex.Name = "gdkchan"
+                MyTex.Image = Img
+                Model_Texture.Add(MyTex)
+                FrmMain.LstTextures.AddItem("gdkchan debug")
+                FrmMain.LstTextures.Refresh()
+        End Select
+    End Sub
     Public Sub Export_SMD(File_Name As String)
         Dim Info As New NumberFormatInfo
         Info.NumberDecimalSeparator = "."
@@ -976,14 +1305,19 @@ Public Class Ohana
         Return Out
     End Function
     Private Function Modify_Pixel(R As Integer, G As Integer, B As Integer, X As Integer, Y As Integer, Mod_Block As Integer, Mod_Table As Integer) As Color
-        Dim Index As Integer = X * 4 + Y
+        Dim Index As Integer = X * 4 + Y '!!!
         Dim Pixel_Modulation As Integer
         Dim MSB As Integer = Mod_Block << 1
+
+        'Dim dbg As Integer
         If Index < 8 Then
+            'dbg = ((Mod_Block >> (Index + 24)) And 1) + ((MSB >> (Index + 8)) And 2)
             Pixel_Modulation = Modulation_Table(Mod_Table, ((Mod_Block >> (Index + 24)) And 1) + ((MSB >> (Index + 8)) And 2))
         Else
+            'dbg = ((Mod_Block >> (Index + 8)) And 1) + ((MSB >> (Index - 8)) And 2)
             Pixel_Modulation = Modulation_Table(Mod_Table, ((Mod_Block >> (Index + 8)) And 1) + ((MSB >> (Index - 8)) And 2))
         End If
+        'MsgBox(Hex(Mod_Block) & " - " & Hex(dbg) & " - " & Index & " - " & X & " - " & Y & " - - " & Hex(MSB))
 
         R = Clip(R + Pixel_Modulation)
         G = Clip(G + Pixel_Modulation)
@@ -1069,7 +1403,7 @@ Public Class Ohana
                 Device.Material = MyMaterial
 
                 Dim Mtx_1 As Matrix = Matrix.RotationYawPitchRoll(Rotation.X / 200.0F, -Rotation.Y / 200.0F, 0)
-                Dim Mtx_2 As Matrix = Matrix.Translation(New Vector3(Translation.X / 50.0F, (Translation.Y / 50.0F) - 0.6F, Zoom))
+                Dim Mtx_2 As Matrix = Matrix.Translation(New Vector3(Translation.X / 50.0F, (Translation.Y / 50.0F) - (Max_Y / 2), Zoom))
                 Device.Transform.World = Mtx_1 * Mtx_2
 
                 For Phase As Integer = 0 To 1

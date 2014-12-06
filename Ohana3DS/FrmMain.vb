@@ -778,4 +778,7 @@ Public Class FrmMain
 
 #End Region
 
+    Private Sub BtnTextureInsert_Click(sender As Object, e As EventArgs) Handles BtnTextureInsert.Click
+        MyOhana.Insert_Texture(New Bitmap(Image.FromFile("D:\oh.png")), 0, 12)
+    End Sub
 End Class
