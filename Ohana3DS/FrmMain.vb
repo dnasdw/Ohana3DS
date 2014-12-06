@@ -538,6 +538,7 @@ Public Class FrmMain
     Private Sub BtnTextureImport_Click(sender As Object, e As EventArgs) Handles BtnTextureImport.Click
         Dim InputDlg As New FolderBrowserDialog
         If InputDlg.ShowDialog = Windows.Forms.DialogResult.OK Then
+            MyOhana.Current_Texture = Nothing
             MyOhana.Model_Texture = New List(Of Ohana.OhanaTexture)
             LstTextures.Clear()
             ImgTexture.Image = Nothing
@@ -584,6 +585,24 @@ Public Class FrmMain
                 My.Settings.TextureFlipMirror = 0
         End Select
         My.Settings.Save()
+    End Sub
+    Private Sub BtnTextureInsert_Click(sender As Object, e As EventArgs) Handles BtnTextureInsert.Click
+        If MyOhana.Current_Texture <> Nothing And LstTextures.SelectedIndex > -1 Then
+            Dim OpenDlg As New OpenFileDialog
+            OpenDlg.Title = "Select the Texture to insert"
+            OpenDlg.Filter = "PNG|*.png"
+            If OpenDlg.ShowDialog = DialogResult.OK Then
+                If File.Exists(OpenDlg.FileName) Then
+                    MyOhana.Insert_Texture(OpenDlg.FileName, LstTextures.SelectedIndex)
+                End If
+            End If
+        End If
+    End Sub
+    Private Sub BtnTextureSave_Click(sender As Object, e As EventArgs) Handles BtnTextureSave.Click
+        If MsgBox("The file will be modified, are you sure?", vbYesNo) = vbYes Then
+            File.Delete(MyOhana.Current_Texture)
+            File.Copy(MyOhana.Temp_Texture_File, MyOhana.Current_Texture)
+        End If
     End Sub
 
     Private Function Mirror_Image(Img As Bitmap) As Bitmap
@@ -778,7 +797,4 @@ Public Class FrmMain
 
 #End Region
 
-    Private Sub BtnTextureInsert_Click(sender As Object, e As EventArgs) Handles BtnTextureInsert.Click
-        MyOhana.Insert_Texture(New Bitmap(Image.FromFile("D:\oh.png")), 0, 12)
-    End Sub
 End Class

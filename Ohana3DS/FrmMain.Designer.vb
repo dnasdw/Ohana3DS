@@ -49,6 +49,7 @@ Partial Class FrmMain
         Me.Screen = New System.Windows.Forms.PictureBox()
         Me.TexturePage = New System.Windows.Forms.TabPage()
         Me.GrpTexOptions = New Ohana3DS.MyGroupbox()
+        Me.BtnTextureInsert = New System.Windows.Forms.Button()
         Me.BtnTextureImport = New System.Windows.Forms.Button()
         Me.BtnTextureMode = New System.Windows.Forms.Button()
         Me.BtnTextureExportAllFF = New System.Windows.Forms.Button()
@@ -91,7 +92,7 @@ Partial Class FrmMain
         Me.BtnSearch = New System.Windows.Forms.Button()
         Me.ROMPage = New System.Windows.Forms.TabPage()
         Me.Title = New Ohana3DS.MyWindowTitle()
-        Me.BtnTextureInsert = New System.Windows.Forms.Button()
+        Me.BtnTextureSave = New System.Windows.Forms.Button()
         CType(Me.Splash, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.MainTabs.SuspendLayout()
         Me.ModelPage.SuspendLayout()
@@ -419,6 +420,7 @@ Partial Class FrmMain
         'GrpTexOptions
         '
         Me.GrpTexOptions.BackColor = System.Drawing.Color.Transparent
+        Me.GrpTexOptions.Controls.Add(Me.BtnTextureSave)
         Me.GrpTexOptions.Controls.Add(Me.BtnTextureInsert)
         Me.GrpTexOptions.Controls.Add(Me.BtnTextureImport)
         Me.GrpTexOptions.Controls.Add(Me.BtnTextureMode)
@@ -434,6 +436,18 @@ Partial Class FrmMain
         Me.GrpTexOptions.TabIndex = 26
         Me.GrpTexOptions.TabStop = False
         Me.GrpTexOptions.Text = "Options"
+        '
+        'BtnTextureInsert
+        '
+        Me.BtnTextureInsert.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
+        Me.BtnTextureInsert.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
+        Me.BtnTextureInsert.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        Me.BtnTextureInsert.Location = New System.Drawing.Point(78, 48)
+        Me.BtnTextureInsert.Name = "BtnTextureInsert"
+        Me.BtnTextureInsert.Size = New System.Drawing.Size(72, 24)
+        Me.BtnTextureInsert.TabIndex = 8
+        Me.BtnTextureInsert.Text = "Insert"
+        Me.BtnTextureInsert.UseVisualStyleBackColor = True
         '
         'BtnTextureImport
         '
@@ -890,17 +904,17 @@ Partial Class FrmMain
         Me.Title.TabIndex = 18
         Me.Title.Text = "OhanaXY"
         '
-        'BtnTextureInsert
+        'BtnTextureSave
         '
-        Me.BtnTextureInsert.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
-        Me.BtnTextureInsert.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
-        Me.BtnTextureInsert.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        Me.BtnTextureInsert.Location = New System.Drawing.Point(78, 48)
-        Me.BtnTextureInsert.Name = "BtnTextureInsert"
-        Me.BtnTextureInsert.Size = New System.Drawing.Size(72, 24)
-        Me.BtnTextureInsert.TabIndex = 8
-        Me.BtnTextureInsert.Text = "Insert"
-        Me.BtnTextureInsert.UseVisualStyleBackColor = True
+        Me.BtnTextureSave.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
+        Me.BtnTextureSave.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
+        Me.BtnTextureSave.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        Me.BtnTextureSave.Location = New System.Drawing.Point(0, 48)
+        Me.BtnTextureSave.Name = "BtnTextureSave"
+        Me.BtnTextureSave.Size = New System.Drawing.Size(72, 24)
+        Me.BtnTextureSave.TabIndex = 9
+        Me.BtnTextureSave.Text = "Save"
+        Me.BtnTextureSave.UseVisualStyleBackColor = True
         '
         'FrmMain
         '
@@ -1020,5 +1034,6 @@ Partial Class FrmMain
     Friend WithEvents BtnModelMirror As System.Windows.Forms.Button
     Friend WithEvents BtnTextureImport As System.Windows.Forms.Button
     Friend WithEvents BtnTextureInsert As System.Windows.Forms.Button
+    Friend WithEvents BtnTextureSave As System.Windows.Forms.Button
 
 End Class
