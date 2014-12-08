@@ -49,6 +49,7 @@ Partial Class FrmMain
         Me.Screen = New System.Windows.Forms.PictureBox()
         Me.TexturePage = New System.Windows.Forms.TabPage()
         Me.GrpTexOptions = New Ohana3DS.MyGroupbox()
+        Me.BtnTextureSave = New System.Windows.Forms.Button()
         Me.BtnTextureInsert = New System.Windows.Forms.Button()
         Me.BtnTextureImport = New System.Windows.Forms.Button()
         Me.BtnTextureMode = New System.Windows.Forms.Button()
@@ -73,6 +74,14 @@ Partial Class FrmMain
         Me.LstTextures_Container = New System.Windows.Forms.Panel()
         Me.LstTextures = New Ohana3DS.MyListview()
         Me.TextPage = New System.Windows.Forms.TabPage()
+        Me.GrpTextOptions = New Ohana3DS.MyGroupbox()
+        Me.BtnTextSave = New System.Windows.Forms.Button()
+        Me.BtnTextImport = New System.Windows.Forms.Button()
+        Me.MyProgressbar1 = New Ohana3DS.MyProgressbar()
+        Me.BtnTextExport = New System.Windows.Forms.Button()
+        Me.BtnTextOpen = New System.Windows.Forms.Button()
+        Me.MyGroupbox2 = New Ohana3DS.MyGroupbox()
+        Me.TxtGameStrings = New System.Windows.Forms.TextBox()
         Me.GARCPage = New System.Windows.Forms.TabPage()
         Me.GrpGARCOptions = New Ohana3DS.MyGroupbox()
         Me.ProgressGARC = New Ohana3DS.MyProgressbar()
@@ -92,7 +101,6 @@ Partial Class FrmMain
         Me.BtnSearch = New System.Windows.Forms.Button()
         Me.ROMPage = New System.Windows.Forms.TabPage()
         Me.Title = New Ohana3DS.MyWindowTitle()
-        Me.BtnTextureSave = New System.Windows.Forms.Button()
         CType(Me.Splash, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.MainTabs.SuspendLayout()
         Me.ModelPage.SuspendLayout()
@@ -107,6 +115,9 @@ Partial Class FrmMain
         CType(Me.ImgTexture, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.GrpTextures.SuspendLayout()
         Me.LstTextures_Container.SuspendLayout()
+        Me.TextPage.SuspendLayout()
+        Me.GrpTextOptions.SuspendLayout()
+        Me.MyGroupbox2.SuspendLayout()
         Me.GARCPage.SuspendLayout()
         Me.GrpGARCOptions.SuspendLayout()
         Me.GrpFiles.SuspendLayout()
@@ -437,6 +448,18 @@ Partial Class FrmMain
         Me.GrpTexOptions.TabStop = False
         Me.GrpTexOptions.Text = "Options"
         '
+        'BtnTextureSave
+        '
+        Me.BtnTextureSave.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
+        Me.BtnTextureSave.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
+        Me.BtnTextureSave.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        Me.BtnTextureSave.Location = New System.Drawing.Point(0, 48)
+        Me.BtnTextureSave.Name = "BtnTextureSave"
+        Me.BtnTextureSave.Size = New System.Drawing.Size(72, 24)
+        Me.BtnTextureSave.TabIndex = 9
+        Me.BtnTextureSave.Text = "Save"
+        Me.BtnTextureSave.UseVisualStyleBackColor = True
+        '
         'BtnTextureInsert
         '
         Me.BtnTextureInsert.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
@@ -689,12 +712,109 @@ Partial Class FrmMain
         'TextPage
         '
         Me.TextPage.BackColor = System.Drawing.Color.Transparent
+        Me.TextPage.Controls.Add(Me.GrpTextOptions)
+        Me.TextPage.Controls.Add(Me.MyGroupbox2)
         Me.TextPage.ForeColor = System.Drawing.Color.White
         Me.TextPage.Location = New System.Drawing.Point(28, 4)
         Me.TextPage.Name = "TextPage"
         Me.TextPage.Size = New System.Drawing.Size(768, 560)
         Me.TextPage.TabIndex = 2
         Me.TextPage.Text = "Text"
+        '
+        'GrpTextOptions
+        '
+        Me.GrpTextOptions.BackColor = System.Drawing.Color.Transparent
+        Me.GrpTextOptions.Controls.Add(Me.BtnTextSave)
+        Me.GrpTextOptions.Controls.Add(Me.BtnTextImport)
+        Me.GrpTextOptions.Controls.Add(Me.MyProgressbar1)
+        Me.GrpTextOptions.Controls.Add(Me.BtnTextExport)
+        Me.GrpTextOptions.Controls.Add(Me.BtnTextOpen)
+        Me.GrpTextOptions.ForeColor = System.Drawing.Color.White
+        Me.GrpTextOptions.Location = New System.Drawing.Point(0, 480)
+        Me.GrpTextOptions.Name = "GrpTextOptions"
+        Me.GrpTextOptions.Size = New System.Drawing.Size(768, 80)
+        Me.GrpTextOptions.TabIndex = 27
+        Me.GrpTextOptions.TabStop = False
+        Me.GrpTextOptions.Text = "Options"
+        '
+        'BtnTextSave
+        '
+        Me.BtnTextSave.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
+        Me.BtnTextSave.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
+        Me.BtnTextSave.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        Me.BtnTextSave.Location = New System.Drawing.Point(0, 48)
+        Me.BtnTextSave.Name = "BtnTextSave"
+        Me.BtnTextSave.Size = New System.Drawing.Size(72, 24)
+        Me.BtnTextSave.TabIndex = 4
+        Me.BtnTextSave.Text = "Save"
+        Me.BtnTextSave.UseVisualStyleBackColor = True
+        '
+        'BtnTextImport
+        '
+        Me.BtnTextImport.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
+        Me.BtnTextImport.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
+        Me.BtnTextImport.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        Me.BtnTextImport.Location = New System.Drawing.Point(84, 48)
+        Me.BtnTextImport.Name = "BtnTextImport"
+        Me.BtnTextImport.Size = New System.Drawing.Size(72, 24)
+        Me.BtnTextImport.TabIndex = 3
+        Me.BtnTextImport.Text = "Import"
+        Me.BtnTextImport.UseVisualStyleBackColor = True
+        '
+        'MyProgressbar1
+        '
+        Me.MyProgressbar1.Location = New System.Drawing.Point(0, 48)
+        Me.MyProgressbar1.Name = "MyProgressbar1"
+        Me.MyProgressbar1.Percentage = 0.0!
+        Me.MyProgressbar1.Size = New System.Drawing.Size(228, 24)
+        Me.MyProgressbar1.TabIndex = 0
+        '
+        'BtnTextExport
+        '
+        Me.BtnTextExport.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
+        Me.BtnTextExport.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
+        Me.BtnTextExport.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        Me.BtnTextExport.Location = New System.Drawing.Point(84, 18)
+        Me.BtnTextExport.Name = "BtnTextExport"
+        Me.BtnTextExport.Size = New System.Drawing.Size(72, 24)
+        Me.BtnTextExport.TabIndex = 2
+        Me.BtnTextExport.Text = "Export"
+        Me.BtnTextExport.UseVisualStyleBackColor = True
+        '
+        'BtnTextOpen
+        '
+        Me.BtnTextOpen.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
+        Me.BtnTextOpen.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
+        Me.BtnTextOpen.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        Me.BtnTextOpen.Location = New System.Drawing.Point(0, 18)
+        Me.BtnTextOpen.Name = "BtnTextOpen"
+        Me.BtnTextOpen.Size = New System.Drawing.Size(72, 24)
+        Me.BtnTextOpen.TabIndex = 1
+        Me.BtnTextOpen.Text = "Open"
+        Me.BtnTextOpen.UseVisualStyleBackColor = True
+        '
+        'MyGroupbox2
+        '
+        Me.MyGroupbox2.Controls.Add(Me.TxtGameStrings)
+        Me.MyGroupbox2.ForeColor = System.Drawing.Color.White
+        Me.MyGroupbox2.Location = New System.Drawing.Point(0, 0)
+        Me.MyGroupbox2.Name = "MyGroupbox2"
+        Me.MyGroupbox2.Size = New System.Drawing.Size(768, 480)
+        Me.MyGroupbox2.TabIndex = 26
+        Me.MyGroupbox2.TabStop = False
+        Me.MyGroupbox2.Text = "Texts (Preview only!)"
+        '
+        'TxtGameStrings
+        '
+        Me.TxtGameStrings.BackColor = System.Drawing.Color.Black
+        Me.TxtGameStrings.BorderStyle = System.Windows.Forms.BorderStyle.None
+        Me.TxtGameStrings.ForeColor = System.Drawing.Color.White
+        Me.TxtGameStrings.Location = New System.Drawing.Point(0, 18)
+        Me.TxtGameStrings.Multiline = True
+        Me.TxtGameStrings.Name = "TxtGameStrings"
+        Me.TxtGameStrings.ScrollBars = System.Windows.Forms.ScrollBars.Vertical
+        Me.TxtGameStrings.Size = New System.Drawing.Size(768, 460)
+        Me.TxtGameStrings.TabIndex = 0
         '
         'GARCPage
         '
@@ -904,18 +1024,6 @@ Partial Class FrmMain
         Me.Title.TabIndex = 18
         Me.Title.Text = "OhanaXY"
         '
-        'BtnTextureSave
-        '
-        Me.BtnTextureSave.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
-        Me.BtnTextureSave.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
-        Me.BtnTextureSave.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        Me.BtnTextureSave.Location = New System.Drawing.Point(0, 48)
-        Me.BtnTextureSave.Name = "BtnTextureSave"
-        Me.BtnTextureSave.Size = New System.Drawing.Size(72, 24)
-        Me.BtnTextureSave.TabIndex = 9
-        Me.BtnTextureSave.Text = "Save"
-        Me.BtnTextureSave.UseVisualStyleBackColor = True
-        '
         'FrmMain
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
@@ -952,6 +1060,10 @@ Partial Class FrmMain
         CType(Me.ImgTexture, System.ComponentModel.ISupportInitialize).EndInit()
         Me.GrpTextures.ResumeLayout(False)
         Me.LstTextures_Container.ResumeLayout(False)
+        Me.TextPage.ResumeLayout(False)
+        Me.GrpTextOptions.ResumeLayout(False)
+        Me.MyGroupbox2.ResumeLayout(False)
+        Me.MyGroupbox2.PerformLayout()
         Me.GARCPage.ResumeLayout(False)
         Me.GrpGARCOptions.ResumeLayout(False)
         Me.GrpFiles.ResumeLayout(False)
@@ -1035,5 +1147,13 @@ Partial Class FrmMain
     Friend WithEvents BtnTextureImport As System.Windows.Forms.Button
     Friend WithEvents BtnTextureInsert As System.Windows.Forms.Button
     Friend WithEvents BtnTextureSave As System.Windows.Forms.Button
+    Friend WithEvents GrpTextOptions As Ohana3DS.MyGroupbox
+    Friend WithEvents MyProgressbar1 As Ohana3DS.MyProgressbar
+    Friend WithEvents BtnTextExport As System.Windows.Forms.Button
+    Friend WithEvents BtnTextOpen As System.Windows.Forms.Button
+    Friend WithEvents MyGroupbox2 As Ohana3DS.MyGroupbox
+    Friend WithEvents TxtGameStrings As System.Windows.Forms.TextBox
+    Friend WithEvents BtnTextImport As System.Windows.Forms.Button
+    Friend WithEvents BtnTextSave As System.Windows.Forms.Button
 
 End Class

@@ -3,9 +3,12 @@ Imports System.Threading
 Imports System.Drawing.Imaging
 Imports System.Runtime.InteropServices
 Imports System.Text
+Imports System.Text.RegularExpressions
+
 Public Class FrmMain
     'Classes de gerenciamento 3D e compressão/extração
     Public MyOhana As New Ohana
+    Dim MyMinko As New Minko
     Dim MyNako As New Nako
 
     'Movimentação do modelo
@@ -13,6 +16,8 @@ Public Class FrmMain
     Dim Mov_InitX, Mov_InitY, Mov_FinalX, Mov_FinalY As Integer
 
     Dim Current_Model As String
+    Dim Current_Opened_Text As String
+    Dim Current_Text_Temp As String
 
     Private Enum TextureMode
         Original
@@ -628,6 +633,70 @@ Public Class FrmMain
 
         Return Output
     End Function
+#End Region
+
+#Region "Text"
+    Private Sub BtnTextOpen_Click(sender As Object, e As EventArgs) Handles BtnTextOpen.Click
+        Dim OpenDlg As New OpenFileDialog
+        OpenDlg.Title = "Open Text file"
+        If OpenDlg.ShowDialog = DialogResult.OK Then
+            If File.Exists(OpenDlg.FileName) Then
+                Current_Opened_Text = OpenDlg.FileName
+                MyMinko.Extract_Strings(OpenDlg.FileName)
+                Dim Out As New StringBuilder
+                For Each Line As String In MyMinko.Strings
+                    Out.AppendLine(Line & vbCrLf)
+                Next
+                TxtGameStrings.Text = Out.ToString.Trim
+            End If
+        End If
+    End Sub
+    Private Sub BtnTextExport_Click(sender As Object, e As EventArgs) Handles BtnTextExport.Click
+        Dim SaveDlg As New SaveFileDialog
+        SaveDlg.Title = "Save texts"
+        SaveDlg.Filter = "XML|*.xml"
+        If SaveDlg.ShowDialog = DialogResult.OK Then
+            Dim Out As New StringBuilder
+            Out.AppendLine("<!--OhanaXY Pokémon Text Rip :P-->")
+            Out.AppendLine("<textfile>")
+            For Each Line As String In MyMinko.Strings
+                Out.AppendLine("    <text>")
+                Out.AppendLine("        " & Line)
+                Out.AppendLine("    </text>")
+            Next
+            Out.AppendLine("</textfile>")
+            File.WriteAllText(SaveDlg.FileName, Out.ToString)
+        End If
+    End Sub
+    Private Sub BtnTextImport_Click(sender As Object, e As EventArgs) Handles BtnTextImport.Click
+        Dim OpenDlg As New OpenFileDialog
+        OpenDlg.Title = "Open texts"
+        OpenDlg.Filter = "XML|*.xml"
+        If OpenDlg.ShowDialog = DialogResult.OK Then
+            Dim TextData As MatchCollection = Regex.Matches(File.ReadAllText(OpenDlg.FileName), "<text>(.+?)</text>", RegexOptions.Singleline Or RegexOptions.IgnoreCase)
+            Dim Strings(TextData.Count - 1) As String
+            Dim Index As Integer
+            For Each Text As Match In TextData
+                Strings(Index) = Text.Groups(1).Value.Trim
+                Index += 1
+            Next
+            Current_Text_Temp = Path.GetTempFileName
+            MyMinko.Insert_Strings(Strings, Current_Text_Temp)
+
+            MyMinko.Extract_Strings(Current_Text_Temp)
+            Dim Out As New StringBuilder
+            For Each Line As String In MyMinko.Strings
+                Out.AppendLine(Line & vbCrLf)
+            Next
+            TxtGameStrings.Text = Out.ToString.Trim
+        End If
+    End Sub
+    Private Sub BtnTextSave_Click(sender As Object, e As EventArgs) Handles BtnTextSave.Click
+        If Current_Text_Temp <> Nothing And Current_Opened_Text <> Nothing Then
+            File.Delete(Current_Opened_Text)
+            File.Copy(Current_Text_Temp, Current_Opened_Text)
+        End If
+    End Sub
 #End Region
 
 #Region "GARC"

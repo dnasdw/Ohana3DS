@@ -95,7 +95,10 @@ Public Class MyListview
                     For Each SubData As ListText In Item.Text
                         Dim TxtHeight As Integer = Convert.ToInt32(e.Graphics.MeasureString(SubData.Text, Me.Font).Height)
                         If SubData.ForeColor = Nothing Then SubData.ForeColor = Me.ForeColor
-                        e.Graphics.DrawString(SubData.Text, Me.Font, New SolidBrush(SubData.ForeColor), New Point(SubData.Left, (Start_Y + (TileHeight \ 2) - (TxtHeight \ 2))))
+                        If SubData.Text <> Nothing Then
+                            Dim Text() As String = SubData.Text.Split(vbCrLf)
+                            e.Graphics.DrawString(Text(0).Trim, Me.Font, New SolidBrush(SubData.ForeColor), New Point(SubData.Left, (Start_Y + (TileHeight \ 2) - (TxtHeight \ 2))))
+                        End If
 
                         If Item.Header Then
                             Dim ItemW As Integer
