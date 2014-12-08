@@ -385,7 +385,12 @@ Public Class Ohana
                         Model_Texture_Name_Offset += 1
                         If Value <> 0 Then Model_Texture_Name &= Chr(Value) Else Exit Do
                     Loop
-                    Model_Texture_Index(Index) = Model_Texture_Name
+
+                    If Model_Texture_Name <> Nothing Then
+                        Model_Texture_Index(Index) = Model_Texture_Name
+                    Else 'Workaround
+                        Model_Texture_Index(Index) = Texture_Name
+                    End If
                 End If
 
                 Dim Texture_Description As Integer = Description_Offset + Read32(Data, Header_Offset + Read32(Data, MM_Texture_Table_Offset + (Index * 4)))
@@ -523,121 +528,199 @@ Public Class Ohana
         Temp_Texture_File = Path.GetTempFileName
         File.WriteAllBytes(Temp_Texture_File, Data)
 
-        Dim File_Magic As String = Nothing
-        For i As Integer = 0 To 1
-            File_Magic &= Chr(Data(i))
+        Dim CLIM_Magic As String = Nothing
+        For i As Integer = Data.Length - &H28 To Data.Length - &H25
+            CLIM_Magic &= Chr(Data(i))
         Next
-        Dim BCH_Table_Offset As Integer = If(File_Magic = "PT", 4, 8)
-        Dim BCH_Offset As Integer = Read32(Data, BCH_Table_Offset)
 
-        Dim Header_Offset As Integer = Read32(Data, BCH_Offset + 8)
-        If Header_Offset = &H44 Then Version = BCH_Version.ORAS Else Version = BCH_Version.XY
+        If CLIM_Magic = "CLIM" Then
+            Model_Texture = New List(Of OhanaTexture)
 
-        Dim Texture_Description_Length As Integer
-        Dim Desc_Texture_Pointer As Integer
-        Dim Desc_Texture_Format As Integer
-        If Version = BCH_Version.XY Then
-            Texture_Description_Length = &H20
-            Desc_Texture_Pointer = 8
-            Desc_Texture_Format = &H10
-        ElseIf Version = BCH_Version.ORAS Then
-            Texture_Description_Length = &H30
-            Desc_Texture_Pointer = &H10
-            Desc_Texture_Format = &H18
-        End If
+            Dim Header_Offset As Integer = Data.Length - &H14
+            Dim Index As Integer
+            While Header_Offset > 0
+                Dim Image_Magic As String = Nothing
+                For i As Integer = Header_Offset To Header_Offset + 3
+                    Image_Magic &= Chr(Data(i))
+                Next
+                If Image_Magic <> "imag" Then Exit While
 
-        Model_Texture = New List(Of OhanaTexture)
-        While BCH_Offset > 0
-            If BCH_Offset = Data.Length Then Exit While
-            Dim Magic As String = Nothing
-            For i As Integer = 0 To 2
-                Magic &= Chr(Data(BCH_Offset + i))
-            Next
+                Dim Width As Integer = Read16(Data, Header_Offset + 8)
+                Width = Convert.ToInt32(Math.Pow(2, Math.Ceiling(Math.Log(Width) / Math.Log(2)))) 'Arredonda para o mais próximo 2^n
+                Dim Height As Integer = Read16(Data, Header_Offset + 10)
+                Height = Convert.ToInt32(Math.Pow(2, Math.Ceiling(Math.Log(Height) / Math.Log(2)))) 'Arredonda para o mais próximo 2^n
+                Dim Format As Integer = Read32(Data, Header_Offset + 12)
+                Dim Length As Integer = Read32(Data, Header_Offset + 16)
+                Dim Offset As Integer = Header_Offset - &H14 - Length
 
-            If Magic = "BCH" Then
-                Dim Texture_Names_Offset As Integer = BCH_Offset + Read32(Data, BCH_Offset + &HC)
-                Dim Description_Offset As Integer = BCH_Offset + Read32(Data, BCH_Offset + &H10)
-                Dim Data_Offset As Integer = BCH_Offset + Read32(Data, BCH_Offset + &H14)
-                Dim Texture_Count As Integer
-                If Version = BCH_Version.XY Then
-                    Texture_Count = Read32(Data, BCH_Offset + &H60)
-                ElseIf Version = BCH_Version.ORAS Then
-                    Texture_Count = Read32(Data, BCH_Offset + &H6C)
+                Dim Actual_Format As Integer
+                Select Case Format
+                    Case 0 : Actual_Format = 7
+                    Case 1 : Actual_Format = 8
+                    Case 2 : Actual_Format = 9
+                    Case 3 : Actual_Format = 5
+                    Case 4 : Actual_Format = 6
+                    Case 5 : Actual_Format = 3
+                    Case 6 : Actual_Format = 1
+                    Case 7 : Actual_Format = 2
+                    Case 8 : Actual_Format = 4
+                    Case 9 : Actual_Format = 0
+                    Case 10 : Actual_Format = 12
+                    Case 11 : Actual_Format = 13
+                    Case 12 : Actual_Format = 10
+                End Select
+
+                Dim Out() As Byte = Convert_Texture(Data, Offset, Actual_Format, Width, Height)
+
+                Dim MyTex As New OhanaTexture
+                Dim Img As New Bitmap(Width, Height, Imaging.PixelFormat.Format32bppArgb)
+                Dim ImgData As BitmapData = Img.LockBits(New Rectangle(0, 0, Img.Width, Img.Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb)
+                Marshal.Copy(Out, 0, ImgData.Scan0, Out.Length)
+                Img.UnlockBits(ImgData)
+                MyTex.Image = Img
+                MyTex.Image.RotateFlip(RotateFlipType.RotateNoneFlipY)
+
+                Dim Texture As Texture = Nothing
+                If Create_DX_Texture Then
+                    Texture = New Texture(Device, Width, Height, 1, Usage.None, Direct3D.Format.A8R8G8B8, Pool.Managed)
+                    Dim pData As GraphicsStream = Texture.LockRectangle(0, LockFlags.None)
+                    pData.Write(Out, 0, Out.Length)
+                    Texture.UnlockRectangle(0)
                 End If
 
-                Dim Texture_Names(Texture_Count - 1) As String
-                Dim Tmp As Integer = 0
-                For i As Integer = 0 To Texture_Count - 1
-                    Dim Str As String = Nothing
-                    Do
-                        Dim Value As Integer = Data(Texture_Names_Offset + Tmp)
-                        Tmp += 1
-                        If Value <> 0 Then Str &= Chr(Value) Else Exit Do
-                    Loop
-                    Texture_Names(i) = Str
+                With MyTex
+                    If Create_DX_Texture Then .Texture = Texture
+                    .Name = "bclim_" & Index
+                    Select Case Format
+                        Case 0, 2, 4, 5, 13
+                            .Has_Alpha = True
+                    End Select
+
+                    .Offset = Offset
+                    .Format = Actual_Format
+                End With
+                Model_Texture.Add(MyTex)
+
+                Header_Offset -= (Length + &H80)
+                Index += 1
+            End While
+        Else
+            Dim File_Magic As String = Nothing
+            For i As Integer = 0 To 1
+                File_Magic &= Chr(Data(i))
+            Next
+            Dim BCH_Table_Offset As Integer = If(File_Magic = "PT", 4, 8)
+            Dim BCH_Offset As Integer = Read32(Data, BCH_Table_Offset)
+
+            Dim Header_Offset As Integer = Read32(Data, BCH_Offset + 8)
+            If Header_Offset = &H44 Then Version = BCH_Version.ORAS Else Version = BCH_Version.XY
+
+            Dim Texture_Description_Length As Integer
+            Dim Desc_Texture_Pointer As Integer
+            Dim Desc_Texture_Format As Integer
+            If Version = BCH_Version.XY Then
+                Texture_Description_Length = &H20
+                Desc_Texture_Pointer = 8
+                Desc_Texture_Format = &H10
+            ElseIf Version = BCH_Version.ORAS Then
+                Texture_Description_Length = &H30
+                Desc_Texture_Pointer = &H10
+                Desc_Texture_Format = &H18
+            End If
+
+            Model_Texture = New List(Of OhanaTexture)
+            While BCH_Offset > 0
+                If BCH_Offset = Data.Length Then Exit While
+                Dim Magic As String = Nothing
+                For i As Integer = 0 To 2
+                    Magic &= Chr(Data(BCH_Offset + i))
                 Next
 
-                Dim Index As Integer = 0
-                While Index < Texture_Count
-                    If Read32(Data, Description_Offset + Desc_Texture_Pointer - Texture_Description_Length) <> Read32(Data, Description_Offset + Desc_Texture_Pointer) Then
-                        Dim Width As Integer = Read16(Data, Description_Offset + 2)
-                        Dim Height As Integer = Read16(Data, Description_Offset)
-                        Dim Format As Integer = Data(Description_Offset + Desc_Texture_Format)
-                        Dim Texture_Data_Offset As Integer = Data_Offset + Read32(Data, Description_Offset + Desc_Texture_Pointer)
-
-                        Dim Out() As Byte = Convert_Texture(Data, Texture_Data_Offset, Format, Width, Height)
-
-                        Dim MyTex As New OhanaTexture
-                        Dim Img As New Bitmap(Width, Height, Imaging.PixelFormat.Format32bppArgb)
-                        Dim ImgData As BitmapData = Img.LockBits(New Rectangle(0, 0, Img.Width, Img.Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb)
-                        Marshal.Copy(Out, 0, ImgData.Scan0, Out.Length)
-                        Img.UnlockBits(ImgData)
-                        MyTex.Image = Img
-                        MyTex.Image.RotateFlip(RotateFlipType.RotateNoneFlipY)
-
-                        If File_Magic = "PT" Then
-                            Out = Mirror_Texture(Out, Width, Height)
-                            Width *= 2
-                        End If
-
-                        Dim Texture As Texture = Nothing
-                        If Create_DX_Texture Then
-                            Texture = New Texture(Device, Width, Height, 1, Usage.None, Direct3D.Format.A8R8G8B8, Pool.Managed)
-                            Dim pData As GraphicsStream = Texture.LockRectangle(0, LockFlags.None)
-                            pData.Write(Out, 0, Out.Length)
-                            Texture.UnlockRectangle(0)
-                        End If
-
-                        With MyTex
-                            If Create_DX_Texture Then .Texture = Texture
-                            .Name = Texture_Names(Index)
-                            Select Case Format
-                                Case 0, 2, 4, 5, 13
-                                    .Has_Alpha = True
-                            End Select
-
-                            .Offset = Texture_Data_Offset
-                            .Format = Format
-                        End With
-                        Model_Texture.Add(MyTex)
-
-                        Index += 1
+                If Magic = "BCH" Then
+                    Dim Texture_Names_Offset As Integer = BCH_Offset + Read32(Data, BCH_Offset + &HC)
+                    Dim Description_Offset As Integer = BCH_Offset + Read32(Data, BCH_Offset + &H10)
+                    Dim Data_Offset As Integer = BCH_Offset + Read32(Data, BCH_Offset + &H14)
+                    Dim Texture_Count As Integer
+                    If Version = BCH_Version.XY Then
+                        Texture_Count = Read32(Data, BCH_Offset + &H60)
+                    ElseIf Version = BCH_Version.ORAS Then
+                        Texture_Count = Read32(Data, BCH_Offset + &H6C)
                     End If
 
-                    Description_Offset += Texture_Description_Length
-                End While
-            End If
+                    Dim Texture_Names(Texture_Count - 1) As String
+                    Dim Tmp As Integer = 0
+                    For i As Integer = 0 To Texture_Count - 1
+                        Dim Str As String = Nothing
+                        Do
+                            Dim Value As Integer = Data(Texture_Names_Offset + Tmp)
+                            Tmp += 1
+                            If Value <> 0 Then Str &= Chr(Value) Else Exit Do
+                        Loop
+                        Texture_Names(i) = Str
+                    Next
 
-            If File_Magic = "PT" Then
-                If BCH_Table_Offset < 8 Then BCH_Table_Offset += 4 Else Exit While
-            Else
-                BCH_Table_Offset += &H10
-            End If
+                    Dim Index As Integer = 0
+                    While Index < Texture_Count
+                        If Read32(Data, Description_Offset + Desc_Texture_Pointer - Texture_Description_Length) <> Read32(Data, Description_Offset + Desc_Texture_Pointer) Then
+                            Dim Width As Integer = Read16(Data, Description_Offset + 2)
+                            Dim Height As Integer = Read16(Data, Description_Offset)
+                            Dim Format As Integer = Data(Description_Offset + Desc_Texture_Format)
+                            Dim Texture_Data_Offset As Integer = Data_Offset + Read32(Data, Description_Offset + Desc_Texture_Pointer)
 
-            BCH_Offset = Read32(Data, BCH_Table_Offset)
-        End While
+                            Dim Out() As Byte = Convert_Texture(Data, Texture_Data_Offset, Format, Width, Height)
+
+                            Dim MyTex As New OhanaTexture
+                            Dim Img As New Bitmap(Width, Height, Imaging.PixelFormat.Format32bppArgb)
+                            Dim ImgData As BitmapData = Img.LockBits(New Rectangle(0, 0, Img.Width, Img.Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb)
+                            Marshal.Copy(Out, 0, ImgData.Scan0, Out.Length)
+                            Img.UnlockBits(ImgData)
+                            MyTex.Image = Img
+                            MyTex.Image.RotateFlip(RotateFlipType.RotateNoneFlipY)
+
+                            If File_Magic = "PT" Then
+                                Out = Mirror_Texture(Out, Width, Height)
+                                Width *= 2
+                            End If
+
+                            Dim Texture As Texture = Nothing
+                            If Create_DX_Texture Then
+                                Texture = New Texture(Device, Width, Height, 1, Usage.None, Direct3D.Format.A8R8G8B8, Pool.Managed)
+                                Dim pData As GraphicsStream = Texture.LockRectangle(0, LockFlags.None)
+                                pData.Write(Out, 0, Out.Length)
+                                Texture.UnlockRectangle(0)
+                            End If
+
+                            With MyTex
+                                If Create_DX_Texture Then .Texture = Texture
+                                .Name = Texture_Names(Index)
+                                Select Case Format
+                                    Case 0, 2, 4, 5, 13
+                                        .Has_Alpha = True
+                                End Select
+
+                                .Offset = Texture_Data_Offset
+                                .Format = Format
+                            End With
+                            Model_Texture.Add(MyTex)
+
+                            Index += 1
+                        End If
+
+                        Description_Offset += Texture_Description_Length
+                    End While
+                End If
+
+                If File_Magic = "PT" Then
+                    If BCH_Table_Offset < 8 Then BCH_Table_Offset += 4 Else Exit While
+                Else
+                    BCH_Table_Offset += &H10
+                End If
+
+                BCH_Offset = Read32(Data, BCH_Table_Offset)
+            End While
+        End If
     End Sub
-    Private Function Convert_Texture(Data() As Byte, Texture_Data_Offset As Integer, Format As Integer, Width As Integer, Height As Integer) As Byte()
+    Private Function Convert_Texture(Data() As Byte, Texture_Data_Offset As Integer, Format As Integer, Width As Integer, Height As Integer, Optional Linear As Boolean = False) As Byte()
         Dim Out((Width * Height * 4) - 1) As Byte
         Dim Offset As Integer = Texture_Data_Offset
         Dim Low_High_Toggle As Boolean = False
@@ -699,7 +782,7 @@ Public Class Ohana
                         For X As Integer = 0 To 3
                             Dim Out_Offset As Integer = ((Tile_X * 4) + X + (((Height - 1) - ((Tile_Y * 4) + Y)) * Width)) * 4
                             Dim Image_Offset As Integer = ((TX * 4) + X + (((TY * 4) + Y) * Width)) * 4
-
+ 
                             Out(Out_Offset) = Temp_2(Image_Offset)
                             Out(Out_Offset + 1) = Temp_2(Image_Offset + 1)
                             Out(Out_Offset + 2) = Temp_2(Image_Offset + 2)

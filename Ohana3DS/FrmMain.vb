@@ -386,19 +386,19 @@ Public Class FrmMain
         OpenDlg.Title = "Open Pokémon BCH Texture"
         OpenDlg.Filter = "BCH Texture|*.*"
         If OpenDlg.ShowDialog = Windows.Forms.DialogResult.OK Then
-            Try
-                LstTextures.Clear()
-                ImgTexture.Image = Nothing
-                ImgTexture_Container.Refresh()
+            'Try
+            LstTextures.Clear()
+            ImgTexture.Image = Nothing
+            ImgTexture_Container.Refresh()
 
-                MyOhana.Load_Textures(OpenDlg.FileName)
-                For Each Texture As Ohana.OhanaTexture In MyOhana.Model_Texture
-                    LstTextures.AddItem(Texture.Name)
-                Next
-                LstTextures.Refresh()
-            Catch
-                MsgBox("Sorry, something went wrong.", vbExclamation, "Error")
-            End Try
+            MyOhana.Load_Textures(OpenDlg.FileName)
+            For Each Texture As Ohana.OhanaTexture In MyOhana.Model_Texture
+                LstTextures.AddItem(Texture.Name)
+            Next
+            LstTextures.Refresh()
+            'Catch
+            'MsgBox("Sorry, something went wrong.", vbExclamation, "Error")
+            'End Try
         End If
     End Sub
     Private Sub LstTextures_Click(sender As Object, e As EventArgs) Handles LstTextures.Click
@@ -788,7 +788,7 @@ Public Class FrmMain
     Private Sub GARC_ExtractAll(OutFolder As String)
         For Index As Integer = 0 To MyNako.Files.Length - 1
             MyNako.Extract(Path.Combine(OutFolder, "file_" & Index), Index)
-            Update_Progress(ProgressGARC, Convert.ToSingle((Index / (MyNako.Files.Length - 1)) * 100), "Extracting file_" & Index & "...")
+            If MyNako.Files.Length > 1 Then Update_Progress(ProgressGARC, Convert.ToSingle((Index / (MyNako.Files.Length - 1)) * 100), "Extracting file_" & Index & "...")
         Next
 
         Update_Progress(ProgressGARC, 0, Nothing)
