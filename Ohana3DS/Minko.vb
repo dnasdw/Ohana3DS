@@ -115,6 +115,12 @@ Public Class Minko
                 If Not Code_Mode Then
                     Dim Character As String = Line.Substring(i, 1)
                     Dim CharCode As Integer = AscW(Character)
+                    Select Case CharCode
+                        Case &H202F : CharCode = &HE07F
+                        Case &H2026 : CharCode = &HE08D
+                        Case &H2642 : CharCode = &HE08E
+                        Case &H2640 : CharCode = &HE08F
+                    End Select
                     CharCode = ((CharCode And &HFFFF) Xor CurrKey) And &HFFFF
                     CurrKey = (((CurrKey << 3) Or (CurrKey >> 13)) And &HFFFF)
                     Data.Write(Convert.ToUInt16(CharCode))

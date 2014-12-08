@@ -164,10 +164,10 @@ Public Class FrmMain
 
             Dim Temp() As Byte = File.ReadAllBytes(File_Name)
             Dim File_Magic As String = Nothing
-            For i As Integer = 0 To 1
+            For i As Integer = 0 To 2
                 File_Magic &= Chr(Temp(i))
             Next
-            If File_Magic = "MM" Then
+            If File_Magic.Substring(0, 2) = "MM" Or File_Magic = "BCH" Then
                 LstTextures.Clear()
                 ImgTexture.Image = Nothing
 
@@ -660,9 +660,9 @@ Public Class FrmMain
             Out.AppendLine("<!--OhanaXY Pokémon Text Rip :P-->")
             Out.AppendLine("<textfile>")
             For Each Line As String In MyMinko.Strings
-                Out.AppendLine("    <text>")
-                Out.AppendLine("        " & Line)
-                Out.AppendLine("    </text>")
+                Out.AppendLine("<text>")
+                Out.AppendLine(Line)
+                Out.AppendLine("</text>")
             Next
             Out.AppendLine("</textfile>")
             File.WriteAllText(SaveDlg.FileName, Out.ToString)

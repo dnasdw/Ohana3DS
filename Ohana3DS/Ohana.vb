@@ -359,7 +359,7 @@ Public Class Ohana
             Name_Table_Length = &H2C
         End If
 
-        If Left(File_Magic, 2) = "MM" Then
+        If Left(File_Magic, 2) = "MM" Or File_Magic = "BCH" Then
             Current_Texture = File_Name
             Temp_Texture_File = Path.GetTempFileName
             File.WriteAllBytes(Temp_Texture_File, Temp)
@@ -378,7 +378,7 @@ Public Class Ohana
                 Loop
 
                 If Index < Texture_Entries Then
-                    Dim Model_Texture_Name_Offset As Integer = Texture_Names_Offset + Read32(Data, (Texture_Table_Offset + Index * Name_Table_Length) + Name_Table_Base_Pointer + 4)
+                    Dim Model_Texture_Name_Offset As Integer = Texture_Names_Offset + Read32(Data, (Texture_Table_Offset + Index * Name_Table_Length) + Name_Table_Base_Pointer + If(File_Magic = "BCH", 0, 4))
                     Dim Model_Texture_Name As String = Nothing
                     Do
                         Dim Value As Integer = Data(Model_Texture_Name_Offset)

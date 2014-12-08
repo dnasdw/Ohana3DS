@@ -80,7 +80,7 @@ Partial Class FrmMain
         Me.MyProgressbar1 = New Ohana3DS.MyProgressbar()
         Me.BtnTextExport = New System.Windows.Forms.Button()
         Me.BtnTextOpen = New System.Windows.Forms.Button()
-        Me.MyGroupbox2 = New Ohana3DS.MyGroupbox()
+        Me.GrpTextStrings = New Ohana3DS.MyGroupbox()
         Me.TxtGameStrings = New System.Windows.Forms.TextBox()
         Me.GARCPage = New System.Windows.Forms.TabPage()
         Me.GrpGARCOptions = New Ohana3DS.MyGroupbox()
@@ -117,7 +117,7 @@ Partial Class FrmMain
         Me.LstTextures_Container.SuspendLayout()
         Me.TextPage.SuspendLayout()
         Me.GrpTextOptions.SuspendLayout()
-        Me.MyGroupbox2.SuspendLayout()
+        Me.GrpTextStrings.SuspendLayout()
         Me.GARCPage.SuspendLayout()
         Me.GrpGARCOptions.SuspendLayout()
         Me.GrpFiles.SuspendLayout()
@@ -713,7 +713,7 @@ Partial Class FrmMain
         '
         Me.TextPage.BackColor = System.Drawing.Color.Transparent
         Me.TextPage.Controls.Add(Me.GrpTextOptions)
-        Me.TextPage.Controls.Add(Me.MyGroupbox2)
+        Me.TextPage.Controls.Add(Me.GrpTextStrings)
         Me.TextPage.ForeColor = System.Drawing.Color.White
         Me.TextPage.Location = New System.Drawing.Point(28, 4)
         Me.TextPage.Name = "TextPage"
@@ -793,16 +793,16 @@ Partial Class FrmMain
         Me.BtnTextOpen.Text = "Open"
         Me.BtnTextOpen.UseVisualStyleBackColor = True
         '
-        'MyGroupbox2
+        'GrpTextStrings
         '
-        Me.MyGroupbox2.Controls.Add(Me.TxtGameStrings)
-        Me.MyGroupbox2.ForeColor = System.Drawing.Color.White
-        Me.MyGroupbox2.Location = New System.Drawing.Point(0, 0)
-        Me.MyGroupbox2.Name = "MyGroupbox2"
-        Me.MyGroupbox2.Size = New System.Drawing.Size(768, 480)
-        Me.MyGroupbox2.TabIndex = 26
-        Me.MyGroupbox2.TabStop = False
-        Me.MyGroupbox2.Text = "Texts (Preview only!)"
+        Me.GrpTextStrings.Controls.Add(Me.TxtGameStrings)
+        Me.GrpTextStrings.ForeColor = System.Drawing.Color.White
+        Me.GrpTextStrings.Location = New System.Drawing.Point(0, 0)
+        Me.GrpTextStrings.Name = "GrpTextStrings"
+        Me.GrpTextStrings.Size = New System.Drawing.Size(768, 480)
+        Me.GrpTextStrings.TabIndex = 26
+        Me.GrpTextStrings.TabStop = False
+        Me.GrpTextStrings.Text = "Texts (Preview only!)"
         '
         'TxtGameStrings
         '
@@ -1062,8 +1062,8 @@ Partial Class FrmMain
         Me.LstTextures_Container.ResumeLayout(False)
         Me.TextPage.ResumeLayout(False)
         Me.GrpTextOptions.ResumeLayout(False)
-        Me.MyGroupbox2.ResumeLayout(False)
-        Me.MyGroupbox2.PerformLayout()
+        Me.GrpTextStrings.ResumeLayout(False)
+        Me.GrpTextStrings.PerformLayout()
         Me.GARCPage.ResumeLayout(False)
         Me.GrpGARCOptions.ResumeLayout(False)
         Me.GrpFiles.ResumeLayout(False)
@@ -1151,7 +1151,7 @@ Partial Class FrmMain
     Friend WithEvents MyProgressbar1 As Ohana3DS.MyProgressbar
     Friend WithEvents BtnTextExport As System.Windows.Forms.Button
     Friend WithEvents BtnTextOpen As System.Windows.Forms.Button
-    Friend WithEvents MyGroupbox2 As Ohana3DS.MyGroupbox
+    Friend WithEvents GrpTextStrings As Ohana3DS.MyGroupbox
     Friend WithEvents TxtGameStrings As System.Windows.Forms.TextBox
     Friend WithEvents BtnTextImport As System.Windows.Forms.Button
     Friend WithEvents BtnTextSave As System.Windows.Forms.Button
