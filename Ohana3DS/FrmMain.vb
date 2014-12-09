@@ -37,7 +37,11 @@ Public Class FrmMain
     Protected Overrides Sub WndProc(ByRef m As System.Windows.Forms.Message)
         If m.Msg <> &HA3 Then MyBase.WndProc(m)
         Select Case m.Msg
-            Case &H84 : If m.Result = New IntPtr(1) Then m.Result = New IntPtr(2)
+            Case &H84
+                Dim Mouse_Position As Point = PointToClient(Cursor.Position)
+                If Mouse_Position.Y < 32 Then
+                    If m.Result = New IntPtr(1) Then m.Result = New IntPtr(2)
+                End If
         End Select
     End Sub
     Private Sub FrmMain_Load(sender As Object, e As EventArgs) Handles MyBase.Load
@@ -81,6 +85,33 @@ Public Class FrmMain
                         Next
                 End Select
             End If
+        End If
+    End Sub
+    Private Sub FrmMain_DragDrop(sender As System.Object, e As System.Windows.Forms.DragEventArgs) Handles Me.DragDrop
+        Dim Files() As String = DirectCast(e.Data.GetData(DataFormats.FileDrop), String())
+        Dim Temp As New FileStream(Files(0), FileMode.Open)
+
+        Dim Magic_2_Bytes As String = Chr(Temp.ReadByte) & Chr(Temp.ReadByte)
+        Dim Magic_3_Bytes As String = Magic_2_Bytes & Chr(Temp.ReadByte)
+        Dim Magic_4_Bytes As String = Magic_3_Bytes & Chr(Temp.ReadByte)
+        Temp.Seek(-40, SeekOrigin.End)
+        Dim CLIM_Magic As String = Chr(Temp.ReadByte) & Chr(Temp.ReadByte) & Chr(Temp.ReadByte) & Chr(Temp.ReadByte)
+        Temp.Close()
+
+        If Magic_2_Bytes = "PC" Or Magic_2_Bytes = "MM" Or Magic_2_Bytes = "GR" Or Magic_3_Bytes = "BCH" Then
+            Load_Model(Files(0))
+            MainTabs.SelectTab(0)
+        ElseIf Magic_2_Bytes = "PT" Or CLIM_Magic = "CLIM" Then
+            Open_Texture(Files(0))
+            MainTabs.SelectTab(1)
+        ElseIf Magic_4_Bytes = "CRAG" Then
+            Open_GARC(Files(0))
+            MainTabs.SelectTab(3)
+        End If
+    End Sub
+    Private Sub FrmMain_DragEnter(sender As System.Object, e As System.Windows.Forms.DragEventArgs) Handles Me.DragEnter
+        If e.Data.GetDataPresent(DataFormats.FileDrop) Then
+            e.Effect = DragDropEffects.Copy
         End If
     End Sub
 
@@ -387,26 +418,29 @@ Public Class FrmMain
         OpenDlg.Title = "Open Pokémon BCH Texture"
         OpenDlg.Filter = "BCH Texture|*.*"
         If OpenDlg.ShowDialog = Windows.Forms.DialogResult.OK Then
-            'Try
+            Open_Texture(OpenDlg.FileName)
+        End If
+    End Sub
+    Private Sub Open_Texture(File_Name As String)
+        Try
             LstTextures.Clear()
             ImgTexture.Image = Nothing
             ImgTexture_Container.Refresh()
 
-            MyOhana.Load_Textures(OpenDlg.FileName)
+            MyOhana.Load_Textures(File_Name)
             For Each Texture As Ohana.OhanaTexture In MyOhana.Model_Texture
                 LstTextures.AddItem(Texture.Name)
             Next
             LstTextures.Refresh()
-            'Catch
-            'MsgBox("Sorry, something went wrong.", vbExclamation, "Error")
-            'End Try
-        End If
+        Catch
+            MsgBox("Sorry, something went wrong.", vbExclamation, "Error")
+        End Try
     End Sub
     Private Sub LstTextures_SelectedIndexChanged(Index As Integer) Handles LstTextures.SelectedIndexChanged
         If Index > -1 Then
             With MyOhana.Model_Texture(Index)
                 ImgTexture.Image = .Image
-                ImgTexture_Container.Refresh()
+                ImgTexture.Refresh()
 
                 LblInfoTextureIndex.Text = Index + 1 & "/" & MyOhana.Model_Texture.Count
                 LblInfoTextureResolution.Text = .Image.Width & "x" & .Image.Height
@@ -700,45 +734,48 @@ Public Class FrmMain
 #End Region
 
 #Region "GARC"
-    Private Sub BtnOpenGARC_Click(sender As Object, e As EventArgs) Handles BtnOpenGARC.Click
+    Private Sub BtnOpenGARC_Click(sender As Object, e As EventArgs) Handles BtnGARCOpen.Click
         Dim OpenDlg As New OpenFileDialog
         OpenDlg.Title = "Open GARC container"
         OpenDlg.Filter = "GARC file|*.*"
         If OpenDlg.ShowDialog = Windows.Forms.DialogResult.OK Then
-            MyNako.Load(OpenDlg.FileName)
-            Dim Index As Integer
-            LstFiles.Clear()
-
-            Dim Header As MyListview.ListItem
-            ReDim Header.Text(2)
-            Header.Text(0).Text = "File"
-            Header.Text(1).Left = 400
-            Header.Text(1).Text = "Compressed size"
-            Header.Text(2).Left = 500
-            Header.Text(2).Text = "Uncompressed size"
-            Header.Header = True
-            LstFiles.AddItem(Header)
-
-            For Each File As Nako.GARC_File In MyNako.Files
-                Dim Item As MyListview.ListItem
-                ReDim Item.Text(2)
-                With File
-                    Item.Text(0).Text = "file_" & Index
-                    Item.Text(1).Left = 400
-                    If .Compressed Then
-                        Item.Text(1).Text = Format_Size(.Length)
-                    Else
-                        Item.Text(1).Text = "---"
-                    End If
-                    Item.Text(2).Left = 500
-                    Item.Text(2).Text = Format_Size(.Uncompressed_Length)
-                End With
-                LstFiles.AddItem(Item)
-
-                Index += 1
-            Next
-            LstFiles.Refresh()
+            Open_GARC(OpenDlg.FileName)
         End If
+    End Sub
+    Private Sub Open_GARC(File_Name As String)
+        MyNako.Load(File_Name)
+        Dim Index As Integer
+        LstFiles.Clear()
+
+        Dim Header As MyListview.ListItem
+        ReDim Header.Text(2)
+        Header.Text(0).Text = "File"
+        Header.Text(1).Left = 400
+        Header.Text(1).Text = "Compressed size"
+        Header.Text(2).Left = 500
+        Header.Text(2).Text = "Uncompressed size"
+        Header.Header = True
+        LstFiles.AddItem(Header)
+
+        For Each File As Nako.GARC_File In MyNako.Files
+            Dim Item As MyListview.ListItem
+            ReDim Item.Text(2)
+            With File
+                Item.Text(0).Text = "file_" & Index
+                Item.Text(1).Left = 400
+                If .Compressed Then
+                    Item.Text(1).Text = Format_Size(.Length)
+                Else
+                    Item.Text(1).Text = "---"
+                End If
+                Item.Text(2).Left = 500
+                Item.Text(2).Text = Format_Size(.Uncompressed_Length)
+            End With
+            LstFiles.AddItem(Item)
+
+            Index += 1
+        Next
+        LstFiles.Refresh()
     End Sub
     Private Function Format_Size(Bytes As Integer) As String
         If Bytes >= 1073741824 Then
@@ -793,6 +830,22 @@ Public Class FrmMain
 
         Update_Progress(ProgressGARC, 0, Nothing)
         Update_Button_Text(BtnGARCExtractAll, "Extract all")
+    End Sub
+    Private Sub BtnGARCInsert_Click(sender As Object, e As EventArgs) Handles BtnGARCInsert.Click
+        If LstFiles.SelectedIndex > -1 Then
+            Dim OpenDlg As New OpenFileDialog
+            If OpenDlg.ShowDialog = DialogResult.OK Then
+                If File.Exists(OpenDlg.FileName) Then
+                    Dim Item As New Nako.Inserted_File
+                    Item.Index = LstFiles.SelectedIndex
+                    Item.File_Name = OpenDlg.FileName
+                    MyNako.Inserted_Files.Add(Item)
+                End If
+            End If
+        End If
+    End Sub
+    Private Sub BtnGARCSave_Click(sender As Object, e As EventArgs) Handles BtnGARCSave.Click
+        MyNako.Insert()
     End Sub
 #End Region
 
@@ -865,24 +918,5 @@ Public Class FrmMain
 #End Region
 
 #End Region
-
-    Private Sub Form1_DragDrop(sender As System.Object, _
-                           e As System.Windows.Forms.DragEventArgs) _
-  Handles Me.DragDrop
-
-        Dim files() As String = e.Data.GetData(DataFormats.FileDrop)
-        For Each path In files
-            MsgBox(path)
-        Next
-    End Sub
-
-    Private Sub Form1_DragEnter(sender As System.Object, _
-                                e As System.Windows.Forms.DragEventArgs) _
-      Handles Me.DragEnter
-
-        If e.Data.GetDataPresent(DataFormats.FileDrop) Then
-            e.Effect = DragDropEffects.Copy
-        End If
-    End Sub
 
 End Class

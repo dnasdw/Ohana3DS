@@ -19,6 +19,7 @@ Public Class MyListview
     Private LstItems As New List(Of ListItem)
     Private Tile_Height As Integer = 32
     Private Selected_Index As Integer = -1
+    Private Selected_Index_Total As Integer = -1
 
     Private Scroll_Y As Integer
     Private Scroll_Bar_Y As Integer, Scroll_Bar_Height As Integer = 64
@@ -76,7 +77,7 @@ Public Class MyListview
 
         If LstItems IsNot Nothing Then
             Dim Start_Y As Integer = Scroll_Y * -1
-            Dim Index As Integer
+            Dim Total_Index, Index As Integer
 
             For Each Item As ListItem In LstItems
                 'Item selecionado (e detecção de click no Item)
@@ -89,6 +90,7 @@ Public Class MyListview
                             Clicked = False
                             e.Graphics.FillRectangle(New SolidBrush(Selected), New Rectangle(0, Start_Y, Me.Width, TileHeight))
                             Selected_Index = Index
+                            Selected_Index_Total = Total_Index
                             RaiseEvent SelectedIndexChanged(Index)
                         End If
                     Else
@@ -123,6 +125,7 @@ Public Class MyListview
 
                 Start_Y += Tile_Height
                 If Not Item.Header Then Index += 1
+                Total_Index += 1
             Next
 
             'Barra de rolagem
@@ -215,10 +218,11 @@ Public Class MyListview
             Case Keys.Up
                 If Selected_Index > 0 Then
                     Selected_Index -= 1
+                    Selected_Index_Total -= 1
                     RaiseEvent SelectedIndexChanged(Selected_Index)
                 End If
 
-                While (Selected_Index * Tile_Height) - Scroll_Y < 0
+                While (Selected_Index_Total * Tile_Height) - Scroll_Y < 0
                     Dim Y As Integer = Scroll_Bar_Y - 1
                     If Y < 0 Then Y = 0
                     Scroll_Bar_Y = Y
@@ -228,10 +232,11 @@ Public Class MyListview
             Case Keys.Down
                 If Selected_Index < LstItems.Count - 1 Then
                     Selected_Index += 1
+                    Selected_Index_Total += 1
                     RaiseEvent SelectedIndexChanged(Selected_Index)
                 End If
 
-                While (Selected_Index * Tile_Height) - Scroll_Y > Me.Height - TileHeight
+                While (Selected_Index_Total * Tile_Height) - Scroll_Y > (Me.Height - Tile_Height)
                     Dim Y As Integer = Scroll_Bar_Y + 1
                     If Y > Me.Height - Scroll_Bar_Height Then Y = Me.Height - Scroll_Bar_Height
                     Scroll_Bar_Y = Y

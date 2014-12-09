@@ -76,28 +76,29 @@ Partial Class FrmMain
         Me.GrpTextOptions = New Ohana3DS.MyGroupbox()
         Me.BtnTextSave = New System.Windows.Forms.Button()
         Me.BtnTextImport = New System.Windows.Forms.Button()
-        Me.MyProgressbar1 = New Ohana3DS.MyProgressbar()
         Me.BtnTextExport = New System.Windows.Forms.Button()
         Me.BtnTextOpen = New System.Windows.Forms.Button()
         Me.GrpTextStrings = New Ohana3DS.MyGroupbox()
         Me.TxtGameStrings = New System.Windows.Forms.TextBox()
         Me.GARCPage = New System.Windows.Forms.TabPage()
         Me.GrpGARCOptions = New Ohana3DS.MyGroupbox()
+        Me.BtnGARCSave = New System.Windows.Forms.Button()
+        Me.BtnGARCInsert = New System.Windows.Forms.Button()
         Me.ProgressGARC = New Ohana3DS.MyProgressbar()
         Me.BtnGARCExtractAll = New System.Windows.Forms.Button()
         Me.BtnGARCExtract = New System.Windows.Forms.Button()
-        Me.BtnOpenGARC = New System.Windows.Forms.Button()
+        Me.BtnGARCOpen = New System.Windows.Forms.Button()
         Me.GrpFiles = New Ohana3DS.MyGroupbox()
+        Me.LstFiles = New Ohana3DS.MyListview()
         Me.SearchPage = New System.Windows.Forms.TabPage()
         Me.GrpMatches = New Ohana3DS.MyGroupbox()
+        Me.LstMatches = New Ohana3DS.MyListview()
         Me.GrpSearchOptions = New Ohana3DS.MyGroupbox()
         Me.TxtSearch = New System.Windows.Forms.TextBox()
         Me.ProgressSearch = New Ohana3DS.MyProgressbar()
         Me.BtnSearch = New System.Windows.Forms.Button()
         Me.ROMPage = New System.Windows.Forms.TabPage()
         Me.Title = New Ohana3DS.MyWindowTitle()
-        Me.LstFiles = New Ohana3DS.MyListview()
-        Me.LstMatches = New Ohana3DS.MyListview()
         CType(Me.Splash, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.MainTabs.SuspendLayout()
         Me.ModelPage.SuspendLayout()
@@ -711,7 +712,6 @@ Partial Class FrmMain
         Me.GrpTextOptions.BackColor = System.Drawing.Color.Transparent
         Me.GrpTextOptions.Controls.Add(Me.BtnTextSave)
         Me.GrpTextOptions.Controls.Add(Me.BtnTextImport)
-        Me.GrpTextOptions.Controls.Add(Me.MyProgressbar1)
         Me.GrpTextOptions.Controls.Add(Me.BtnTextExport)
         Me.GrpTextOptions.Controls.Add(Me.BtnTextOpen)
         Me.GrpTextOptions.ForeColor = System.Drawing.Color.White
@@ -745,14 +745,6 @@ Partial Class FrmMain
         Me.BtnTextImport.TabIndex = 3
         Me.BtnTextImport.Text = "Import"
         Me.BtnTextImport.UseVisualStyleBackColor = True
-        '
-        'MyProgressbar1
-        '
-        Me.MyProgressbar1.Location = New System.Drawing.Point(0, 48)
-        Me.MyProgressbar1.Name = "MyProgressbar1"
-        Me.MyProgressbar1.Percentage = 0.0!
-        Me.MyProgressbar1.Size = New System.Drawing.Size(228, 24)
-        Me.MyProgressbar1.TabIndex = 0
         '
         'BtnTextExport
         '
@@ -816,10 +808,12 @@ Partial Class FrmMain
         'GrpGARCOptions
         '
         Me.GrpGARCOptions.BackColor = System.Drawing.Color.Transparent
+        Me.GrpGARCOptions.Controls.Add(Me.BtnGARCSave)
+        Me.GrpGARCOptions.Controls.Add(Me.BtnGARCInsert)
         Me.GrpGARCOptions.Controls.Add(Me.ProgressGARC)
         Me.GrpGARCOptions.Controls.Add(Me.BtnGARCExtractAll)
         Me.GrpGARCOptions.Controls.Add(Me.BtnGARCExtract)
-        Me.GrpGARCOptions.Controls.Add(Me.BtnOpenGARC)
+        Me.GrpGARCOptions.Controls.Add(Me.BtnGARCOpen)
         Me.GrpGARCOptions.ForeColor = System.Drawing.Color.White
         Me.GrpGARCOptions.Location = New System.Drawing.Point(0, 480)
         Me.GrpGARCOptions.Name = "GrpGARCOptions"
@@ -828,9 +822,33 @@ Partial Class FrmMain
         Me.GrpGARCOptions.TabStop = False
         Me.GrpGARCOptions.Text = "Options"
         '
+        'BtnGARCSave
+        '
+        Me.BtnGARCSave.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
+        Me.BtnGARCSave.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
+        Me.BtnGARCSave.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        Me.BtnGARCSave.Location = New System.Drawing.Point(0, 48)
+        Me.BtnGARCSave.Name = "BtnGARCSave"
+        Me.BtnGARCSave.Size = New System.Drawing.Size(72, 24)
+        Me.BtnGARCSave.TabIndex = 5
+        Me.BtnGARCSave.Text = "Save"
+        Me.BtnGARCSave.UseVisualStyleBackColor = True
+        '
+        'BtnGARCInsert
+        '
+        Me.BtnGARCInsert.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
+        Me.BtnGARCInsert.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
+        Me.BtnGARCInsert.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        Me.BtnGARCInsert.Location = New System.Drawing.Point(78, 48)
+        Me.BtnGARCInsert.Name = "BtnGARCInsert"
+        Me.BtnGARCInsert.Size = New System.Drawing.Size(72, 24)
+        Me.BtnGARCInsert.TabIndex = 4
+        Me.BtnGARCInsert.Text = "Insert"
+        Me.BtnGARCInsert.UseVisualStyleBackColor = True
+        '
         'ProgressGARC
         '
-        Me.ProgressGARC.Location = New System.Drawing.Point(0, 48)
+        Me.ProgressGARC.Location = New System.Drawing.Point(234, 18)
         Me.ProgressGARC.Name = "ProgressGARC"
         Me.ProgressGARC.Percentage = 0.0!
         Me.ProgressGARC.Size = New System.Drawing.Size(228, 24)
@@ -860,17 +878,17 @@ Partial Class FrmMain
         Me.BtnGARCExtract.Text = "Extract"
         Me.BtnGARCExtract.UseVisualStyleBackColor = True
         '
-        'BtnOpenGARC
+        'BtnGARCOpen
         '
-        Me.BtnOpenGARC.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
-        Me.BtnOpenGARC.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
-        Me.BtnOpenGARC.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        Me.BtnOpenGARC.Location = New System.Drawing.Point(0, 18)
-        Me.BtnOpenGARC.Name = "BtnOpenGARC"
-        Me.BtnOpenGARC.Size = New System.Drawing.Size(72, 24)
-        Me.BtnOpenGARC.TabIndex = 1
-        Me.BtnOpenGARC.Text = "Open"
-        Me.BtnOpenGARC.UseVisualStyleBackColor = True
+        Me.BtnGARCOpen.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
+        Me.BtnGARCOpen.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
+        Me.BtnGARCOpen.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        Me.BtnGARCOpen.Location = New System.Drawing.Point(0, 18)
+        Me.BtnGARCOpen.Name = "BtnGARCOpen"
+        Me.BtnGARCOpen.Size = New System.Drawing.Size(72, 24)
+        Me.BtnGARCOpen.TabIndex = 1
+        Me.BtnGARCOpen.Text = "Open"
+        Me.BtnGARCOpen.UseVisualStyleBackColor = True
         '
         'GrpFiles
         '
@@ -882,6 +900,15 @@ Partial Class FrmMain
         Me.GrpFiles.TabIndex = 24
         Me.GrpFiles.TabStop = False
         Me.GrpFiles.Text = "Files"
+        '
+        'LstFiles
+        '
+        Me.LstFiles.Location = New System.Drawing.Point(0, 18)
+        Me.LstFiles.Name = "LstFiles"
+        Me.LstFiles.SelectedIndex = -1
+        Me.LstFiles.Size = New System.Drawing.Size(768, 460)
+        Me.LstFiles.TabIndex = 1
+        Me.LstFiles.TileHeight = 16
         '
         'SearchPage
         '
@@ -905,6 +932,15 @@ Partial Class FrmMain
         Me.GrpMatches.TabIndex = 28
         Me.GrpMatches.TabStop = False
         Me.GrpMatches.Text = "Matches"
+        '
+        'LstMatches
+        '
+        Me.LstMatches.Location = New System.Drawing.Point(0, 18)
+        Me.LstMatches.Name = "LstMatches"
+        Me.LstMatches.SelectedIndex = -1
+        Me.LstMatches.Size = New System.Drawing.Size(768, 460)
+        Me.LstMatches.TabIndex = 3
+        Me.LstMatches.TileHeight = 16
         '
         'GrpSearchOptions
         '
@@ -972,24 +1008,6 @@ Partial Class FrmMain
         Me.Title.Size = New System.Drawing.Size(91, 25)
         Me.Title.TabIndex = 18
         Me.Title.Text = "OhanaXY"
-        '
-        'LstFiles
-        '
-        Me.LstFiles.Location = New System.Drawing.Point(0, 18)
-        Me.LstFiles.Name = "LstFiles"
-        Me.LstFiles.SelectedIndex = -1
-        Me.LstFiles.Size = New System.Drawing.Size(768, 460)
-        Me.LstFiles.TabIndex = 1
-        Me.LstFiles.TileHeight = 16
-        '
-        'LstMatches
-        '
-        Me.LstMatches.Location = New System.Drawing.Point(0, 18)
-        Me.LstMatches.Name = "LstMatches"
-        Me.LstMatches.SelectedIndex = -1
-        Me.LstMatches.Size = New System.Drawing.Size(768, 460)
-        Me.LstMatches.TabIndex = 3
-        Me.LstMatches.TileHeight = 16
         '
         'FrmMain
         '
@@ -1092,7 +1110,7 @@ Partial Class FrmMain
     Friend WithEvents ProgressGARC As Ohana3DS.MyProgressbar
     Friend WithEvents BtnGARCExtractAll As System.Windows.Forms.Button
     Friend WithEvents BtnGARCExtract As System.Windows.Forms.Button
-    Friend WithEvents BtnOpenGARC As System.Windows.Forms.Button
+    Friend WithEvents BtnGARCOpen As System.Windows.Forms.Button
     Friend WithEvents GrpFiles As Ohana3DS.MyGroupbox
     Friend WithEvents GrpMatches As Ohana3DS.MyGroupbox
     Friend WithEvents GrpSearchOptions As Ohana3DS.MyGroupbox
@@ -1106,7 +1124,6 @@ Partial Class FrmMain
     Friend WithEvents BtnTextureInsert As System.Windows.Forms.Button
     Friend WithEvents BtnTextureSave As System.Windows.Forms.Button
     Friend WithEvents GrpTextOptions As Ohana3DS.MyGroupbox
-    Friend WithEvents MyProgressbar1 As Ohana3DS.MyProgressbar
     Friend WithEvents BtnTextExport As System.Windows.Forms.Button
     Friend WithEvents BtnTextOpen As System.Windows.Forms.Button
     Friend WithEvents GrpTextStrings As Ohana3DS.MyGroupbox
@@ -1116,5 +1133,7 @@ Partial Class FrmMain
     Friend WithEvents LstTextures As Ohana3DS.MyListview
     Friend WithEvents LstFiles As Ohana3DS.MyListview
     Friend WithEvents LstMatches As Ohana3DS.MyListview
+    Friend WithEvents BtnGARCInsert As System.Windows.Forms.Button
+    Friend WithEvents BtnGARCSave As System.Windows.Forms.Button
 
 End Class
