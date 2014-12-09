@@ -44,8 +44,11 @@ Public Class FrmMain
                 End If
         End Select
     End Sub
+    Private Delegate Sub FileDrop(File_Name As String)
+    Private MyFileDrop As FileDrop
     Private Sub FrmMain_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         Me.AllowDrop = True
+        MyFileDrop = New FileDrop(AddressOf File_Dropped)
         MyOhana.Initialize(Screen)
 
         MyOhana.Scale = My.Settings.ModelScale
@@ -89,7 +92,16 @@ Public Class FrmMain
     End Sub
     Private Sub FrmMain_DragDrop(sender As System.Object, e As System.Windows.Forms.DragEventArgs) Handles Me.DragDrop
         Dim Files() As String = DirectCast(e.Data.GetData(DataFormats.FileDrop), String())
-        Dim Temp As New FileStream(Files(0), FileMode.Open)
+        Me.BeginInvoke(MyFileDrop, Files(0))
+        Me.Activate()
+    End Sub
+    Private Sub FrmMain_DragEnter(sender As System.Object, e As System.Windows.Forms.DragEventArgs) Handles Me.DragEnter
+        If e.Data.GetDataPresent(DataFormats.FileDrop) Then
+            e.Effect = DragDropEffects.Copy
+        End If
+    End Sub
+    Private Sub File_Dropped(File_Name As String)
+        Dim Temp As New FileStream(File_Name, FileMode.Open)
 
         Dim Magic_2_Bytes As String = Chr(Temp.ReadByte) & Chr(Temp.ReadByte)
         Dim Magic_3_Bytes As String = Magic_2_Bytes & Chr(Temp.ReadByte)
@@ -99,19 +111,14 @@ Public Class FrmMain
         Temp.Close()
 
         If Magic_2_Bytes = "PC" Or Magic_2_Bytes = "MM" Or Magic_2_Bytes = "GR" Or Magic_3_Bytes = "BCH" Then
-            Load_Model(Files(0))
             MainTabs.SelectTab(0)
+            Load_Model(File_Name)
         ElseIf Magic_2_Bytes = "PT" Or CLIM_Magic = "CLIM" Then
-            Open_Texture(Files(0))
             MainTabs.SelectTab(1)
+            Open_Texture(File_Name)
         ElseIf Magic_4_Bytes = "CRAG" Then
-            Open_GARC(Files(0))
             MainTabs.SelectTab(3)
-        End If
-    End Sub
-    Private Sub FrmMain_DragEnter(sender As System.Object, e As System.Windows.Forms.DragEventArgs) Handles Me.DragEnter
-        If e.Data.GetDataPresent(DataFormats.FileDrop) Then
-            e.Effect = DragDropEffects.Copy
+            Open_GARC(File_Name)
         End If
     End Sub
 
