@@ -71,7 +71,6 @@ Partial Class FrmMain
         Me.ImgTexture_Container = New System.Windows.Forms.Panel()
         Me.ImgTexture = New System.Windows.Forms.PictureBox()
         Me.GrpTextures = New Ohana3DS.MyGroupbox()
-        Me.LstTextures_Container = New System.Windows.Forms.Panel()
         Me.LstTextures = New Ohana3DS.MyListview()
         Me.TextPage = New System.Windows.Forms.TabPage()
         Me.GrpTextOptions = New Ohana3DS.MyGroupbox()
@@ -89,18 +88,16 @@ Partial Class FrmMain
         Me.BtnGARCExtract = New System.Windows.Forms.Button()
         Me.BtnOpenGARC = New System.Windows.Forms.Button()
         Me.GrpFiles = New Ohana3DS.MyGroupbox()
-        Me.LstFiles_Container = New System.Windows.Forms.Panel()
-        Me.LstFiles = New Ohana3DS.MyListview()
         Me.SearchPage = New System.Windows.Forms.TabPage()
         Me.GrpMatches = New Ohana3DS.MyGroupbox()
-        Me.LstMatches_Container = New System.Windows.Forms.Panel()
-        Me.LstMatches = New Ohana3DS.MyListview()
         Me.GrpSearchOptions = New Ohana3DS.MyGroupbox()
         Me.TxtSearch = New System.Windows.Forms.TextBox()
         Me.ProgressSearch = New Ohana3DS.MyProgressbar()
         Me.BtnSearch = New System.Windows.Forms.Button()
         Me.ROMPage = New System.Windows.Forms.TabPage()
         Me.Title = New Ohana3DS.MyWindowTitle()
+        Me.LstFiles = New Ohana3DS.MyListview()
+        Me.LstMatches = New Ohana3DS.MyListview()
         CType(Me.Splash, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.MainTabs.SuspendLayout()
         Me.ModelPage.SuspendLayout()
@@ -114,17 +111,14 @@ Partial Class FrmMain
         Me.ImgTexture_Container.SuspendLayout()
         CType(Me.ImgTexture, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.GrpTextures.SuspendLayout()
-        Me.LstTextures_Container.SuspendLayout()
         Me.TextPage.SuspendLayout()
         Me.GrpTextOptions.SuspendLayout()
         Me.GrpTextStrings.SuspendLayout()
         Me.GARCPage.SuspendLayout()
         Me.GrpGARCOptions.SuspendLayout()
         Me.GrpFiles.SuspendLayout()
-        Me.LstFiles_Container.SuspendLayout()
         Me.SearchPage.SuspendLayout()
         Me.GrpMatches.SuspendLayout()
-        Me.LstMatches_Container.SuspendLayout()
         Me.GrpSearchOptions.SuspendLayout()
         Me.SuspendLayout()
         '
@@ -682,7 +676,7 @@ Partial Class FrmMain
         '
         'GrpTextures
         '
-        Me.GrpTextures.Controls.Add(Me.LstTextures_Container)
+        Me.GrpTextures.Controls.Add(Me.LstTextures)
         Me.GrpTextures.ForeColor = System.Drawing.Color.White
         Me.GrpTextures.Location = New System.Drawing.Point(0, 0)
         Me.GrpTextures.Name = "GrpTextures"
@@ -691,22 +685,13 @@ Partial Class FrmMain
         Me.GrpTextures.TabStop = False
         Me.GrpTextures.Text = "Textures"
         '
-        'LstTextures_Container
-        '
-        Me.LstTextures_Container.AutoScroll = True
-        Me.LstTextures_Container.Controls.Add(Me.LstTextures)
-        Me.LstTextures_Container.Location = New System.Drawing.Point(0, 18)
-        Me.LstTextures_Container.Name = "LstTextures_Container"
-        Me.LstTextures_Container.Size = New System.Drawing.Size(200, 460)
-        Me.LstTextures_Container.TabIndex = 0
-        '
         'LstTextures
         '
-        Me.LstTextures.Location = New System.Drawing.Point(0, 0)
-        Me.LstTextures.MinHeight = 460
+        Me.LstTextures.Location = New System.Drawing.Point(0, 18)
         Me.LstTextures.Name = "LstTextures"
-        Me.LstTextures.Size = New System.Drawing.Size(183, 460)
-        Me.LstTextures.TabIndex = 0
+        Me.LstTextures.SelectedIndex = -1
+        Me.LstTextures.Size = New System.Drawing.Size(200, 460)
+        Me.LstTextures.TabIndex = 1
         Me.LstTextures.TileHeight = 16
         '
         'TextPage
@@ -889,7 +874,7 @@ Partial Class FrmMain
         '
         'GrpFiles
         '
-        Me.GrpFiles.Controls.Add(Me.LstFiles_Container)
+        Me.GrpFiles.Controls.Add(Me.LstFiles)
         Me.GrpFiles.ForeColor = System.Drawing.Color.White
         Me.GrpFiles.Location = New System.Drawing.Point(0, 0)
         Me.GrpFiles.Name = "GrpFiles"
@@ -897,24 +882,6 @@ Partial Class FrmMain
         Me.GrpFiles.TabIndex = 24
         Me.GrpFiles.TabStop = False
         Me.GrpFiles.Text = "Files"
-        '
-        'LstFiles_Container
-        '
-        Me.LstFiles_Container.AutoScroll = True
-        Me.LstFiles_Container.Controls.Add(Me.LstFiles)
-        Me.LstFiles_Container.Location = New System.Drawing.Point(0, 18)
-        Me.LstFiles_Container.Name = "LstFiles_Container"
-        Me.LstFiles_Container.Size = New System.Drawing.Size(768, 460)
-        Me.LstFiles_Container.TabIndex = 0
-        '
-        'LstFiles
-        '
-        Me.LstFiles.Location = New System.Drawing.Point(0, 0)
-        Me.LstFiles.MinHeight = 250
-        Me.LstFiles.Name = "LstFiles"
-        Me.LstFiles.Size = New System.Drawing.Size(751, 460)
-        Me.LstFiles.TabIndex = 0
-        Me.LstFiles.TileHeight = 16
         '
         'SearchPage
         '
@@ -930,7 +897,7 @@ Partial Class FrmMain
         '
         'GrpMatches
         '
-        Me.GrpMatches.Controls.Add(Me.LstMatches_Container)
+        Me.GrpMatches.Controls.Add(Me.LstMatches)
         Me.GrpMatches.ForeColor = System.Drawing.Color.White
         Me.GrpMatches.Location = New System.Drawing.Point(0, 0)
         Me.GrpMatches.Name = "GrpMatches"
@@ -938,24 +905,6 @@ Partial Class FrmMain
         Me.GrpMatches.TabIndex = 28
         Me.GrpMatches.TabStop = False
         Me.GrpMatches.Text = "Matches"
-        '
-        'LstMatches_Container
-        '
-        Me.LstMatches_Container.AutoScroll = True
-        Me.LstMatches_Container.Controls.Add(Me.LstMatches)
-        Me.LstMatches_Container.Location = New System.Drawing.Point(0, 18)
-        Me.LstMatches_Container.Name = "LstMatches_Container"
-        Me.LstMatches_Container.Size = New System.Drawing.Size(768, 460)
-        Me.LstMatches_Container.TabIndex = 0
-        '
-        'LstMatches
-        '
-        Me.LstMatches.Location = New System.Drawing.Point(0, 0)
-        Me.LstMatches.MinHeight = 250
-        Me.LstMatches.Name = "LstMatches"
-        Me.LstMatches.Size = New System.Drawing.Size(751, 460)
-        Me.LstMatches.TabIndex = 2
-        Me.LstMatches.TileHeight = 16
         '
         'GrpSearchOptions
         '
@@ -1024,6 +973,24 @@ Partial Class FrmMain
         Me.Title.TabIndex = 18
         Me.Title.Text = "OhanaXY"
         '
+        'LstFiles
+        '
+        Me.LstFiles.Location = New System.Drawing.Point(0, 18)
+        Me.LstFiles.Name = "LstFiles"
+        Me.LstFiles.SelectedIndex = -1
+        Me.LstFiles.Size = New System.Drawing.Size(768, 460)
+        Me.LstFiles.TabIndex = 1
+        Me.LstFiles.TileHeight = 16
+        '
+        'LstMatches
+        '
+        Me.LstMatches.Location = New System.Drawing.Point(0, 18)
+        Me.LstMatches.Name = "LstMatches"
+        Me.LstMatches.SelectedIndex = -1
+        Me.LstMatches.Size = New System.Drawing.Size(768, 460)
+        Me.LstMatches.TabIndex = 3
+        Me.LstMatches.TileHeight = 16
+        '
         'FrmMain
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
@@ -1059,7 +1026,6 @@ Partial Class FrmMain
         Me.ImgTexture_Container.PerformLayout()
         CType(Me.ImgTexture, System.ComponentModel.ISupportInitialize).EndInit()
         Me.GrpTextures.ResumeLayout(False)
-        Me.LstTextures_Container.ResumeLayout(False)
         Me.TextPage.ResumeLayout(False)
         Me.GrpTextOptions.ResumeLayout(False)
         Me.GrpTextStrings.ResumeLayout(False)
@@ -1067,10 +1033,8 @@ Partial Class FrmMain
         Me.GARCPage.ResumeLayout(False)
         Me.GrpGARCOptions.ResumeLayout(False)
         Me.GrpFiles.ResumeLayout(False)
-        Me.LstFiles_Container.ResumeLayout(False)
         Me.SearchPage.ResumeLayout(False)
         Me.GrpMatches.ResumeLayout(False)
-        Me.LstMatches_Container.ResumeLayout(False)
         Me.GrpSearchOptions.ResumeLayout(False)
         Me.GrpSearchOptions.PerformLayout()
         Me.ResumeLayout(False)
@@ -1124,19 +1088,13 @@ Partial Class FrmMain
     Friend WithEvents ImgTexture_Container As System.Windows.Forms.Panel
     Friend WithEvents ImgTexture As System.Windows.Forms.PictureBox
     Friend WithEvents GrpTextures As Ohana3DS.MyGroupbox
-    Friend WithEvents LstTextures_Container As System.Windows.Forms.Panel
-    Friend WithEvents LstTextures As Ohana3DS.MyListview
     Friend WithEvents GrpGARCOptions As Ohana3DS.MyGroupbox
     Friend WithEvents ProgressGARC As Ohana3DS.MyProgressbar
     Friend WithEvents BtnGARCExtractAll As System.Windows.Forms.Button
     Friend WithEvents BtnGARCExtract As System.Windows.Forms.Button
     Friend WithEvents BtnOpenGARC As System.Windows.Forms.Button
     Friend WithEvents GrpFiles As Ohana3DS.MyGroupbox
-    Friend WithEvents LstFiles_Container As System.Windows.Forms.Panel
-    Friend WithEvents LstFiles As Ohana3DS.MyListview
     Friend WithEvents GrpMatches As Ohana3DS.MyGroupbox
-    Friend WithEvents LstMatches_Container As System.Windows.Forms.Panel
-    Friend WithEvents LstMatches As Ohana3DS.MyListview
     Friend WithEvents GrpSearchOptions As Ohana3DS.MyGroupbox
     Friend WithEvents TxtSearch As System.Windows.Forms.TextBox
     Friend WithEvents ProgressSearch As Ohana3DS.MyProgressbar
@@ -1155,5 +1113,8 @@ Partial Class FrmMain
     Friend WithEvents TxtGameStrings As System.Windows.Forms.TextBox
     Friend WithEvents BtnTextImport As System.Windows.Forms.Button
     Friend WithEvents BtnTextSave As System.Windows.Forms.Button
+    Friend WithEvents LstTextures As Ohana3DS.MyListview
+    Friend WithEvents LstFiles As Ohana3DS.MyListview
+    Friend WithEvents LstMatches As Ohana3DS.MyListview
 
 End Class

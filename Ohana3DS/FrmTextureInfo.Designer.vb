@@ -23,34 +23,11 @@ Partial Class FrmTextureInfo
     <System.Diagnostics.DebuggerStepThrough()> _
     Private Sub InitializeComponent()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(FrmTextureInfo))
-        Me.LstBonesInfo_Container = New System.Windows.Forms.Panel()
-        Me.LstModelTextures = New Ohana3DS.MyListview()
         Me.Title = New Ohana3DS.MyWindowTitle()
         Me.BtnMinimize = New System.Windows.Forms.Label()
         Me.BtnClose = New System.Windows.Forms.Label()
-        Me.LstBonesInfo_Container.SuspendLayout()
+        Me.LstModelTextures = New Ohana3DS.MyListview()
         Me.SuspendLayout()
-        '
-        'LstBonesInfo_Container
-        '
-        Me.LstBonesInfo_Container.AutoScroll = True
-        Me.LstBonesInfo_Container.BackColor = System.Drawing.Color.Transparent
-        Me.LstBonesInfo_Container.Controls.Add(Me.LstModelTextures)
-        Me.LstBonesInfo_Container.Location = New System.Drawing.Point(0, 32)
-        Me.LstBonesInfo_Container.Name = "LstBonesInfo_Container"
-        Me.LstBonesInfo_Container.Size = New System.Drawing.Size(640, 448)
-        Me.LstBonesInfo_Container.TabIndex = 1
-        '
-        'LstModelTextures
-        '
-        Me.LstModelTextures.BackColor = System.Drawing.Color.Transparent
-        Me.LstModelTextures.ForeColor = System.Drawing.Color.White
-        Me.LstModelTextures.Location = New System.Drawing.Point(0, 0)
-        Me.LstModelTextures.MinHeight = 448
-        Me.LstModelTextures.Name = "LstModelTextures"
-        Me.LstModelTextures.Size = New System.Drawing.Size(623, 448)
-        Me.LstModelTextures.TabIndex = 1
-        Me.LstModelTextures.TileHeight = 16
         '
         'Title
         '
@@ -88,30 +65,39 @@ Partial Class FrmTextureInfo
         Me.BtnClose.Text = "X"
         Me.BtnClose.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
         '
+        'LstModelTextures
+        '
+        Me.LstModelTextures.BackColor = System.Drawing.Color.Transparent
+        Me.LstModelTextures.ForeColor = System.Drawing.Color.White
+        Me.LstModelTextures.Location = New System.Drawing.Point(0, 32)
+        Me.LstModelTextures.Name = "LstModelTextures"
+        Me.LstModelTextures.SelectedIndex = -1
+        Me.LstModelTextures.Size = New System.Drawing.Size(640, 448)
+        Me.LstModelTextures.TabIndex = 22
+        Me.LstModelTextures.TileHeight = 16
+        '
         'FrmTextureInfo
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.BackgroundImage = CType(resources.GetObject("$this.BackgroundImage"), System.Drawing.Image)
         Me.ClientSize = New System.Drawing.Size(640, 480)
+        Me.Controls.Add(Me.LstModelTextures)
         Me.Controls.Add(Me.Title)
         Me.Controls.Add(Me.BtnMinimize)
         Me.Controls.Add(Me.BtnClose)
-        Me.Controls.Add(Me.LstBonesInfo_Container)
         Me.Font = New System.Drawing.Font("Segoe UI", 8.25!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None
         Me.MaximizeBox = False
         Me.Name = "FrmTextureInfo"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
         Me.Text = "FrmBonesInfo"
-        Me.LstBonesInfo_Container.ResumeLayout(False)
         Me.ResumeLayout(False)
         Me.PerformLayout()
 
     End Sub
-    Friend WithEvents LstBonesInfo_Container As System.Windows.Forms.Panel
-    Friend WithEvents LstModelTextures As Ohana3DS.MyListview
     Friend WithEvents Title As Ohana3DS.MyWindowTitle
     Friend WithEvents BtnMinimize As System.Windows.Forms.Label
     Friend WithEvents BtnClose As System.Windows.Forms.Label
+    Friend WithEvents LstModelTextures As Ohana3DS.MyListview
 End Class

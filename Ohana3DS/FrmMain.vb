@@ -41,6 +41,7 @@ Public Class FrmMain
         End Select
     End Sub
     Private Sub FrmMain_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        Me.AllowDrop = True
         MyOhana.Initialize(Screen)
 
         MyOhana.Scale = My.Settings.ModelScale
@@ -401,14 +402,13 @@ Public Class FrmMain
             'End Try
         End If
     End Sub
-    Private Sub LstTextures_Click(sender As Object, e As EventArgs) Handles LstTextures.Click
-        LstTextures_Container.Focus()
-        If LstTextures.SelectedIndex > -1 Then
-            With MyOhana.Model_Texture(LstTextures.SelectedIndex)
+    Private Sub LstTextures_SelectedIndexChanged(Index As Integer) Handles LstTextures.SelectedIndexChanged
+        If Index > -1 Then
+            With MyOhana.Model_Texture(Index)
                 ImgTexture.Image = .Image
                 ImgTexture_Container.Refresh()
 
-                LblInfoTextureIndex.Text = LstTextures.SelectedIndex + 1 & "/" & MyOhana.Model_Texture.Count
+                LblInfoTextureIndex.Text = Index + 1 & "/" & MyOhana.Model_Texture.Count
                 LblInfoTextureResolution.Text = .Image.Width & "x" & .Image.Height
                 Select Case .Format
                     Case 0
@@ -865,5 +865,24 @@ Public Class FrmMain
 #End Region
 
 #End Region
+
+    Private Sub Form1_DragDrop(sender As System.Object, _
+                           e As System.Windows.Forms.DragEventArgs) _
+  Handles Me.DragDrop
+
+        Dim files() As String = e.Data.GetData(DataFormats.FileDrop)
+        For Each path In files
+            MsgBox(path)
+        Next
+    End Sub
+
+    Private Sub Form1_DragEnter(sender As System.Object, _
+                                e As System.Windows.Forms.DragEventArgs) _
+      Handles Me.DragEnter
+
+        If e.Data.GetDataPresent(DataFormats.FileDrop) Then
+            e.Effect = DragDropEffects.Copy
+        End If
+    End Sub
 
 End Class

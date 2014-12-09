@@ -361,6 +361,7 @@ Public Class Ohana
 
         If Left(File_Magic, 2) = "MM" Or File_Magic = "BCH" Then
             Current_Texture = File_Name
+            If Temp_Texture_File <> Nothing Then File.Delete(Temp_Texture_File)
             Temp_Texture_File = Path.GetTempFileName
             File.WriteAllBytes(Temp_Texture_File, Temp)
 
@@ -525,6 +526,7 @@ Public Class Ohana
 
         Dim Data() As Byte = File.ReadAllBytes(File_Name)
         Current_Texture = File_Name
+        If Temp_Texture_File <> Nothing Then File.Delete(Temp_Texture_File)
         Temp_Texture_File = Path.GetTempFileName
         File.WriteAllBytes(Temp_Texture_File, Data)
 
