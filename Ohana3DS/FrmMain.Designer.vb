@@ -36,7 +36,6 @@ Partial Class FrmMain
         Me.BtnModelExport = New System.Windows.Forms.Button()
         Me.BtnModelOpen = New System.Windows.Forms.Button()
         Me.GrpInfo = New Ohana3DS.MyGroupbox()
-        Me.LblModelName = New System.Windows.Forms.Label()
         Me.BtnModelTexturesMore = New System.Windows.Forms.Button()
         Me.LblInfoTextures = New System.Windows.Forms.Label()
         Me.LblInfoBones = New System.Windows.Forms.Label()
@@ -99,6 +98,7 @@ Partial Class FrmMain
         Me.BtnSearch = New System.Windows.Forms.Button()
         Me.ROMPage = New System.Windows.Forms.TabPage()
         Me.Title = New Ohana3DS.MyWindowTitle()
+        Me.LblModelName = New Ohana3DS.MySliderLabel()
         CType(Me.Splash, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.MainTabs.SuspendLayout()
         Me.ModelPage.SuspendLayout()
@@ -297,15 +297,6 @@ Partial Class FrmMain
         Me.GrpInfo.TabIndex = 22
         Me.GrpInfo.TabStop = False
         Me.GrpInfo.Text = "Info"
-        '
-        'LblModelName
-        '
-        Me.LblModelName.Font = New System.Drawing.Font("Segoe UI Light", 8.25!)
-        Me.LblModelName.Location = New System.Drawing.Point(112, 18)
-        Me.LblModelName.Name = "LblModelName"
-        Me.LblModelName.Size = New System.Drawing.Size(88, 13)
-        Me.LblModelName.TabIndex = 8
-        Me.LblModelName.TextAlign = System.Drawing.ContentAlignment.TopRight
         '
         'BtnModelTexturesMore
         '
@@ -1009,6 +1000,14 @@ Partial Class FrmMain
         Me.Title.TabIndex = 18
         Me.Title.Text = "OhanaXY"
         '
+        'LblModelName
+        '
+        Me.LblModelName.Font = New System.Drawing.Font("Segoe UI Light", 8.25!)
+        Me.LblModelName.Location = New System.Drawing.Point(112, 18)
+        Me.LblModelName.Name = "LblModelName"
+        Me.LblModelName.Size = New System.Drawing.Size(88, 13)
+        Me.LblModelName.TabIndex = 6
+        '
         'FrmMain
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
@@ -1118,7 +1117,6 @@ Partial Class FrmMain
     Friend WithEvents ProgressSearch As Ohana3DS.MyProgressbar
     Friend WithEvents BtnSearch As System.Windows.Forms.Button
     Friend WithEvents Splash As System.Windows.Forms.PictureBox
-    Friend WithEvents LblModelName As System.Windows.Forms.Label
     Friend WithEvents BtnModelMirror As System.Windows.Forms.Button
     Friend WithEvents BtnTextureImport As System.Windows.Forms.Button
     Friend WithEvents BtnTextureInsert As System.Windows.Forms.Button
@@ -1135,5 +1133,6 @@ Partial Class FrmMain
     Friend WithEvents LstMatches As Ohana3DS.MyListview
     Friend WithEvents BtnGARCInsert As System.Windows.Forms.Button
     Friend WithEvents BtnGARCSave As System.Windows.Forms.Button
+    Friend WithEvents LblModelName As Ohana3DS.MySliderLabel
 
 End Class

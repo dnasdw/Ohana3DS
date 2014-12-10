@@ -130,7 +130,7 @@ Public Class Ohana
             .Lights(0).Attenuation0 = 0.05F
             .Lights(0).Enabled = True
 
-            .RenderState.Ambient = Color.FromArgb(100, 100, 100)
+            .RenderState.Ambient = Color.FromArgb(200, 200, 200)
             .RenderState.CullMode = Cull.None
             .RenderState.ZBufferEnable = True
             .RenderState.AlphaBlendEnable = True
@@ -183,17 +183,14 @@ Public Class Ohana
         Dim Description_Offset As Integer = Read32(Data, &H10)
         Dim Data_Offset As Integer = Read32(Data, &H14)
         Dim Texture_Names_Length As Integer = Read32(Data, &H20)
-        Dim Table_Offset As Integer
-        If Version = BCH_Version.XY Then
-            Table_Offset = &H6C + Read32(Data, &H104)
-        ElseIf Version = BCH_Version.ORAS Then
-            Table_Offset = &H78 + Read32(Data, &H110)
-        End If
+        Dim Table_Offset As Integer = (Header_Offset + &H34) + Read32(Data, Header_Offset + Read32(Data, Header_Offset)) 'Table_Offset = &H78 + Read32(Data, &H110)
+
         Dim Texture_Entries As Integer = Read32(Data, Table_Offset + 4)
         Dim Bone_Entries As Integer = Read32(Data, Table_Offset + &H40)
         Dim Bones_Offset As Integer = Header_Offset + Read32(Data, Table_Offset + &H44)
         Dim Texture_Table_Offset As Integer
         Dim Vertex_Table_Offset As Integer = Read32(Data, Table_Offset + &HC)
+
         Dim Entries As Integer = Read32(Data, Table_Offset + &H10)
 
         Dim MM_Texture_Table_Offset As Integer = Header_Offset + Read32(Data, Header_Offset + &H24)
@@ -207,62 +204,44 @@ Public Class Ohana
 
         Dim Vertex_Offsets As New List(Of Integer)
         Dim Face_Offsets As New List(Of Integer)
-        If Version = BCH_Version.ORAS Then
-            For Entry As Integer = 0 To Entries - 1
-                Dim Base_Offset As Integer = Table_Offset + (Entry * &H38)
+        For Entry As Integer = 0 To Entries - 1
+            Dim Base_Offset As Integer = Table_Offset + (Entry * &H38)
 
-                Dim Vertex_Offset As Integer = Description_Offset + Read32(Data, Base_Offset + 8)
-                Vertex_Offsets.Add(Data_Offset + Read32(Data, Vertex_Offset + &H30))
+            Dim Vertex_Offset As Integer = Description_Offset + Read32(Data, Base_Offset + 8)
+            Vertex_Offsets.Add(Data_Offset + Read32(Data, Vertex_Offset + &H30))
 
-                Dim Face_Offset As Integer = Read32(Data, Base_Offset + &H10)
-                Face_Offset = Description_Offset + Read32(Data, Face_Offset + &H70)
-                Face_Offsets.Add(Data_Offset + Read32(Data, Face_Offset + &H10))
-            Next
-
-            Vertex_Offsets.Sort()
-            Face_Offsets.Sort()
-            Vertex_Offsets.Add(Face_Offsets(0))
-        End If
+            Dim Face_Offset As Integer = Read32(Data, Base_Offset + &H10)
+            Face_Offset = Description_Offset + Read32(Data, Face_Offset + (Header_Offset + &H2C))
+            Face_Offsets.Add(Data_Offset + Read32(Data, Face_Offset + &H10))
+        Next
+        Vertex_Offsets.Sort()
+        Face_Offsets.Sort()
+        Vertex_Offsets.Add(Face_Offsets(0))
 
         Dim Texture_ID_List As New List(Of Integer)
         ReDim Model_Object(Entries - 1)
         Dim Vertex_Count As Integer
         For Entry As Integer = 0 To Entries - 1
             Dim Base_Offset As Integer = Table_Offset + (Entry * &H38)
-            Dim Texture_ID As Integer = Read32(Data, Base_Offset)
+            Dim Texture_ID As Integer = Read16(Data, Base_Offset)
             If Not Texture_ID_List.Contains(Texture_ID) Then Texture_ID_List.Add(Texture_ID)
             Dim Vertex_Offset As Integer = Description_Offset + Read32(Data, Base_Offset + 8)
-            Dim Faces As Integer = Read32(Data, Base_Offset + &H14)
-            Dim Face_Offset_1 As Integer = Read32(Data, Base_Offset + &H10)
-            Dim Face_Offset_2 As Integer = Read32(Data, Base_Offset + &H34)
-            Dim Extra_Face_Offset() As Integer = Nothing
+            Dim Face_Count As Integer = Read32(Data, Base_Offset + &H14)
+            Dim Face_Offset As Integer = Read32(Data, Base_Offset + &H10)
+            Dim Faces() As Integer = Nothing
 
-            If Version = BCH_Version.XY Then
-                If Faces > 2 Then
-                    ReDim Extra_Face_Offset(Faces - 3)
-                    For Index As Integer = 0 To Faces - 3
-                        Extra_Face_Offset(Index) = Description_Offset + Read32(Data, Face_Offset_1 + &H98 + (Index * &H34))
-                    Next
-                End If
-                Face_Offset_1 = Description_Offset + Read32(Data, Face_Offset_1 + &H64)
-                Face_Offset_2 = Description_Offset + Read32(Data, Face_Offset_2 + &H30)
-            ElseIf Version = BCH_Version.ORAS Then
-                If Faces > 2 Then
-                    ReDim Extra_Face_Offset(Faces - 3)
-                    For Index As Integer = 0 To Faces - 3
-                        Extra_Face_Offset(Index) = Description_Offset + Read32(Data, Face_Offset_1 + &HA4 + (Index * &H34))
-                    Next
-                End If
-                Face_Offset_1 = Description_Offset + Read32(Data, Face_Offset_1 + &H70)
-                Face_Offset_2 = Description_Offset + Read32(Data, Face_Offset_2 + &H3C)
-            End If
+            ReDim Faces(Face_Count - 1)
+            For Index As Integer = 0 To Face_Count - 1
+                Faces(Index) = Description_Offset + Read32(Data, Face_Offset + (Header_Offset + &H2C) + (Index * &H34))
+            Next
 
             Dim Vertex_Data_Offset As Integer = Data_Offset + Read32(Data, Vertex_Offset + &H30)
             Dim Vertex_Data_Format As Integer = Data(Vertex_Offset + &H3A)
-            Dim Vertex_Bytes As Integer = Read32(Data, Face_Offset_1)
+            Dim Vertex_Bytes As Integer = Read32(Data, Face_Offset)
             Dim Vertex_Data_Length As Integer
             If Version = BCH_Version.XY Then
-                Dim Face_Data_Offset As Integer = Data_Offset + Read32(Data, Face_Offset_1 + &H10)
+                Face_Offset = Description_Offset + Read32(Data, Face_Offset + (Header_Offset + &H2C))
+                Dim Face_Data_Offset As Integer = Data_Offset + Read32(Data, Face_Offset + &H10)
                 Vertex_Data_Length = Face_Data_Offset - Vertex_Data_Offset
             ElseIf Version = BCH_Version.ORAS Then
                 Vertex_Data_Length = Vertex_Offsets(Vertex_Offsets.IndexOf(Vertex_Data_Offset) + 1) - Vertex_Data_Offset
@@ -331,15 +310,9 @@ Public Class Ohana
                 Offset += Vertex_Data_Format
             Next
 
-            Parse_Faces(Data, Entry, Data_Offset, Face_Offset_1, Count)
-            If Face_Offset_1 <> Face_Offset_2 Then Parse_Faces(Data, Entry, Data_Offset, Face_Offset_2, Count)
-            If Faces > 2 Then
-                Dim Index As Integer = 0
-                For Each Face_Offset As Integer In Extra_Face_Offset
-                    Parse_Faces(Data, Entry, Data_Offset, Extra_Face_Offset(Index), Count)
-                    Index += 1
-                Next
-            End If
+            For Each Face As Integer In Faces
+                Parse_Faces(Data, Entry, Data_Offset, Face, Count)
+            Next
 
             Model_Object(Entry).Texture_ID = Texture_ID
             Model_Object(Entry).Vertex_Format = Vertex_Data_Format
@@ -1618,7 +1591,7 @@ Public Class Ohana
                 Device.Material = MyMaterial
 
                 Dim Mtx_1 As Matrix = Matrix.RotationYawPitchRoll(Rotation.X / 200.0F, -Rotation.Y / 200.0F, 0)
-                Dim Mtx_2 As Matrix = Matrix.Translation(New Vector3(Translation.X / 50.0F, (Translation.Y / 50.0F) - (Max_Y / 2), Zoom))
+                Dim Mtx_2 As Matrix = Matrix.Translation(New Vector3(Translation.X / 50.0F, (Translation.Y / 50.0F), Zoom))
                 Device.Transform.World = Mtx_1 * Mtx_2
 
                 For Phase As Integer = 0 To 1
