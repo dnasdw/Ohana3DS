@@ -1,5 +1,6 @@
 ﻿Imports System.IO
 Module Common
+    Public MyOhana As New Ohana
     Public Function Read32(Data As FileStream, Address As Integer) As Integer
         Data.Seek(Address, SeekOrigin.Begin)
         Return (Data.ReadByte And &HFF) + _

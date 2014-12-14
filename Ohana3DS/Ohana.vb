@@ -6,10 +6,16 @@ Imports System.Drawing.Imaging
 Imports System.Runtime.InteropServices
 Imports System.Text
 Imports System.Globalization
+Imports System.Text.RegularExpressions
+
 Public Class Ohana
-    Public Scale As Single = 32.0F
     Private Device As Device
 
+    Public Structure Data_Entry
+        Dim Offset As Integer
+        Dim Length As Integer
+        Dim Format As Integer
+    End Structure
     Public Structure OhanaVertex
         Dim X, Y, Z As Single
         Dim NX, NY, NZ As Single
@@ -22,10 +28,14 @@ Public Class Ohana
         Dim Weight_1, Weight_2, Weight_3, Weight_4 As Single
     End Structure
     Public Structure VertexList
-        Dim Vertex_Format As Integer
         Dim Texture_ID As Integer
+
+        Dim Vertex_Entry As Data_Entry
         Dim Vertice() As OhanaVertex
+
         Dim Index() As Integer
+        Dim Per_Face_Entry As List(Of Data_Entry)
+        Dim Per_Face_Index As List(Of Integer())
     End Structure
     Public Structure OhanaTexture
         Dim Name As String
@@ -59,7 +69,10 @@ Public Class Ohana
     Public Model_Bump_Map_Index() As String
     Private Model_Type As ModelType
 
+    Public Scale As Single = 32.0F
     Public Model_Mirror_X As Boolean = True
+    Public Load_Scale As Single
+    Public Load_Mirror As Boolean
 
     Public Structure OhanaInfo
         Dim Vertex_Count As Integer
@@ -76,11 +89,18 @@ Public Class Ohana
     Public Rotation As Vector2
     Public Translation As Vector2
 
-    Private Max_Y As Single
+    Public Max_Y_Neg, Max_Y_Pos, Max_Y As Single
+    Private Has_Normals As Boolean
 
     Public Rendering As Boolean
+    Public Current_Model As String
     Public Current_Texture As String
+    Public Temp_Model_File As String
     Public Temp_Texture_File As String
+
+    Public Selected_Object As Integer
+    Public Selected_Face As Integer
+    Public Edit_Mode As Boolean
 
     Private Tile_Order() As Integer = _
         {0, 1, 8, 9, 2, 3, 10, 11, _
@@ -122,15 +142,6 @@ Public Class Ohana
 
         Device = New Device(0, DeviceType.Hardware, Picture.Handle, CreateFlags.HardwareVertexProcessing, Present)
         With Device
-            .RenderState.Lighting = True
-            .Lights(0).Type = LightType.Point
-            .Lights(0).Diffuse = Color.White
-            .Lights(0).Position = New Vector3(0.0F, 80.0F, 20.0F)
-            .Lights(0).Range = 250.0F
-            .Lights(0).Attenuation0 = 0.05F
-            .Lights(0).Enabled = True
-
-            .RenderState.Ambient = Color.FromArgb(200, 200, 200)
             .RenderState.CullMode = Cull.None
             .RenderState.ZBufferEnable = True
             .RenderState.AlphaBlendEnable = True
@@ -147,7 +158,13 @@ Public Class Ohana
         Dim Version As BCH_Version
 
         Total_Vertex = 0
-        Max_Y = 0
+        Max_Y_Neg = 0
+        Max_Y_Pos = 0
+        Has_Normals = False
+        Rendering = False
+
+        Load_Scale = Scale
+        Load_Mirror = Model_Mirror_X
 
         Dim Temp() As Byte = File.ReadAllBytes(File_Name)
         Dim File_Magic As String = Nothing
@@ -171,7 +188,9 @@ Public Class Ohana
             Exit Sub
         End If
 
-        Rendering = False
+        Current_Model = File_Name
+        Temp_Model_File = Path.GetTempFileName
+        File.WriteAllBytes(Temp_Model_File, Temp)
 
         Dim Data(Temp.Length - BCH_Offset) As Byte
         Buffer.BlockCopy(Temp, BCH_Offset, Data, 0, Temp.Length - BCH_Offset)
@@ -183,7 +202,7 @@ Public Class Ohana
         Dim Description_Offset As Integer = Read32(Data, &H10)
         Dim Data_Offset As Integer = Read32(Data, &H14)
         Dim Texture_Names_Length As Integer = Read32(Data, &H20)
-        Dim Table_Offset As Integer = (Header_Offset + &H34) + Read32(Data, Header_Offset + Read32(Data, Header_Offset)) 'Table_Offset = &H78 + Read32(Data, &H110)
+        Dim Table_Offset As Integer = (Header_Offset + &H34) + Read32(Data, Header_Offset + Read32(Data, Header_Offset))
 
         Dim Texture_Entries As Integer = Read32(Data, Table_Offset + 4)
         Dim Bone_Entries As Integer = Read32(Data, Table_Offset + &H40)
@@ -226,28 +245,81 @@ Public Class Ohana
             Dim Texture_ID As Integer = Read16(Data, Base_Offset)
             If Not Texture_ID_List.Contains(Texture_ID) Then Texture_ID_List.Add(Texture_ID)
             Dim Vertex_Offset As Integer = Description_Offset + Read32(Data, Base_Offset + 8)
-            Dim Face_Count As Integer = Read32(Data, Base_Offset + &H14)
             Dim Face_Offset As Integer = Read32(Data, Base_Offset + &H10)
-            Dim Faces() As Integer = Nothing
-
-            ReDim Faces(Face_Count - 1)
+            Dim Face_Count As Integer = Read32(Data, Base_Offset + &H14)
+            Dim Faces(Face_Count - 1) As Integer
             For Index As Integer = 0 To Face_Count - 1
                 Faces(Index) = Description_Offset + Read32(Data, Face_Offset + (Header_Offset + &H2C) + (Index * &H34))
             Next
 
+            Face_Offset = Description_Offset + Read32(Data, Face_Offset + (Header_Offset + &H2C))
             Dim Vertex_Data_Offset As Integer = Data_Offset + Read32(Data, Vertex_Offset + &H30)
+
             Dim Vertex_Data_Format As Integer = Data(Vertex_Offset + &H3A)
-            Dim Vertex_Bytes As Integer = Read32(Data, Face_Offset)
+            Dim Vertex_Flags As Integer = Read32(Data, Face_Offset)
             Dim Vertex_Data_Length As Integer
             If Version = BCH_Version.XY Then
-                Face_Offset = Description_Offset + Read32(Data, Face_Offset + (Header_Offset + &H2C))
                 Dim Face_Data_Offset As Integer = Data_Offset + Read32(Data, Face_Offset + &H10)
                 Vertex_Data_Length = Face_Data_Offset - Vertex_Data_Offset
             ElseIf Version = BCH_Version.ORAS Then
                 Vertex_Data_Length = Vertex_Offsets(Vertex_Offsets.IndexOf(Vertex_Data_Offset) + 1) - Vertex_Data_Offset
             End If
 
+            Dim Index_List As New List(Of Integer)
+            Model_Object(Entry).Per_Face_Entry = New List(Of Data_Entry)
+            Model_Object(Entry).Per_Face_Index = New List(Of Integer())
+            If Entry = Entries - 1 Then
+                Dim Face_Total_Length As Integer = 0
+                For Each Face As Integer In Faces
+                    Face_Total_Length += Read32(Data, Face + &H18)
+                Next
+                Dim Temp_Length As Integer = Face_Total_Length * Vertex_Data_Format
+                If Temp_Length < Vertex_Data_Length Then Vertex_Data_Length = Temp_Length
+            End If
             Dim Count As Integer = Vertex_Data_Length \ Vertex_Data_Format
+            For Each Face As Integer In Faces
+                Dim Face_Data_Offset As Integer = Data_Offset + Read32(Data, Face + &H10)
+                Dim Face_Data_Length As Integer = Read32(Data, Face + &H18)
+                Dim Face_Data_Format As Integer = 2
+
+                Dim Temp_Offset As Integer = Face_Data_Offset
+                For Index As Integer = 0 To Face_Data_Length - 1 Step 3
+                    Dim Temp_1 As Integer = Convert.ToInt32(Read16(Data, Temp_Offset))
+                    Dim Temp_2 As Integer = Convert.ToInt32(Read16(Data, Temp_Offset + 2))
+                    Dim Temp_3 As Integer = Convert.ToInt32(Read16(Data, Temp_Offset + 4))
+
+                    If Temp_1 > Count Or Temp_2 > Count Or Temp_3 > Count Then
+                        Face_Data_Format = 1
+                        Exit For
+                    End If
+                    Temp_Offset += 6
+                Next
+
+                Dim Face_Entry As Data_Entry
+                Face_Entry.Offset = Face_Data_Offset + BCH_Offset
+                Face_Entry.Length = Face_Data_Length * Face_Data_Format
+                Face_Entry.Format = Face_Data_Format
+                Model_Object(Entry).Per_Face_Entry.Add(Face_Entry)
+
+                Dim CurrOffset As Integer = Face_Data_Offset
+                Dim Per_Face_Index As New List(Of Integer)
+                For Index As Integer = 0 To Face_Data_Length - 1 Step 3
+                    If Face_Data_Format = 2 Then
+                        Per_Face_Index.Add(Convert.ToInt32(Read16(Data, CurrOffset)))
+                        Per_Face_Index.Add(Convert.ToInt32(Read16(Data, CurrOffset + 2)))
+                        Per_Face_Index.Add(Convert.ToInt32(Read16(Data, CurrOffset + 4)))
+                    Else
+                        Per_Face_Index.Add(Data(CurrOffset))
+                        Per_Face_Index.Add(Data(CurrOffset + 1))
+                        Per_Face_Index.Add(Data(CurrOffset + 2))
+                    End If
+                    CurrOffset += 3 * Face_Data_Format
+                    Total_Vertex += 3
+                Next
+                Index_List.AddRange(Per_Face_Index)
+                Model_Object(Entry).Per_Face_Index.Add(Per_Face_Index.ToArray())
+            Next
+
             ReDim Model_Object(Entry).Vertice(Count - 1)
             Dim Offset As Integer = Vertex_Data_Offset
             For Index As Integer = 0 To Count - 1
@@ -260,14 +332,9 @@ Public Class Ohana
                     Select Case Vertex_Data_Format
                         Case &H10
                             .Color = Read32(Data, Offset + 12)
-                        Case &H14, &H1C
+                        Case &H14, &H18, &H1C
                             .U = BitConverter.ToSingle(Data, Offset + 12)
                             .V = BitConverter.ToSingle(Data, Offset + 16)
-                        Case &H18
-                            .U = BitConverter.ToSingle(Data, Offset + 12)
-                            .V = BitConverter.ToSingle(Data, Offset + 16)
-
-                            .Color = Read32(Data, Offset + 20)
                         Case &H20, &H30, &H38
                             .NX = BitConverter.ToSingle(Data, Offset + 12) / Scale
                             .NY = BitConverter.ToSingle(Data, Offset + 16) / Scale
@@ -275,6 +342,8 @@ Public Class Ohana
 
                             .U = BitConverter.ToSingle(Data, Offset + 24)
                             .V = BitConverter.ToSingle(Data, Offset + 28)
+
+                            Has_Normals = True
                         Case &H24, &H28, &H2C
                             .NX = BitConverter.ToSingle(Data, Offset + 12) / Scale
                             .NY = BitConverter.ToSingle(Data, Offset + 16) / Scale
@@ -284,16 +353,18 @@ Public Class Ohana
                             .V = BitConverter.ToSingle(Data, Offset + 28)
 
                             If Vertex_Data_Format = &H24 Then
-                                Select Case Vertex_Bytes And &HFFFF
+                                Select Case Vertex_Flags And &HFFFF
                                     Case &H8E81, &H8E82, &HAA83, &HAADB, &HAC81, &HAE83
                                         .Color = Read32(Data, Offset + 32)
                                 End Select
                             Else
-                                Select Case Vertex_Bytes And &HFFFF
+                                Select Case Vertex_Flags And &HFFFF
                                     Case &HAA83, &HAB83, &HAE83, &HAF83, &HEF83, &HEFD3
                                         .Color = Read32(Data, Offset + 32)
                                 End Select
                             End If
+
+                            Has_Normals = True
                         Case &H34
                             .NX = BitConverter.ToSingle(Data, Offset + 12) / Scale
                             .NY = BitConverter.ToSingle(Data, Offset + 16) / Scale
@@ -301,22 +372,30 @@ Public Class Ohana
 
                             .U = BitConverter.ToSingle(Data, Offset + 24)
                             .V = BitConverter.ToSingle(Data, Offset + 28)
+
+                            Has_Normals = True
                     End Select
 
-                    If .Y > 0 And .Y > Max_Y Then Max_Y = .Y
+                    If Model_Mirror_X Then .NX *= -1
+
+                    If .Y > Max_Y_Pos Then Max_Y_Pos = .Y
+                    If .Y < Max_Y_Neg Then Max_Y_Neg = .Y
                 End With
 
                 Vertex_Count += 1
                 Offset += Vertex_Data_Format
             Next
 
-            For Each Face As Integer In Faces
-                Parse_Faces(Data, Entry, Data_Offset, Face, Count)
-            Next
+            With Model_Object(Entry)
+                .Index = Index_List.ToArray
+                .Texture_ID = Texture_ID
 
-            Model_Object(Entry).Texture_ID = Texture_ID
-            Model_Object(Entry).Vertex_Format = Vertex_Data_Format
+                .Vertex_Entry.Offset = Vertex_Data_Offset + BCH_Offset
+                .Vertex_Entry.Length = Vertex_Data_Length
+                .Vertex_Entry.Format = Vertex_Data_Format
+            End With
         Next
+        Max_Y = Math.Abs(Max_Y_Pos - Max_Y_Neg)
 
         Dim Name_Table_Base_Pointer As Integer
         Dim Name_Table_Length As Integer
@@ -383,6 +462,9 @@ Public Class Ohana
                 MyTex.Image = Img
                 MyTex.Image.RotateFlip(RotateFlipType.RotateNoneFlipY)
 
+                'Out = Mirror_Texture(Out, Width, Height)
+                'Width *= 2
+
                 Dim Texture As Texture = Nothing
                 If Create_DX_Texture Then
                     Texture = New Texture(Device, Width, Height, 1, Usage.None, Direct3D.Format.A8R8G8B8, Pool.Managed)
@@ -394,11 +476,7 @@ Public Class Ohana
                 With MyTex
                     If Create_DX_Texture Then .Texture = Texture
                     .Name = Texture_Name
-                    Select Case Texture_Format
-                        Case 0, 2, 4, 5, 13
-                            .Has_Alpha = True
-                    End Select
-
+                    .Has_Alpha = Check_Alpha(Out)
                     .Offset = Texture_Offset + BCH_Offset
                     .Format = Texture_Format
                 End With
@@ -668,11 +746,7 @@ Public Class Ohana
                             With MyTex
                                 If Create_DX_Texture Then .Texture = Texture
                                 .Name = Texture_Names(Index)
-                                Select Case Format
-                                    Case 0, 2, 4, 5, 13
-                                        .Has_Alpha = True
-                                End Select
-
+                                .Has_Alpha = Check_Alpha(Out)
                                 .Offset = Texture_Data_Offset
                                 .Format = Format
                             End With
@@ -695,6 +769,12 @@ Public Class Ohana
             End While
         End If
     End Sub
+    Private Function Check_Alpha(Img() As Byte) As Boolean
+        For Offset As Integer = 0 To Img.Length - 1 Step 4
+            If Img(Offset + 3) < &HFF Then Return True
+        Next
+        Return False
+    End Function
     Private Function Convert_Texture(Data() As Byte, Texture_Data_Offset As Integer, Format As Integer, Width As Integer, Height As Integer, Optional Linear As Boolean = False) As Byte()
         Dim Out((Width * Height * 4) - 1) As Byte
         Dim Offset As Integer = Texture_Data_Offset
@@ -757,7 +837,7 @@ Public Class Ohana
                         For X As Integer = 0 To 3
                             Dim Out_Offset As Integer = ((Tile_X * 4) + X + (((Height - 1) - ((Tile_Y * 4) + Y)) * Width)) * 4
                             Dim Image_Offset As Integer = ((TX * 4) + X + (((TY * 4) + Y) * Width)) * 4
- 
+
                             Out(Out_Offset) = Temp_2(Image_Offset)
                             Out(Out_Offset + 1) = Temp_2(Image_Offset + 1)
                             Out(Out_Offset + 2) = Temp_2(Image_Offset + 2)
@@ -827,10 +907,10 @@ Public Class Ohana
                             Case 9 'L4A4
                                 Dim Luma As Integer = Data(Offset) And &HF
                                 Dim Alpha As Integer = (Data(Offset) And &HF0) >> 4
-                                Out(Out_Offset) = Convert.ToByte(Luma * &H11)
-                                Out(Out_Offset + 1) = Convert.ToByte(Luma * &H11)
-                                Out(Out_Offset + 2) = Convert.ToByte(Luma * &H11)
-                                Out(Out_Offset + 3) = Convert.ToByte(Alpha * &H11)
+                                Out(Out_Offset) = Convert.ToByte((Luma << 4) + Luma)
+                                Out(Out_Offset + 1) = Convert.ToByte((Luma << 4) + Luma)
+                                Out(Out_Offset + 2) = Convert.ToByte((Luma << 4) + Luma)
+                                Out(Out_Offset + 3) = Convert.ToByte((Alpha << 4) + Alpha)
                             Case 10 'L4
                                 Dim Pixel_Data As Integer
                                 If Low_High_Toggle Then
@@ -1404,7 +1484,7 @@ Public Class Ohana
                             Alpha_Data = Alphas_Block(Alpha_Offset) And &HF
                         End If
                         Low_High_Toggle = Not Low_High_Toggle
-                        Out(Out_Offset + 3) = Alpha_Data * &H11
+                        Out(Out_Offset + 3) = Convert.ToByte((Alpha_Data << 4) + Alpha_Data)
                     Next
                 Next
             Next
@@ -1493,19 +1573,15 @@ Public Class Ohana
         Return Out
     End Function
     Private Function Modify_Pixel(R As Integer, G As Integer, B As Integer, X As Integer, Y As Integer, Mod_Block As Integer, Mod_Table As Integer) As Color
-        Dim Index As Integer = X * 4 + Y '!!!
+        Dim Index As Integer = X * 4 + Y
         Dim Pixel_Modulation As Integer
         Dim MSB As Integer = Mod_Block << 1
 
-        'Dim dbg As Integer
         If Index < 8 Then
-            'dbg = ((Mod_Block >> (Index + 24)) And 1) + ((MSB >> (Index + 8)) And 2)
             Pixel_Modulation = Modulation_Table(Mod_Table, ((Mod_Block >> (Index + 24)) And 1) + ((MSB >> (Index + 8)) And 2))
         Else
-            'dbg = ((Mod_Block >> (Index + 8)) And 1) + ((MSB >> (Index - 8)) And 2)
             Pixel_Modulation = Modulation_Table(Mod_Table, ((Mod_Block >> (Index + 8)) And 1) + ((MSB >> (Index - 8)) And 2))
         End If
-        'MsgBox(Hex(Mod_Block) & " - " & Hex(dbg) & " - " & Index & " - " & X & " - " & Y & " - - " & Hex(MSB))
 
         R = Clip(R + Pixel_Modulation)
         G = Clip(G + Pixel_Modulation)
@@ -1533,50 +1609,28 @@ Public Class Ohana
     Public Function Get_Texture(Image As Bitmap) As Texture
         Return New Texture(Device, Image, Usage.None, Pool.Managed)
     End Function
-    Private Sub Parse_Faces(Data() As Byte, Entry As Integer, Data_Offset As Integer, Face_Offset As Integer, Vertex_Count As Integer)
-        Dim Face_Data_Format As Integer = 2
-
-        Dim Temp_Data_Offset As Integer = Data_Offset + Read32(Data, Face_Offset + &H10)
-        Dim Temp_Data_Length As Integer = Read32(Data, Face_Offset + &H18)
-        Dim Temp As Integer = Temp_Data_Offset
-        For Index As Integer = 0 To Temp_Data_Length - 1 Step 3
-            Dim Temp_1 As Integer = Convert.ToInt32(Read16(Data, Temp))
-            Dim Temp_2 As Integer = Convert.ToInt32(Read16(Data, Temp + 2))
-            Dim Temp_3 As Integer = Convert.ToInt32(Read16(Data, Temp + 4))
-
-            If Temp_1 > Vertex_Count Or Temp_2 > Vertex_Count Or Temp_3 > Vertex_Count Then
-                Face_Data_Format = 1
-                Exit For
-            End If
-            Temp += 6
-        Next
-
-        With Model_Object(Entry)
-            Dim Face_Data_Offset As Integer = Data_Offset + Read32(Data, Face_Offset + &H10)
-            Dim Face_Data_Length As Integer = Read32(Data, Face_Offset + &H18)
-            Dim Old_Length As Integer
-            If .Index IsNot Nothing Then Old_Length = .Index.Length
-            ReDim Preserve .Index(Old_Length + Face_Data_Length - 1)
-            Dim Offset As Integer = Face_Data_Offset
-            For Index As Integer = 0 To Face_Data_Length - 1 Step 3
-                If Face_Data_Format = 2 Then
-                    .Index(Old_Length + Index) = Convert.ToInt32(Read16(Data, Offset))
-                    .Index(Old_Length + Index + 1) = Convert.ToInt32(Read16(Data, Offset + 2))
-                    .Index(Old_Length + Index + 2) = Convert.ToInt32(Read16(Data, Offset + 4))
-                Else
-                    .Index(Old_Length + Index) = Data(Offset)
-                    .Index(Old_Length + Index + 1) = Data(Offset + 1)
-                    .Index(Old_Length + Index + 2) = Data(Offset + 2)
-                End If
-                Offset += 3 * Face_Data_Format
-                Total_Vertex += 3
-            Next
-        End With
-    End Sub
     Public Sub Render()
         'Define a posição da "câmera"
-        Device.Transform.Projection = Matrix.PerspectiveFovLH(Math.PI / 4, CSng(SWidth / SHeight), 0.1F, 200.0F)
+        Device.Transform.Projection = Matrix.PerspectiveFovLH(Math.PI / 4, CSng(SWidth / SHeight), 0.1F, 500.0F)
         Device.Transform.View = Matrix.LookAtLH(New Vector3(0.0F, 0.0F, 20.0F), New Vector3(0.0F, 0.0F, 0.0F), New Vector3(0.0F, 1.0F, 0.0F))
+
+        'Configura iluminação
+        With Device
+            If Has_Normals Then
+                .RenderState.Lighting = True
+                .RenderState.Ambient = Color.FromArgb(64, 64, 64)
+                .Lights(0).Type = LightType.Point
+                .Lights(0).Diffuse = Color.White
+                .Lights(0).Position = New Vector3(0.0F, 10.0F, 30.0F)
+                .Lights(0).Range = 520.0F
+                .Lights(0).Attenuation0 = 2.0F / Scale
+                .Lights(0).Enabled = True
+            Else
+                .RenderState.Lighting = False
+                .RenderState.Ambient = Color.White
+                .Lights(0).Enabled = False
+            End If
+        End With
 
         Rendering = True
         While Rendering
@@ -1590,45 +1644,90 @@ Public Class Ohana
                 MyMaterial.Ambient = Color.White
                 Device.Material = MyMaterial
 
-                Dim Mtx_1 As Matrix = Matrix.RotationYawPitchRoll(Rotation.X / 200.0F, -Rotation.Y / 200.0F, 0)
-                Dim Mtx_2 As Matrix = Matrix.Translation(New Vector3(Translation.X / 50.0F, (Translation.Y / 50.0F), Zoom))
-                Device.Transform.World = Mtx_1 * Mtx_2
+                Dim Rotation_Matrix As Matrix = Matrix.RotationYawPitchRoll(Rotation.X / 200.0F, -Rotation.Y / 200.0F, 0)
+                Dim Translation_Matrix As Matrix = Matrix.Translation(New Vector3(Translation.X / 50.0F, (Translation.Y / 50.0F), Zoom))
+                Device.Transform.World = Rotation_Matrix * Translation_Matrix
 
-                For Phase As Integer = 0 To 1
-                    For Each ModelObj As VertexList In Model_Object
-                        With ModelObj
-                            Dim Has_Alpha As Boolean
+                If Edit_Mode Then
+                    With Model_Object(Selected_Object)
+                        If .Texture_ID < Model_Texture_Index.Length Then
+                            Dim Texture_Name As String = Model_Texture_Index(.Texture_ID)
+                            If Model_Texture IsNot Nothing Then
+                                For Each Current_Texture As OhanaTexture In Model_Texture
+                                    If Current_Texture.Name = Texture_Name Then
+                                        Device.SetTexture(0, Current_Texture.Texture)
+                                    End If
+                                Next
+                            End If
+                        End If
 
-                            If ModelObj.Texture_ID < Model_Texture_Index.Length Then
-                                Dim Texture_Name As String = Model_Texture_Index(ModelObj.Texture_ID)
-                                If Model_Texture IsNot Nothing Then
-                                    For Each Current_Texture As OhanaTexture In Model_Texture
-                                        If Current_Texture.Name = Texture_Name Then
-                                            Has_Alpha = Current_Texture.Has_Alpha
-                                            If Not Has_Alpha Or (Has_Alpha And Phase > 0) Then Device.SetTexture(0, Current_Texture.Texture)
-                                        End If
-                                    Next
+                        Dim Vertex_Format As VertexFormats = VertexFormats.Position Or VertexFormats.Normal Or VertexFormats.Texture1 Or VertexFormats.Diffuse
+                        Dim VtxBuffer As New VertexBuffer(GetType(OhanaVertex), .Vertice.Length, Device, Usage.None, Vertex_Format, Pool.Managed)
+                        VtxBuffer.SetData(.Vertice, 0, LockFlags.None)
+                        Device.VertexFormat = Vertex_Format
+                        Device.SetStreamSource(0, VtxBuffer, 0)
+
+                        If Selected_Face > -1 Then
+                            Dim Index_Buffer As New IndexBuffer(GetType(Integer), .Per_Face_Index(Selected_Face).Length, Device, Usage.WriteOnly, Pool.Managed)
+                            Index_Buffer.SetData(.Per_Face_Index(Selected_Face), 0, LockFlags.None)
+                            Device.Indices = Index_Buffer
+
+                            Device.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, .Vertice.Length, 0, .Per_Face_Index(Selected_Face).Length \ 3)
+                            Index_Buffer.Dispose()
+                        Else
+                            Dim Index_Buffer As New IndexBuffer(GetType(Integer), .Index.Length, Device, Usage.WriteOnly, Pool.Managed)
+                            Index_Buffer.SetData(.Index, 0, LockFlags.None)
+                            Device.Indices = Index_Buffer
+
+                            Device.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, .Vertice.Length, 0, .Index.Length \ 3)
+                            Index_Buffer.Dispose()
+                        End If
+
+                        VtxBuffer.Dispose()
+
+
+                        Device.SetTexture(0, Nothing)
+                    End With
+                Else
+                    For Phase As Integer = 0 To 1
+                        For Index As Integer = 0 To Model_Object.Length - 1
+                            With Model_Object(Index)
+                                Dim Has_Alpha As Boolean
+
+                                If .Texture_ID < Model_Texture_Index.Length Then
+                                    Dim Texture_Name As String = Model_Texture_Index(.Texture_ID)
+                                    If Model_Texture IsNot Nothing Then
+                                        For Each Current_Texture As OhanaTexture In Model_Texture
+                                            If Current_Texture.Name = Texture_Name Then
+                                                Has_Alpha = Current_Texture.Has_Alpha
+                                                If Not Has_Alpha Or (Has_Alpha And Phase > 0) Then Device.SetTexture(0, Current_Texture.Texture)
+                                            End If
+                                        Next
+                                    End If
                                 End If
-                            End If
 
-                            If Not Has_Alpha Or (Has_Alpha And Phase > 0) Then
-                                Dim Vertex_Format As VertexFormats = VertexFormats.Position Or VertexFormats.Normal Or VertexFormats.Texture1 Or VertexFormats.Diffuse
-                                Dim VtxBuffer As New VertexBuffer(GetType(OhanaVertex), .Vertice.Length, Device, Usage.None, Vertex_Format, Pool.Managed)
-                                VtxBuffer.SetData(.Vertice, 0, LockFlags.None)
-                                Device.VertexFormat = Vertex_Format
-                                Device.SetStreamSource(0, VtxBuffer, 0)
-                                Dim Index_Buffer As New IndexBuffer(GetType(Integer), .Index.Length, Device, Usage.WriteOnly, Pool.Managed)
-                                Index_Buffer.SetData(.Index, 0, LockFlags.None)
-                                Device.Indices = Index_Buffer
-                                Device.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, .Vertice.Length, 0, .Index.Length / 3)
-                                VtxBuffer.Dispose()
-                                Index_Buffer.Dispose()
-                            End If
+                                If Not Has_Alpha Or (Has_Alpha And Phase > 0) Then
+                                    Dim Vertex_Format As VertexFormats = VertexFormats.Position Or VertexFormats.Normal Or VertexFormats.Texture1 Or VertexFormats.Diffuse
+                                    Dim VtxBuffer As New VertexBuffer(GetType(OhanaVertex), .Vertice.Length, Device, Usage.None, Vertex_Format, Pool.Managed)
+                                    VtxBuffer.SetData(.Vertice, 0, LockFlags.None)
+                                    Device.VertexFormat = Vertex_Format
+                                    Device.SetStreamSource(0, VtxBuffer, 0)
 
-                            Device.SetTexture(0, Nothing)
-                        End With
+                                    Dim Index_Buffer As New IndexBuffer(GetType(Integer), .Index.Length, Device, Usage.WriteOnly, Pool.Managed)
+                                    Index_Buffer.SetData(.Index, 0, LockFlags.None)
+                                    Device.Indices = Index_Buffer
+
+                                    Device.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, .Vertice.Length, 0, .Index.Length \ 3)
+
+                                    VtxBuffer.Dispose()
+                                    Index_Buffer.Dispose()
+                                End If
+
+                                Device.SetTexture(0, Nothing)
+                            End With
+                        Next
                     Next
-                Next
+                End If
 
                 Device.EndScene()
                 Device.Present()
@@ -1636,5 +1735,142 @@ Public Class Ohana
 
             Application.DoEvents()
         End While
+    End Sub
+    Public Sub Insert_OBJ(File_Name As String)
+        Dim Data() As Byte = File.ReadAllBytes(Temp_Model_File)
+        Dim Obj As String = File.ReadAllText(File_Name)
+
+        Dim Vertices As MatchCollection = Regex.Matches(Obj, "v\s+([-]?\d+\.\d+)\s+([-]?\d+\.\d+)\s+([-]?\d+\.\d+)")
+        Dim Normals As MatchCollection = Regex.Matches(Obj, "vn\s+([-]?\d+\.\d+)\s+([-]?\d+\.\d+)\s+([-]?\d+\.\d+)")
+        Dim UVs As MatchCollection = Regex.Matches(Obj, "vt\s+([-]?\d+\.\d+)\s+([-]?\d+\.\d+)")
+
+        Dim Faces As MatchCollection = Regex.Matches(Obj, "f\s+(\d+)/\d+/\d+\s+(\d+)/\d+/\d+\s+(\d+)/\d+/\d+")
+
+        With Model_Object(Selected_Object)
+            'Insere vertices presentes no .obj até onde der
+            Dim Current_Vertex_Offset As Integer = .Vertex_Entry.Offset
+            Dim Vertex_Length As Integer = .Vertex_Entry.Length
+
+            Dim Vertice_Index As Integer
+            Dim Offset As Integer = Current_Vertex_Offset
+            For Each Vertex As Match In Vertices
+                Dim X_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(Vertex.Groups(1).Value, CultureInfo.InvariantCulture))
+                Dim Y_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(Vertex.Groups(2).Value, CultureInfo.InvariantCulture))
+                Dim Z_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(Vertex.Groups(3).Value, CultureInfo.InvariantCulture))
+
+                Buffer.BlockCopy(X_Bytes, 0, Data, Offset, 4)
+                Buffer.BlockCopy(Y_Bytes, 0, Data, Offset + 4, 4)
+                Buffer.BlockCopy(Z_Bytes, 0, Data, Offset + 8, 4)
+
+                With Model_Object(Selected_Object).Vertice(Vertice_Index)
+                    .X = Single.Parse(Vertex.Groups(1).Value, CultureInfo.InvariantCulture) / Load_Scale
+                    .Y = Single.Parse(Vertex.Groups(2).Value, CultureInfo.InvariantCulture) / Load_Scale
+                    .Z = Single.Parse(Vertex.Groups(3).Value, CultureInfo.InvariantCulture) / Load_Scale
+                    If Load_Mirror Then .X *= -1
+                End With
+
+                Vertice_Index += 1
+                Offset += .Vertex_Entry.Format
+                If Offset - .Vertex_Entry.Offset >= Vertex_Length Then Exit For
+            Next
+
+            Vertice_Index = 0
+            Offset = Current_Vertex_Offset
+            For Each Normal As Match In Normals
+                Dim NX_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(Normal.Groups(1).Value, CultureInfo.InvariantCulture))
+                Dim NY_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(Normal.Groups(2).Value, CultureInfo.InvariantCulture))
+                Dim NZ_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(Normal.Groups(3).Value, CultureInfo.InvariantCulture))
+
+                Select Case .Vertex_Entry.Format
+                    Case &H20, &H24, &H28, &H2C, &H30, &H34, &H38
+                        Buffer.BlockCopy(NX_Bytes, 0, Data, Offset + 12, 4)
+                        Buffer.BlockCopy(NY_Bytes, 0, Data, Offset + 16, 4)
+                        Buffer.BlockCopy(NZ_Bytes, 0, Data, Offset + 20, 4)
+                End Select
+
+                With Model_Object(Selected_Object).Vertice(Vertice_Index)
+                    .NX = Single.Parse(Normal.Groups(1).Value, CultureInfo.InvariantCulture) / Load_Scale
+                    .NY = Single.Parse(Normal.Groups(2).Value, CultureInfo.InvariantCulture) / Load_Scale
+                    .NZ = Single.Parse(Normal.Groups(3).Value, CultureInfo.InvariantCulture) / Load_Scale
+                    If Load_Mirror Then .NX *= -1
+                End With
+
+                Vertice_Index += 1
+                Offset += .Vertex_Entry.Format
+                If Offset - .Vertex_Entry.Offset >= Vertex_Length Then Exit For
+            Next
+
+            Vertice_Index = 0
+            Offset = Current_Vertex_Offset
+            For Each UV As Match In UVs
+                Dim U_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(UV.Groups(1).Value, CultureInfo.InvariantCulture))
+                Dim V_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(UV.Groups(2).Value, CultureInfo.InvariantCulture))
+
+                Select Case .Vertex_Entry.Format
+                    Case &H14, &H18, &H1C
+                        Buffer.BlockCopy(U_Bytes, 0, Data, Offset + 12, 4)
+                        Buffer.BlockCopy(V_Bytes, 0, Data, Offset + 16, 4)
+                    Case &H20, &H24, &H28, &H2C, &H30, &H34, &H38
+                        Buffer.BlockCopy(U_Bytes, 0, Data, Offset + 24, 4)
+                        Buffer.BlockCopy(V_Bytes, 0, Data, Offset + 28, 4)
+                End Select
+
+                Model_Object(Selected_Object).Vertice(Vertice_Index).U = Single.Parse(UV.Groups(1).Value, CultureInfo.InvariantCulture)
+                Model_Object(Selected_Object).Vertice(Vertice_Index).V = Single.Parse(UV.Groups(2).Value, CultureInfo.InvariantCulture)
+
+                Vertice_Index += 1
+                Offset += .Vertex_Entry.Format
+                If Offset - .Vertex_Entry.Offset >= Vertex_Length Then Exit For
+            Next
+
+            'Insere Faces presentes no .obj até onde der
+            Dim CurrFace As Integer = 0
+            Dim Current_Face_Offset As Integer = .Per_Face_Entry(0).Offset
+            Dim Face_Length As Integer = .Per_Face_Entry(0).Length
+
+            For i As Integer = Current_Face_Offset To Current_Face_Offset + Face_Length
+                Data(i) = 0
+            Next
+
+            Dim Face_Index As Integer
+            For Each Face As Match In Faces
+                If .Per_Face_Entry(CurrFace).Format = 1 Then
+                    Data(Current_Face_Offset) = Convert.ToByte((Convert.ToInt32(Face.Groups(1).Value) - 1) And &HFF)
+                    Data(Current_Face_Offset + 1) = Convert.ToByte((Convert.ToInt32(Face.Groups(2).Value) - 1) And &HFF)
+                    Data(Current_Face_Offset + 2) = Convert.ToByte((Convert.ToInt32(Face.Groups(3).Value) - 1) And &HFF)
+                    Current_Face_Offset += 3
+                Else
+                    Data(Current_Face_Offset) = Convert.ToByte((Convert.ToInt32(Face.Groups(1).Value) - 1) And &HFF)
+                    Data(Current_Face_Offset + 1) = Convert.ToByte(((Convert.ToInt32(Face.Groups(1).Value) - 1) And &HFF00) >> 8)
+                    Data(Current_Face_Offset + 2) = Convert.ToByte((Convert.ToInt32(Face.Groups(2).Value) - 1) And &HFF)
+                    Data(Current_Face_Offset + 3) = Convert.ToByte(((Convert.ToInt32(Face.Groups(2).Value) - 1) And &HFF00) >> 8)
+                    Data(Current_Face_Offset + 4) = Convert.ToByte((Convert.ToInt32(Face.Groups(3).Value) - 1) And &HFF)
+                    Data(Current_Face_Offset + 5) = Convert.ToByte(((Convert.ToInt32(Face.Groups(3).Value) - 1) And &HFF00) >> 8)
+                    Current_Face_Offset += 6
+                End If
+
+                If Current_Face_Offset - .Per_Face_Entry(CurrFace).Offset >= Face_Length Then
+                    CurrFace += 1
+                    If CurrFace < .Per_Face_Entry.Count Then
+                        Current_Face_Offset = .Per_Face_Entry(CurrFace).Offset
+                        Face_Length = .Per_Face_Entry(CurrFace).Length
+
+                        For i As Integer = Current_Face_Offset To Current_Face_Offset + Face_Length
+                            Data(i) = 0
+                        Next
+                    Else
+                        Exit For
+                    End If
+                End If
+
+                Model_Object(Selected_Object).Index(Face_Index) = Convert.ToInt32(Face.Groups(1).Value) - 1
+                Model_Object(Selected_Object).Index(Face_Index + 1) = Convert.ToInt32(Face.Groups(2).Value) - 1
+                Model_Object(Selected_Object).Index(Face_Index + 2) = Convert.ToInt32(Face.Groups(3).Value) - 1
+
+                Face_Index += 3
+            Next
+        End With
+
+        File.WriteAllBytes(Temp_Model_File, Data)
     End Sub
 End Class

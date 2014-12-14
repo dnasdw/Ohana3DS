@@ -29,6 +29,8 @@ Partial Class FrmMain
         Me.MainTabs = New Ohana3DS.MyTabcontrol()
         Me.ModelPage = New System.Windows.Forms.TabPage()
         Me.GrpOptions = New Ohana3DS.MyGroupbox()
+        Me.BtnModelSave = New System.Windows.Forms.Button()
+        Me.BtnModelVertexEditor = New System.Windows.Forms.Button()
         Me.BtnModelMirror = New System.Windows.Forms.Button()
         Me.BtnModelScale = New System.Windows.Forms.Button()
         Me.ProgressModels = New Ohana3DS.MyProgressbar()
@@ -36,6 +38,7 @@ Partial Class FrmMain
         Me.BtnModelExport = New System.Windows.Forms.Button()
         Me.BtnModelOpen = New System.Windows.Forms.Button()
         Me.GrpInfo = New Ohana3DS.MyGroupbox()
+        Me.LblModelName = New Ohana3DS.MySliderLabel()
         Me.BtnModelTexturesMore = New System.Windows.Forms.Button()
         Me.LblInfoTextures = New System.Windows.Forms.Label()
         Me.LblInfoBones = New System.Windows.Forms.Label()
@@ -81,6 +84,8 @@ Partial Class FrmMain
         Me.TxtGameStrings = New System.Windows.Forms.TextBox()
         Me.GARCPage = New System.Windows.Forms.TabPage()
         Me.GrpGARCOptions = New Ohana3DS.MyGroupbox()
+        Me.BtnGARCCompression = New System.Windows.Forms.Button()
+        Me.ProgressGARCInsertion = New Ohana3DS.MyProgressbar()
         Me.BtnGARCSave = New System.Windows.Forms.Button()
         Me.BtnGARCInsert = New System.Windows.Forms.Button()
         Me.ProgressGARC = New Ohana3DS.MyProgressbar()
@@ -98,7 +103,6 @@ Partial Class FrmMain
         Me.BtnSearch = New System.Windows.Forms.Button()
         Me.ROMPage = New System.Windows.Forms.TabPage()
         Me.Title = New Ohana3DS.MyWindowTitle()
-        Me.LblModelName = New Ohana3DS.MySliderLabel()
         CType(Me.Splash, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.MainTabs.SuspendLayout()
         Me.ModelPage.SuspendLayout()
@@ -195,6 +199,8 @@ Partial Class FrmMain
         'GrpOptions
         '
         Me.GrpOptions.BackColor = System.Drawing.Color.Transparent
+        Me.GrpOptions.Controls.Add(Me.BtnModelSave)
+        Me.GrpOptions.Controls.Add(Me.BtnModelVertexEditor)
         Me.GrpOptions.Controls.Add(Me.BtnModelMirror)
         Me.GrpOptions.Controls.Add(Me.BtnModelScale)
         Me.GrpOptions.Controls.Add(Me.ProgressModels)
@@ -209,12 +215,36 @@ Partial Class FrmMain
         Me.GrpOptions.TabStop = False
         Me.GrpOptions.Text = "Options"
         '
+        'BtnModelSave
+        '
+        Me.BtnModelSave.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
+        Me.BtnModelSave.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
+        Me.BtnModelSave.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        Me.BtnModelSave.Location = New System.Drawing.Point(0, 48)
+        Me.BtnModelSave.Name = "BtnModelSave"
+        Me.BtnModelSave.Size = New System.Drawing.Size(72, 24)
+        Me.BtnModelSave.TabIndex = 7
+        Me.BtnModelSave.Text = "Save"
+        Me.BtnModelSave.UseVisualStyleBackColor = True
+        '
+        'BtnModelVertexEditor
+        '
+        Me.BtnModelVertexEditor.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
+        Me.BtnModelVertexEditor.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
+        Me.BtnModelVertexEditor.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        Me.BtnModelVertexEditor.Location = New System.Drawing.Point(84, 48)
+        Me.BtnModelVertexEditor.Name = "BtnModelVertexEditor"
+        Me.BtnModelVertexEditor.Size = New System.Drawing.Size(72, 24)
+        Me.BtnModelVertexEditor.TabIndex = 6
+        Me.BtnModelVertexEditor.Text = "Import..."
+        Me.BtnModelVertexEditor.UseVisualStyleBackColor = True
+        '
         'BtnModelMirror
         '
         Me.BtnModelMirror.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
         Me.BtnModelMirror.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
         Me.BtnModelMirror.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        Me.BtnModelMirror.Location = New System.Drawing.Point(412, 18)
+        Me.BtnModelMirror.Location = New System.Drawing.Point(412, 48)
         Me.BtnModelMirror.Name = "BtnModelMirror"
         Me.BtnModelMirror.Size = New System.Drawing.Size(72, 24)
         Me.BtnModelMirror.TabIndex = 5
@@ -226,7 +256,7 @@ Partial Class FrmMain
         Me.BtnModelScale.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
         Me.BtnModelScale.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
         Me.BtnModelScale.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        Me.BtnModelScale.Location = New System.Drawing.Point(490, 18)
+        Me.BtnModelScale.Location = New System.Drawing.Point(490, 48)
         Me.BtnModelScale.Name = "BtnModelScale"
         Me.BtnModelScale.Size = New System.Drawing.Size(72, 24)
         Me.BtnModelScale.TabIndex = 4
@@ -235,10 +265,10 @@ Partial Class FrmMain
         '
         'ProgressModels
         '
-        Me.ProgressModels.Location = New System.Drawing.Point(156, 48)
+        Me.ProgressModels.Location = New System.Drawing.Point(318, 18)
         Me.ProgressModels.Name = "ProgressModels"
         Me.ProgressModels.Percentage = 0.0!
-        Me.ProgressModels.Size = New System.Drawing.Size(406, 24)
+        Me.ProgressModels.Size = New System.Drawing.Size(228, 24)
         Me.ProgressModels.TabIndex = 0
         '
         'BtnModelExportAllFF
@@ -246,7 +276,7 @@ Partial Class FrmMain
         Me.BtnModelExportAllFF.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
         Me.BtnModelExportAllFF.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
         Me.BtnModelExportAllFF.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        Me.BtnModelExportAllFF.Location = New System.Drawing.Point(0, 48)
+        Me.BtnModelExportAllFF.Location = New System.Drawing.Point(162, 18)
         Me.BtnModelExportAllFF.Name = "BtnModelExportAllFF"
         Me.BtnModelExportAllFF.Size = New System.Drawing.Size(150, 24)
         Me.BtnModelExportAllFF.TabIndex = 3
@@ -258,7 +288,7 @@ Partial Class FrmMain
         Me.BtnModelExport.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
         Me.BtnModelExport.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
         Me.BtnModelExport.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        Me.BtnModelExport.Location = New System.Drawing.Point(78, 18)
+        Me.BtnModelExport.Location = New System.Drawing.Point(84, 18)
         Me.BtnModelExport.Name = "BtnModelExport"
         Me.BtnModelExport.Size = New System.Drawing.Size(72, 24)
         Me.BtnModelExport.TabIndex = 2
@@ -297,6 +327,14 @@ Partial Class FrmMain
         Me.GrpInfo.TabIndex = 22
         Me.GrpInfo.TabStop = False
         Me.GrpInfo.Text = "Info"
+        '
+        'LblModelName
+        '
+        Me.LblModelName.Font = New System.Drawing.Font("Segoe UI Light", 8.25!)
+        Me.LblModelName.Location = New System.Drawing.Point(112, 18)
+        Me.LblModelName.Name = "LblModelName"
+        Me.LblModelName.Size = New System.Drawing.Size(88, 13)
+        Me.LblModelName.TabIndex = 6
         '
         'BtnModelTexturesMore
         '
@@ -799,6 +837,8 @@ Partial Class FrmMain
         'GrpGARCOptions
         '
         Me.GrpGARCOptions.BackColor = System.Drawing.Color.Transparent
+        Me.GrpGARCOptions.Controls.Add(Me.BtnGARCCompression)
+        Me.GrpGARCOptions.Controls.Add(Me.ProgressGARCInsertion)
         Me.GrpGARCOptions.Controls.Add(Me.BtnGARCSave)
         Me.GrpGARCOptions.Controls.Add(Me.BtnGARCInsert)
         Me.GrpGARCOptions.Controls.Add(Me.ProgressGARC)
@@ -812,6 +852,26 @@ Partial Class FrmMain
         Me.GrpGARCOptions.TabIndex = 25
         Me.GrpGARCOptions.TabStop = False
         Me.GrpGARCOptions.Text = "Options"
+        '
+        'BtnGARCCompression
+        '
+        Me.BtnGARCCompression.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
+        Me.BtnGARCCompression.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
+        Me.BtnGARCCompression.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        Me.BtnGARCCompression.Location = New System.Drawing.Point(680, 18)
+        Me.BtnGARCCompression.Name = "BtnGARCCompression"
+        Me.BtnGARCCompression.Size = New System.Drawing.Size(88, 24)
+        Me.BtnGARCCompression.TabIndex = 7
+        Me.BtnGARCCompression.Text = "Fast comp."
+        Me.BtnGARCCompression.UseVisualStyleBackColor = True
+        '
+        'ProgressGARCInsertion
+        '
+        Me.ProgressGARCInsertion.Location = New System.Drawing.Point(162, 48)
+        Me.ProgressGARCInsertion.Name = "ProgressGARCInsertion"
+        Me.ProgressGARCInsertion.Percentage = 0.0!
+        Me.ProgressGARCInsertion.Size = New System.Drawing.Size(228, 24)
+        Me.ProgressGARCInsertion.TabIndex = 6
         '
         'BtnGARCSave
         '
@@ -830,7 +890,7 @@ Partial Class FrmMain
         Me.BtnGARCInsert.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
         Me.BtnGARCInsert.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
         Me.BtnGARCInsert.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        Me.BtnGARCInsert.Location = New System.Drawing.Point(78, 48)
+        Me.BtnGARCInsert.Location = New System.Drawing.Point(84, 48)
         Me.BtnGARCInsert.Name = "BtnGARCInsert"
         Me.BtnGARCInsert.Size = New System.Drawing.Size(72, 24)
         Me.BtnGARCInsert.TabIndex = 4
@@ -839,7 +899,7 @@ Partial Class FrmMain
         '
         'ProgressGARC
         '
-        Me.ProgressGARC.Location = New System.Drawing.Point(234, 18)
+        Me.ProgressGARC.Location = New System.Drawing.Point(240, 18)
         Me.ProgressGARC.Name = "ProgressGARC"
         Me.ProgressGARC.Percentage = 0.0!
         Me.ProgressGARC.Size = New System.Drawing.Size(228, 24)
@@ -850,7 +910,7 @@ Partial Class FrmMain
         Me.BtnGARCExtractAll.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
         Me.BtnGARCExtractAll.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
         Me.BtnGARCExtractAll.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        Me.BtnGARCExtractAll.Location = New System.Drawing.Point(156, 18)
+        Me.BtnGARCExtractAll.Location = New System.Drawing.Point(162, 18)
         Me.BtnGARCExtractAll.Name = "BtnGARCExtractAll"
         Me.BtnGARCExtractAll.Size = New System.Drawing.Size(72, 24)
         Me.BtnGARCExtractAll.TabIndex = 3
@@ -862,7 +922,7 @@ Partial Class FrmMain
         Me.BtnGARCExtract.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
         Me.BtnGARCExtract.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
         Me.BtnGARCExtract.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        Me.BtnGARCExtract.Location = New System.Drawing.Point(78, 18)
+        Me.BtnGARCExtract.Location = New System.Drawing.Point(84, 18)
         Me.BtnGARCExtract.Name = "BtnGARCExtract"
         Me.BtnGARCExtract.Size = New System.Drawing.Size(72, 24)
         Me.BtnGARCExtract.TabIndex = 2
@@ -1000,14 +1060,6 @@ Partial Class FrmMain
         Me.Title.TabIndex = 18
         Me.Title.Text = "OhanaXY"
         '
-        'LblModelName
-        '
-        Me.LblModelName.Font = New System.Drawing.Font("Segoe UI Light", 8.25!)
-        Me.LblModelName.Location = New System.Drawing.Point(112, 18)
-        Me.LblModelName.Name = "LblModelName"
-        Me.LblModelName.Size = New System.Drawing.Size(88, 13)
-        Me.LblModelName.TabIndex = 6
-        '
         'FrmMain
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
@@ -1134,5 +1186,9 @@ Partial Class FrmMain
     Friend WithEvents BtnGARCInsert As System.Windows.Forms.Button
     Friend WithEvents BtnGARCSave As System.Windows.Forms.Button
     Friend WithEvents LblModelName As Ohana3DS.MySliderLabel
+    Friend WithEvents ProgressGARCInsertion As Ohana3DS.MyProgressbar
+    Friend WithEvents BtnGARCCompression As System.Windows.Forms.Button
+    Friend WithEvents BtnModelVertexEditor As System.Windows.Forms.Button
+    Friend WithEvents BtnModelSave As System.Windows.Forms.Button
 
 End Class

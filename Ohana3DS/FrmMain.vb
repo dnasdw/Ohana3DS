@@ -7,7 +7,6 @@ Imports System.Text.RegularExpressions
 
 Public Class FrmMain
     'Classes de gerenciamento 3D e compressão/extração
-    Public MyOhana As New Ohana
     Dim MyMinko As New Minko
     Dim MyNako As New Nako
 
@@ -29,7 +28,7 @@ Public Class FrmMain
 
     Dim Model_Export_Thread As Thread
     Dim Texture_Export_Thread As Thread
-    Dim GARC_Thread As Thread
+    Dim GARC_Thread, GARC_Insertion_Thread As Thread
     Dim Search_Thread As Thread
 
     Dim Old_Index As Integer = -1
@@ -195,47 +194,47 @@ Public Class FrmMain
         End If
     End Sub
     Private Sub Load_Model(File_Name As String)
-        Try
-            Current_Model = File_Name
-            MyOhana.Load_Model(File_Name)
-            LblModelName.Text = Path.GetFileName(File_Name)
-            Update_Info()
+        'Try
+        Current_Model = File_Name
+        MyOhana.Load_Model(File_Name)
+        LblModelName.Text = Path.GetFileName(File_Name)
+        Update_Info()
 
-            Dim Temp() As Byte = File.ReadAllBytes(File_Name)
-            Dim File_Magic As String = Nothing
-            For i As Integer = 0 To 2
-                File_Magic &= Chr(Temp(i))
+        Dim Temp() As Byte = File.ReadAllBytes(File_Name)
+        Dim File_Magic As String = Nothing
+        For i As Integer = 0 To 2
+            File_Magic &= Chr(Temp(i))
+        Next
+        If File_Magic.Substring(0, 2) = "MM" Or File_Magic = "BCH" Then
+            LstTextures.Clear()
+            ImgTexture.Image = Nothing
+
+            For Index As Integer = 0 To MyOhana.Model_Texture.Count - 1
+                LstTextures.AddItem(MyOhana.Model_Texture(Index).Name)
             Next
-            If File_Magic.Substring(0, 2) = "MM" Or File_Magic = "BCH" Then
-                LstTextures.Clear()
-                ImgTexture.Image = Nothing
+        End If
 
-                For Index As Integer = 0 To MyOhana.Model_Texture.Count - 1
-                    LstTextures.AddItem(MyOhana.Model_Texture(Index).Name)
-                Next
-            End If
+        Rot_InitX = 0
+        Rot_InitY = 0
+        Rot_FinalX = 0
+        Rot_FinalY = 0
+        Mov_InitX = 0
+        Mov_InitY = 0
+        Mov_FinalX = 0
+        Mov_FinalY = 0
 
-            Rot_InitX = 0
-            Rot_InitY = 0
-            Rot_FinalX = 0
-            Rot_FinalY = 0
-            Mov_InitX = 0
-            Mov_InitY = 0
-            Mov_FinalX = 0
-            Mov_FinalY = 0
+        MyOhana.Rotation.X = 0
+        MyOhana.Rotation.Y = 0
+        MyOhana.Translation.X = 0
+        MyOhana.Translation.Y = 0
 
-            MyOhana.Rotation.X = 0
-            MyOhana.Rotation.Y = 0
-            MyOhana.Translation.X = 0
-            MyOhana.Translation.Y = 0
-
-            Application.DoEvents()
-            First_Click = False
-        Catch
-            MyOhana.Model_Object = Nothing
-            Screen.Refresh()
-            MsgBox("Sorry, something went wrong.", vbExclamation, "Error")
-        End Try
+        Application.DoEvents()
+        First_Click = False
+        'Catch
+        'MyOhana.Model_Object = Nothing
+        'Screen.Refresh()
+        ' MsgBox("Sorry, something went wrong.", vbExclamation, "Error")
+        'End Try
 
         MyOhana.Render()
     End Sub
@@ -302,7 +301,6 @@ Public Class FrmMain
         If MyOhana.Scale = 1 Then
             MyOhana.Scale = 32
             BtnModelScale.Text = "Scale 1:32"
-
         ElseIf MyOhana.Scale = 32 Then
             MyOhana.Scale = 64
             BtnModelScale.Text = "Scale 1:64"
@@ -368,6 +366,15 @@ Public Class FrmMain
         My.Settings.ModelMirror = MyOhana.Model_Mirror_X
         My.Settings.Save()
     End Sub
+    Private Sub BtnModelVertexEditor_Click(sender As Object, e As EventArgs) Handles BtnModelVertexEditor.Click
+        If MyOhana.Model_Object IsNot Nothing Then FrmVertexEditor.Show()
+    End Sub
+    Private Sub BtnModelSave_Click(sender As Object, e As EventArgs) Handles BtnModelSave.Click
+        If MyOhana.Current_Model IsNot Nothing Then
+            File.Delete(MyOhana.Current_Model)
+            File.Copy(MyOhana.Temp_Model_File, MyOhana.Current_Model)
+        End If
+    End Sub
 
     Private Sub Update_Info()
         LblInfoVertices.Text = MyOhana.Info.Vertex_Count.ToString
@@ -412,9 +419,9 @@ Public Class FrmMain
     End Sub
     Private Sub Screen_MouseWheel(sender As Object, e As System.Windows.Forms.MouseEventArgs) Handles Screen.MouseWheel
         If e.Delta > 0 Then
-            MyOhana.Zoom += 1.5F
+            MyOhana.Zoom += 1.0F
         Else
-            MyOhana.Zoom -= 1.5F
+            MyOhana.Zoom -= 1.0F
         End If
     End Sub
 #End Region
@@ -852,7 +859,39 @@ Public Class FrmMain
         End If
     End Sub
     Private Sub BtnGARCSave_Click(sender As Object, e As EventArgs) Handles BtnGARCSave.Click
-        MyNako.Insert()
+        If GARC_Insertion_Thread IsNot Nothing Then
+            If GARC_Insertion_Thread.IsAlive Then
+                GARC_Insertion_Thread.Abort()
+                BtnGARCSave.Text = "Save"
+                ProgressGARCInsertion.Text = Nothing
+                ProgressGARCInsertion.Percentage = 0
+                ProgressGARCInsertion.Refresh()
+
+                Exit Sub
+            End If
+        End If
+
+        Dim Trd As New Thread(AddressOf GARC_Save)
+        Trd.Start()
+
+        BtnGARCSave.Text = "Cancel"
+    End Sub
+    Private Sub GARC_Save()
+        Update_Progress(ProgressGARCInsertion, 0, "Please wait, rebuilding GARC...")
+        MyNako.Compression_Percentage = 0
+
+        GARC_Insertion_Thread = New Thread(AddressOf MyNako.Insert)
+        GARC_Insertion_Thread.Start()
+
+        Dim Old_Percentage As Single
+        While GARC_Insertion_Thread.IsAlive
+            If MyNako.Compression_Percentage <> Old_Percentage Then
+                Update_Progress(ProgressGARCInsertion, MyNako.Compression_Percentage, "Compressing data...")
+                Old_Percentage = MyNako.Compression_Percentage
+            End If
+        End While
+        Update_Progress(ProgressGARCInsertion, 0, Nothing)
+        Update_Button_Text(BtnGARCSave, "Save")
     End Sub
 #End Region
 

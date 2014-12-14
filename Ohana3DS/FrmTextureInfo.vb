@@ -62,7 +62,7 @@ Public Class FrmTextureInfo
 
     Private Sub LstModelTextures_SelectedIndexChanged(Index As Integer) Handles LstModelTextures.SelectedIndexChanged
         If Index > -1 Then
-            FrmMain.TxtSearch.Text = FrmMain.MyOhana.Model_Texture_Index(Index)
+            FrmMain.TxtSearch.Text = MyOhana.Model_Texture_Index(Index)
         End If
     End Sub
 #End Region

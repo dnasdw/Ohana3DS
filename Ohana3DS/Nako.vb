@@ -18,6 +18,8 @@ Public Class Nako
         Dim Index As Integer
     End Structure
     Public Inserted_Files As List(Of Inserted_File)
+
+    Public Compression_Percentage As Single
     Public Sub Load(File_Name As String)
         Current_File = File_Name
         Dim InFile As New FileStream(File_Name, FileMode.Open)
@@ -127,7 +129,7 @@ Public Class Nako
             For i As Integer = 0 To Inserted_Files.Count - 1
                 If Inserted_Files(i).Index = File_Index Then
                     Dim Data() As Byte = IO.File.ReadAllBytes(Inserted_Files(i).File_Name)
-                    If File.Compressed Then Data = LZSS_Compress(Data)
+                    If File.Compressed And Data.Length < &H1000000 Then Data = LZSS_Compress(Data)
 
                     Output_File.Seek((FATB_Offset + 8) + (File_Index * 16), SeekOrigin.Begin)
                     Output_File.Write(File.Bits)
@@ -288,6 +290,7 @@ Public Class Nako
                     If Index = -1 Then Exit Do
                 Loop
             End If
+
             If Compressed_Data And ((DicPos < SrcPtr) Or (SrcPtr > &HFFF)) Then
                 Dim Back As Integer = DicPtr - DicPos - 1
                 Data(BitsPtr) = Data(BitsPtr) Or Convert.ToByte((2 ^ (BitCount - 1))) 'Comprimido, define bit
@@ -306,6 +309,8 @@ Public Class Nako
                 DstPtr += 1
                 SrcPtr += 1
             End If
+
+            Compression_Percentage = Convert.ToSingle((SrcPtr / InData.Length) * 100)
 
             BitCount -= 1
         End While

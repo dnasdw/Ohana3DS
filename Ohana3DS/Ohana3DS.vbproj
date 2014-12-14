@@ -104,6 +104,12 @@
       <DependentUpon>FrmMain.vb</DependentUpon>
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="FrmVertexEditor.Designer.vb">
+      <DependentUpon>FrmVertexEditor.vb</DependentUpon>
+    </Compile>
+    <Compile Include="FrmVertexEditor.vb">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="GUI\MySliderLabel.vb">
       <SubType>Component</SubType>
     </Compile>
@@ -148,6 +154,9 @@
     <EmbeddedResource Include="FrmMain.resx">
       <DependentUpon>FrmMain.vb</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="FrmVertexEditor.resx">
+      <DependentUpon>FrmVertexEditor.vb</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="My Project\Resources.resx">
       <Generator>VbMyResourcesResXFileCodeGenerator</Generator>
       <CustomToolNamespace>My.Resources</CustomToolNamespace>
@@ -168,8 +177,9 @@
     </None>
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
-    <Folder Include="Resources\" />
+    <None Include="Resources\Selection.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
