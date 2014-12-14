@@ -1740,11 +1740,11 @@ Public Class Ohana
         Dim Data() As Byte = File.ReadAllBytes(Temp_Model_File)
         Dim Obj As String = File.ReadAllText(File_Name)
 
-        Dim Vertices As MatchCollection = Regex.Matches(Obj, "v\s+([-]?\d+\.\d+)\s+([-]?\d+\.\d+)\s+([-]?\d+\.\d+)")
-        Dim Normals As MatchCollection = Regex.Matches(Obj, "vn\s+([-]?\d+\.\d+)\s+([-]?\d+\.\d+)\s+([-]?\d+\.\d+)")
-        Dim UVs As MatchCollection = Regex.Matches(Obj, "vt\s+([-]?\d+\.\d+)\s+([-]?\d+\.\d+)")
+        Dim Vertices As MatchCollection = Regex.Matches(Obj, "v\s+([-]?\d+(\.\d+)?)\s+([-]?\d+(\.\d+)?)\s+([-]?\d+(\.\d+)?)")
+        Dim Normals As MatchCollection = Regex.Matches(Obj, "vn\s+([-]?\d+(\.\d+)?)\s+([-]?\d+(\.\d+)?)\s+([-]?\d+(\.\d+)?)")
+        Dim UVs As MatchCollection = Regex.Matches(Obj, "vt\s+([-]?\d+(\.\d+)?)\s+([-]?\d+(\.\d+)?)")
 
-        Dim Faces As MatchCollection = Regex.Matches(Obj, "f\s+(\d+)/\d+/\d+\s+(\d+)/\d+/\d+\s+(\d+)/\d+/\d+")
+        Dim Faces As MatchCollection = Regex.Matches(Obj, "f\s+(\d+)/\d+(/\d+)?\s+(\d+)/\d+(/\d+)?\s+(\d+)/\d+(/\d+)?")
 
         With Model_Object(Selected_Object)
             'Insere vertices presentes no .obj até onde der
@@ -1755,8 +1755,8 @@ Public Class Ohana
             Dim Offset As Integer = Current_Vertex_Offset
             For Each Vertex As Match In Vertices
                 Dim X_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(Vertex.Groups(1).Value, CultureInfo.InvariantCulture))
-                Dim Y_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(Vertex.Groups(2).Value, CultureInfo.InvariantCulture))
-                Dim Z_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(Vertex.Groups(3).Value, CultureInfo.InvariantCulture))
+                Dim Y_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(Vertex.Groups(3).Value, CultureInfo.InvariantCulture))
+                Dim Z_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(Vertex.Groups(5).Value, CultureInfo.InvariantCulture))
 
                 Buffer.BlockCopy(X_Bytes, 0, Data, Offset, 4)
                 Buffer.BlockCopy(Y_Bytes, 0, Data, Offset + 4, 4)
@@ -1764,8 +1764,8 @@ Public Class Ohana
 
                 With Model_Object(Selected_Object).Vertice(Vertice_Index)
                     .X = Single.Parse(Vertex.Groups(1).Value, CultureInfo.InvariantCulture) / Load_Scale
-                    .Y = Single.Parse(Vertex.Groups(2).Value, CultureInfo.InvariantCulture) / Load_Scale
-                    .Z = Single.Parse(Vertex.Groups(3).Value, CultureInfo.InvariantCulture) / Load_Scale
+                    .Y = Single.Parse(Vertex.Groups(3).Value, CultureInfo.InvariantCulture) / Load_Scale
+                    .Z = Single.Parse(Vertex.Groups(5).Value, CultureInfo.InvariantCulture) / Load_Scale
                     If Load_Mirror Then .X *= -1
                 End With
 
@@ -1778,8 +1778,8 @@ Public Class Ohana
             Offset = Current_Vertex_Offset
             For Each Normal As Match In Normals
                 Dim NX_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(Normal.Groups(1).Value, CultureInfo.InvariantCulture))
-                Dim NY_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(Normal.Groups(2).Value, CultureInfo.InvariantCulture))
-                Dim NZ_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(Normal.Groups(3).Value, CultureInfo.InvariantCulture))
+                Dim NY_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(Normal.Groups(3).Value, CultureInfo.InvariantCulture))
+                Dim NZ_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(Normal.Groups(5).Value, CultureInfo.InvariantCulture))
 
                 Select Case .Vertex_Entry.Format
                     Case &H20, &H24, &H28, &H2C, &H30, &H34, &H38
@@ -1790,8 +1790,8 @@ Public Class Ohana
 
                 With Model_Object(Selected_Object).Vertice(Vertice_Index)
                     .NX = Single.Parse(Normal.Groups(1).Value, CultureInfo.InvariantCulture) / Load_Scale
-                    .NY = Single.Parse(Normal.Groups(2).Value, CultureInfo.InvariantCulture) / Load_Scale
-                    .NZ = Single.Parse(Normal.Groups(3).Value, CultureInfo.InvariantCulture) / Load_Scale
+                    .NY = Single.Parse(Normal.Groups(3).Value, CultureInfo.InvariantCulture) / Load_Scale
+                    .NZ = Single.Parse(Normal.Groups(5).Value, CultureInfo.InvariantCulture) / Load_Scale
                     If Load_Mirror Then .NX *= -1
                 End With
 
@@ -1804,7 +1804,7 @@ Public Class Ohana
             Offset = Current_Vertex_Offset
             For Each UV As Match In UVs
                 Dim U_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(UV.Groups(1).Value, CultureInfo.InvariantCulture))
-                Dim V_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(UV.Groups(2).Value, CultureInfo.InvariantCulture))
+                Dim V_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(UV.Groups(3).Value, CultureInfo.InvariantCulture))
 
                 Select Case .Vertex_Entry.Format
                     Case &H14, &H18, &H1C
@@ -1816,7 +1816,7 @@ Public Class Ohana
                 End Select
 
                 Model_Object(Selected_Object).Vertice(Vertice_Index).U = Single.Parse(UV.Groups(1).Value, CultureInfo.InvariantCulture)
-                Model_Object(Selected_Object).Vertice(Vertice_Index).V = Single.Parse(UV.Groups(2).Value, CultureInfo.InvariantCulture)
+                Model_Object(Selected_Object).Vertice(Vertice_Index).V = Single.Parse(UV.Groups(3).Value, CultureInfo.InvariantCulture)
 
                 Vertice_Index += 1
                 Offset += .Vertex_Entry.Format
@@ -1828,24 +1828,36 @@ Public Class Ohana
             Dim Current_Face_Offset As Integer = .Per_Face_Entry(0).Offset
             Dim Face_Length As Integer = .Per_Face_Entry(0).Length
 
-            For i As Integer = Current_Face_Offset To Current_Face_Offset + Face_Length
-                Data(i) = 0
+            For Each Entry As Data_Entry In .Per_Face_Entry
+                For i As Integer = Entry.Offset To Entry.Offset + Entry.Length
+                    Data(i) = 0
+                Next
+            Next
+
+            For i As Integer = 0 To .Index.Length - 1
+                .Index(i) = 0
+            Next
+
+            For i As Integer = 0 To .Per_Face_Index.Count - 1
+                For j As Integer = 0 To .Per_Face_Index(i).Length - 1
+                    .Per_Face_Index(i)(j) = 0
+                Next
             Next
 
             Dim Face_Index As Integer
             For Each Face As Match In Faces
                 If .Per_Face_Entry(CurrFace).Format = 1 Then
                     Data(Current_Face_Offset) = Convert.ToByte((Convert.ToInt32(Face.Groups(1).Value) - 1) And &HFF)
-                    Data(Current_Face_Offset + 1) = Convert.ToByte((Convert.ToInt32(Face.Groups(2).Value) - 1) And &HFF)
-                    Data(Current_Face_Offset + 2) = Convert.ToByte((Convert.ToInt32(Face.Groups(3).Value) - 1) And &HFF)
+                    Data(Current_Face_Offset + 1) = Convert.ToByte((Convert.ToInt32(Face.Groups(3).Value) - 1) And &HFF)
+                    Data(Current_Face_Offset + 2) = Convert.ToByte((Convert.ToInt32(Face.Groups(5).Value) - 1) And &HFF)
                     Current_Face_Offset += 3
                 Else
                     Data(Current_Face_Offset) = Convert.ToByte((Convert.ToInt32(Face.Groups(1).Value) - 1) And &HFF)
                     Data(Current_Face_Offset + 1) = Convert.ToByte(((Convert.ToInt32(Face.Groups(1).Value) - 1) And &HFF00) >> 8)
-                    Data(Current_Face_Offset + 2) = Convert.ToByte((Convert.ToInt32(Face.Groups(2).Value) - 1) And &HFF)
-                    Data(Current_Face_Offset + 3) = Convert.ToByte(((Convert.ToInt32(Face.Groups(2).Value) - 1) And &HFF00) >> 8)
-                    Data(Current_Face_Offset + 4) = Convert.ToByte((Convert.ToInt32(Face.Groups(3).Value) - 1) And &HFF)
-                    Data(Current_Face_Offset + 5) = Convert.ToByte(((Convert.ToInt32(Face.Groups(3).Value) - 1) And &HFF00) >> 8)
+                    Data(Current_Face_Offset + 2) = Convert.ToByte((Convert.ToInt32(Face.Groups(3).Value) - 1) And &HFF)
+                    Data(Current_Face_Offset + 3) = Convert.ToByte(((Convert.ToInt32(Face.Groups(3).Value) - 1) And &HFF00) >> 8)
+                    Data(Current_Face_Offset + 4) = Convert.ToByte((Convert.ToInt32(Face.Groups(5).Value) - 1) And &HFF)
+                    Data(Current_Face_Offset + 5) = Convert.ToByte(((Convert.ToInt32(Face.Groups(5).Value) - 1) And &HFF00) >> 8)
                     Current_Face_Offset += 6
                 End If
 
@@ -1854,18 +1866,14 @@ Public Class Ohana
                     If CurrFace < .Per_Face_Entry.Count Then
                         Current_Face_Offset = .Per_Face_Entry(CurrFace).Offset
                         Face_Length = .Per_Face_Entry(CurrFace).Length
-
-                        For i As Integer = Current_Face_Offset To Current_Face_Offset + Face_Length
-                            Data(i) = 0
-                        Next
                     Else
                         Exit For
                     End If
                 End If
 
                 Model_Object(Selected_Object).Index(Face_Index) = Convert.ToInt32(Face.Groups(1).Value) - 1
-                Model_Object(Selected_Object).Index(Face_Index + 1) = Convert.ToInt32(Face.Groups(2).Value) - 1
-                Model_Object(Selected_Object).Index(Face_Index + 2) = Convert.ToInt32(Face.Groups(3).Value) - 1
+                Model_Object(Selected_Object).Index(Face_Index + 1) = Convert.ToInt32(Face.Groups(3).Value) - 1
+                Model_Object(Selected_Object).Index(Face_Index + 2) = Convert.ToInt32(Face.Groups(5).Value) - 1
 
                 Face_Index += 3
             Next

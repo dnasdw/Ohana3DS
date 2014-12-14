@@ -151,6 +151,7 @@ Partial Class FrmVertexEditor
         Me.Controls.Add(Me.LstObjects)
         Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None
         Me.Name = "FrmVertexEditor"
+        Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
         Me.Text = "FrmVertexEditor"
         Me.ResumeLayout(False)
         Me.PerformLayout()
