@@ -41,6 +41,7 @@ Public Class FrmVertexEditor
     End Sub
 
     Private Sub BtnClose_Click(sender As Object, e As EventArgs) Handles BtnClose.Click
+        MyOhana.Edit_Mode = False
         Me.Close()
     End Sub
     Private Sub BtnMinimize_Click(sender As Object, e As EventArgs) Handles BtnMinimize.Click
