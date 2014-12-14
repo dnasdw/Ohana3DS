@@ -1845,6 +1845,7 @@ Public Class Ohana
             Next
 
             Dim Face_Index As Integer
+            Dim Per_Face_Index As Integer
             For Each Face As Match In Faces
                 If .Per_Face_Entry(CurrFace).Format = 1 Then
                     Data(Current_Face_Offset) = Convert.ToByte((Convert.ToInt32(Face.Groups(1).Value) - 1) And &HFF)
@@ -1863,6 +1864,7 @@ Public Class Ohana
 
                 If Current_Face_Offset - .Per_Face_Entry(CurrFace).Offset >= Face_Length Then
                     CurrFace += 1
+                    Per_Face_Index = 0
                     If CurrFace < .Per_Face_Entry.Count Then
                         Current_Face_Offset = .Per_Face_Entry(CurrFace).Offset
                         Face_Length = .Per_Face_Entry(CurrFace).Length
@@ -1875,7 +1877,12 @@ Public Class Ohana
                 Model_Object(Selected_Object).Index(Face_Index + 1) = Convert.ToInt32(Face.Groups(3).Value) - 1
                 Model_Object(Selected_Object).Index(Face_Index + 2) = Convert.ToInt32(Face.Groups(5).Value) - 1
 
+                Model_Object(Selected_Object).Per_Face_Index(CurrFace)(Per_Face_Index) = Convert.ToInt32(Face.Groups(1).Value) - 1
+                Model_Object(Selected_Object).Per_Face_Index(CurrFace)(Per_Face_Index + 1) = Convert.ToInt32(Face.Groups(3).Value) - 1
+                Model_Object(Selected_Object).Per_Face_Index(CurrFace)(Per_Face_Index + 2) = Convert.ToInt32(Face.Groups(5).Value) - 1
+
                 Face_Index += 3
+                Per_Face_Index += 3
             Next
         End With
 
