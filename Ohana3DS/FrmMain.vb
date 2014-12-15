@@ -418,10 +418,11 @@ Public Class FrmMain
         End If
     End Sub
     Private Sub Screen_MouseWheel(sender As Object, e As System.Windows.Forms.MouseEventArgs) Handles Screen.MouseWheel
+        Dim z As Single = If((Control.ModifierKeys And Keys.Control) = Keys.Control, 0.05F, 1.0F)
         If e.Delta > 0 Then
-            MyOhana.Zoom += 1.0F
+            MyOhana.Zoom += z
         Else
-            MyOhana.Zoom -= 1.0F
+            MyOhana.Zoom -= z
         End If
     End Sub
 #End Region
