@@ -1748,11 +1748,13 @@ Public Class Ohana
 
         With Model_Object(Selected_Object)
             'Insere vertices presentes no .obj até onde der
+            Dim All_Vertices_Inserted As Boolean = True
             Dim Current_Vertex_Offset As Integer = .Vertex_Entry.Offset
             Dim Vertex_Length As Integer = .Vertex_Entry.Length
 
             Dim Vertice_Index As Integer
             Dim Offset As Integer = Current_Vertex_Offset
+            Dim Match_Count As Integer = 1
             For Each Vertex As Match In Vertices
                 Dim X_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(Vertex.Groups(1).Value, CultureInfo.InvariantCulture))
                 Dim Y_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(Vertex.Groups(3).Value, CultureInfo.InvariantCulture))
@@ -1771,7 +1773,12 @@ Public Class Ohana
 
                 Vertice_Index += 1
                 Offset += .Vertex_Entry.Format
-                If Offset - .Vertex_Entry.Offset >= Vertex_Length Then Exit For
+                If Offset - .Vertex_Entry.Offset >= Vertex_Length Then
+                    If Match_Count < Vertices.Count Then All_Vertices_Inserted = False
+                    Exit For
+                End If
+
+                Match_Count += 1
             Next
 
             Vertice_Index = 0
@@ -1848,11 +1855,40 @@ Public Class Ohana
             Dim Per_Face_Index As Integer
             For Each Face As Match In Faces
                 If .Per_Face_Entry(CurrFace).Format = 1 Then
-                    Data(Current_Face_Offset) = Convert.ToByte((Convert.ToInt32(Face.Groups(1).Value) - 1) And &HFF)
-                    Data(Current_Face_Offset + 1) = Convert.ToByte((Convert.ToInt32(Face.Groups(3).Value) - 1) And &HFF)
-                    Data(Current_Face_Offset + 2) = Convert.ToByte((Convert.ToInt32(Face.Groups(5).Value) - 1) And &HFF)
-                    Current_Face_Offset += 3
+                    Dim a As Integer = Convert.ToInt32(Face.Groups(1).Value) - 1
+                    Dim b As Integer = Convert.ToInt32(Face.Groups(3).Value) - 1
+                    Dim c As Integer = Convert.ToInt32(Face.Groups(5).Value) - 1
+
+                    If a > &HFF Or b > &HFF Or c > &HFF Then
+                        While .Per_Face_Entry(CurrFace).Format = 1
+                            Face_Index += (.Per_Face_Entry(CurrFace).Length - Per_Face_Index)
+                            CurrFace += 1
+                            Per_Face_Index = 0
+                            If CurrFace < .Per_Face_Entry.Count Then
+                                Current_Face_Offset = .Per_Face_Entry(CurrFace).Offset
+                                Face_Length = .Per_Face_Entry(CurrFace).Length
+                            Else
+                                Exit For
+                            End If
+                        End While
+
+                        '16 bits
+                        Data(Current_Face_Offset) = Convert.ToByte((Convert.ToInt32(Face.Groups(1).Value) - 1) And &HFF)
+                        Data(Current_Face_Offset + 1) = Convert.ToByte(((Convert.ToInt32(Face.Groups(1).Value) - 1) And &HFF00) >> 8)
+                        Data(Current_Face_Offset + 2) = Convert.ToByte((Convert.ToInt32(Face.Groups(3).Value) - 1) And &HFF)
+                        Data(Current_Face_Offset + 3) = Convert.ToByte(((Convert.ToInt32(Face.Groups(3).Value) - 1) And &HFF00) >> 8)
+                        Data(Current_Face_Offset + 4) = Convert.ToByte((Convert.ToInt32(Face.Groups(5).Value) - 1) And &HFF)
+                        Data(Current_Face_Offset + 5) = Convert.ToByte(((Convert.ToInt32(Face.Groups(5).Value) - 1) And &HFF00) >> 8)
+                        Current_Face_Offset += 6
+                    Else
+                        '8 bits
+                        Data(Current_Face_Offset) = Convert.ToByte(a And &HFF)
+                        Data(Current_Face_Offset + 1) = Convert.ToByte(b And &HFF)
+                        Data(Current_Face_Offset + 2) = Convert.ToByte(c And &HFF)
+                        Current_Face_Offset += 3
+                    End If
                 Else
+                    '16 bits
                     Data(Current_Face_Offset) = Convert.ToByte((Convert.ToInt32(Face.Groups(1).Value) - 1) And &HFF)
                     Data(Current_Face_Offset + 1) = Convert.ToByte(((Convert.ToInt32(Face.Groups(1).Value) - 1) And &HFF00) >> 8)
                     Data(Current_Face_Offset + 2) = Convert.ToByte((Convert.ToInt32(Face.Groups(3).Value) - 1) And &HFF)
@@ -1860,17 +1896,6 @@ Public Class Ohana
                     Data(Current_Face_Offset + 4) = Convert.ToByte((Convert.ToInt32(Face.Groups(5).Value) - 1) And &HFF)
                     Data(Current_Face_Offset + 5) = Convert.ToByte(((Convert.ToInt32(Face.Groups(5).Value) - 1) And &HFF00) >> 8)
                     Current_Face_Offset += 6
-                End If
-
-                If Current_Face_Offset - .Per_Face_Entry(CurrFace).Offset >= Face_Length Then
-                    CurrFace += 1
-                    Per_Face_Index = 0
-                    If CurrFace < .Per_Face_Entry.Count Then
-                        Current_Face_Offset = .Per_Face_Entry(CurrFace).Offset
-                        Face_Length = .Per_Face_Entry(CurrFace).Length
-                    Else
-                        Exit For
-                    End If
                 End If
 
                 Model_Object(Selected_Object).Index(Face_Index) = Convert.ToInt32(Face.Groups(1).Value) - 1
@@ -1883,7 +1908,27 @@ Public Class Ohana
 
                 Face_Index += 3
                 Per_Face_Index += 3
+
+                If Current_Face_Offset - .Per_Face_Entry(CurrFace).Offset >= Face_Length Then
+                    CurrFace += 1
+                    Per_Face_Index = 0
+                    If CurrFace < .Per_Face_Entry.Count Then
+                        Current_Face_Offset = .Per_Face_Entry(CurrFace).Offset
+                        Face_Length = .Per_Face_Entry(CurrFace).Length
+                    Else
+                        Exit For
+                    End If
+                End If
             Next
+
+            If Not All_Vertices_Inserted And Face_Index < .Index.Length Then
+                MsgBox(Face_Index & " - " & .Index.Length)
+                MessageBox.Show("The inserted object have too much faces and vertices." & vbCrLf & "Try limiting it to the original counts.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            ElseIf Face_Index < .Index.Length Then
+                MessageBox.Show("The inserted object have more faces than the original one." & vbCrLf & "Some faces couldn't be added.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            ElseIf Not All_Vertices_Inserted Then
+                MessageBox.Show("The inserted object have more vertices than the original one." & vbCrLf & "Some vertices couldn't be added.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End If
         End With
 
         File.WriteAllBytes(Temp_Model_File, Data)

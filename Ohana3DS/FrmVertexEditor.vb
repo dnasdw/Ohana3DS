@@ -134,30 +134,34 @@ Public Class FrmVertexEditor
                 File.WriteAllText(SaveDlg.FileName, Out.ToString)
             End If
         Else
-            MsgBox("You must select an object first!", vbExclamation)
+            MessageBox.Show("You must select an object first!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
         End If
     End Sub
 
     Private Sub BtnClear_Click(sender As Object, e As EventArgs) Handles BtnClear.Click
-        Dim Data() As Byte = File.ReadAllBytes(MyOhana.Temp_Model_File)
-        With MyOhana.Model_Object(MyOhana.Selected_Object)
-            Dim Current_Face_Offset As Integer = .Per_Face_Entry(MyOhana.Selected_Face).Offset
-            Dim Face_Length As Integer = .Per_Face_Entry(MyOhana.Selected_Face).Length
+        If MyOhana.Selected_Face > -1 Then
+            Dim Data() As Byte = File.ReadAllBytes(MyOhana.Temp_Model_File)
+            With MyOhana.Model_Object(MyOhana.Selected_Object)
+                Dim Current_Face_Offset As Integer = .Per_Face_Entry(MyOhana.Selected_Face).Offset
+                Dim Face_Length As Integer = .Per_Face_Entry(MyOhana.Selected_Face).Length
 
-            For i As Integer = Current_Face_Offset To (Current_Face_Offset + Face_Length)
-                Data(i) = 0
-            Next
+                For i As Integer = Current_Face_Offset To (Current_Face_Offset + Face_Length)
+                    Data(i) = 0
+                Next
 
-            Dim j As Integer
-            For k As Integer = 0 To MyOhana.Selected_Face - 1
-                j += .Per_Face_Entry(k).Length \ .Per_Face_Entry(k).Format
-            Next
-            For g As Integer = 0 To (Face_Length \ .Per_Face_Entry(MyOhana.Selected_Face).Format) - 1
-                .Index(j) = 0
-                .Per_Face_Index(MyOhana.Selected_Face)(g) = 0
-                j += 1
-            Next
-        End With
-        File.WriteAllBytes(MyOhana.Temp_Model_File, Data)
+                Dim j As Integer
+                For k As Integer = 0 To MyOhana.Selected_Face - 1
+                    j += .Per_Face_Entry(k).Length \ .Per_Face_Entry(k).Format
+                Next
+                For g As Integer = 0 To (Face_Length \ .Per_Face_Entry(MyOhana.Selected_Face).Format) - 1
+                    .Index(j) = 0
+                    .Per_Face_Index(MyOhana.Selected_Face)(g) = 0
+                    j += 1
+                Next
+            End With
+            File.WriteAllBytes(MyOhana.Temp_Model_File, Data)
+        Else
+            MessageBox.Show("You must select an face first!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+        End If
     End Sub
 End Class

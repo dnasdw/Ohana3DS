@@ -29,6 +29,7 @@ Partial Class FrmMain
         Me.MainTabs = New Ohana3DS.MyTabcontrol()
         Me.ModelPage = New System.Windows.Forms.TabPage()
         Me.GrpOptions = New Ohana3DS.MyGroupbox()
+        Me.BtnModelMapEditor = New System.Windows.Forms.Button()
         Me.BtnModelSave = New System.Windows.Forms.Button()
         Me.BtnModelVertexEditor = New System.Windows.Forms.Button()
         Me.BtnModelMirror = New System.Windows.Forms.Button()
@@ -53,7 +54,6 @@ Partial Class FrmMain
         Me.GrpTexOptions = New Ohana3DS.MyGroupbox()
         Me.BtnTextureSave = New System.Windows.Forms.Button()
         Me.BtnTextureInsert = New System.Windows.Forms.Button()
-        Me.BtnTextureImport = New System.Windows.Forms.Button()
         Me.BtnTextureMode = New System.Windows.Forms.Button()
         Me.BtnTextureExportAllFF = New System.Windows.Forms.Button()
         Me.ProgressTextures = New Ohana3DS.MyProgressbar()
@@ -199,6 +199,7 @@ Partial Class FrmMain
         'GrpOptions
         '
         Me.GrpOptions.BackColor = System.Drawing.Color.Transparent
+        Me.GrpOptions.Controls.Add(Me.BtnModelMapEditor)
         Me.GrpOptions.Controls.Add(Me.BtnModelSave)
         Me.GrpOptions.Controls.Add(Me.BtnModelVertexEditor)
         Me.GrpOptions.Controls.Add(Me.BtnModelMirror)
@@ -214,6 +215,18 @@ Partial Class FrmMain
         Me.GrpOptions.TabIndex = 23
         Me.GrpOptions.TabStop = False
         Me.GrpOptions.Text = "Options"
+        '
+        'BtnModelMapEditor
+        '
+        Me.BtnModelMapEditor.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
+        Me.BtnModelMapEditor.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
+        Me.BtnModelMapEditor.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        Me.BtnModelMapEditor.Location = New System.Drawing.Point(162, 48)
+        Me.BtnModelMapEditor.Name = "BtnModelMapEditor"
+        Me.BtnModelMapEditor.Size = New System.Drawing.Size(150, 24)
+        Me.BtnModelMapEditor.TabIndex = 8
+        Me.BtnModelMapEditor.Text = "Edit map data..."
+        Me.BtnModelMapEditor.UseVisualStyleBackColor = True
         '
         'BtnModelSave
         '
@@ -236,7 +249,7 @@ Partial Class FrmMain
         Me.BtnModelVertexEditor.Name = "BtnModelVertexEditor"
         Me.BtnModelVertexEditor.Size = New System.Drawing.Size(72, 24)
         Me.BtnModelVertexEditor.TabIndex = 6
-        Me.BtnModelVertexEditor.Text = "Import..."
+        Me.BtnModelVertexEditor.Text = "Edit..."
         Me.BtnModelVertexEditor.UseVisualStyleBackColor = True
         '
         'BtnModelMirror
@@ -244,7 +257,7 @@ Partial Class FrmMain
         Me.BtnModelMirror.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
         Me.BtnModelMirror.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
         Me.BtnModelMirror.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        Me.BtnModelMirror.Location = New System.Drawing.Point(412, 48)
+        Me.BtnModelMirror.Location = New System.Drawing.Point(412, 18)
         Me.BtnModelMirror.Name = "BtnModelMirror"
         Me.BtnModelMirror.Size = New System.Drawing.Size(72, 24)
         Me.BtnModelMirror.TabIndex = 5
@@ -256,7 +269,7 @@ Partial Class FrmMain
         Me.BtnModelScale.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
         Me.BtnModelScale.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
         Me.BtnModelScale.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        Me.BtnModelScale.Location = New System.Drawing.Point(490, 48)
+        Me.BtnModelScale.Location = New System.Drawing.Point(490, 18)
         Me.BtnModelScale.Name = "BtnModelScale"
         Me.BtnModelScale.Size = New System.Drawing.Size(72, 24)
         Me.BtnModelScale.TabIndex = 4
@@ -265,10 +278,10 @@ Partial Class FrmMain
         '
         'ProgressModels
         '
-        Me.ProgressModels.Location = New System.Drawing.Point(318, 18)
+        Me.ProgressModels.Location = New System.Drawing.Point(412, 48)
         Me.ProgressModels.Name = "ProgressModels"
         Me.ProgressModels.Percentage = 0.0!
-        Me.ProgressModels.Size = New System.Drawing.Size(228, 24)
+        Me.ProgressModels.Size = New System.Drawing.Size(150, 24)
         Me.ProgressModels.TabIndex = 0
         '
         'BtnModelExportAllFF
@@ -457,7 +470,6 @@ Partial Class FrmMain
         Me.GrpTexOptions.BackColor = System.Drawing.Color.Transparent
         Me.GrpTexOptions.Controls.Add(Me.BtnTextureSave)
         Me.GrpTexOptions.Controls.Add(Me.BtnTextureInsert)
-        Me.GrpTexOptions.Controls.Add(Me.BtnTextureImport)
         Me.GrpTexOptions.Controls.Add(Me.BtnTextureMode)
         Me.GrpTexOptions.Controls.Add(Me.BtnTextureExportAllFF)
         Me.GrpTexOptions.Controls.Add(Me.ProgressTextures)
@@ -489,24 +501,12 @@ Partial Class FrmMain
         Me.BtnTextureInsert.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
         Me.BtnTextureInsert.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
         Me.BtnTextureInsert.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        Me.BtnTextureInsert.Location = New System.Drawing.Point(78, 48)
+        Me.BtnTextureInsert.Location = New System.Drawing.Point(84, 48)
         Me.BtnTextureInsert.Name = "BtnTextureInsert"
         Me.BtnTextureInsert.Size = New System.Drawing.Size(72, 24)
         Me.BtnTextureInsert.TabIndex = 8
-        Me.BtnTextureInsert.Text = "Insert"
+        Me.BtnTextureInsert.Text = "Import"
         Me.BtnTextureInsert.UseVisualStyleBackColor = True
-        '
-        'BtnTextureImport
-        '
-        Me.BtnTextureImport.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
-        Me.BtnTextureImport.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
-        Me.BtnTextureImport.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        Me.BtnTextureImport.Location = New System.Drawing.Point(234, 18)
-        Me.BtnTextureImport.Name = "BtnTextureImport"
-        Me.BtnTextureImport.Size = New System.Drawing.Size(72, 24)
-        Me.BtnTextureImport.TabIndex = 7
-        Me.BtnTextureImport.Text = "Import"
-        Me.BtnTextureImport.UseVisualStyleBackColor = True
         '
         'BtnTextureMode
         '
@@ -525,7 +525,7 @@ Partial Class FrmMain
         Me.BtnTextureExportAllFF.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
         Me.BtnTextureExportAllFF.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
         Me.BtnTextureExportAllFF.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        Me.BtnTextureExportAllFF.Location = New System.Drawing.Point(156, 48)
+        Me.BtnTextureExportAllFF.Location = New System.Drawing.Point(240, 18)
         Me.BtnTextureExportAllFF.Name = "BtnTextureExportAllFF"
         Me.BtnTextureExportAllFF.Size = New System.Drawing.Size(150, 24)
         Me.BtnTextureExportAllFF.TabIndex = 4
@@ -534,10 +534,10 @@ Partial Class FrmMain
         '
         'ProgressTextures
         '
-        Me.ProgressTextures.Location = New System.Drawing.Point(325, 48)
+        Me.ProgressTextures.Location = New System.Drawing.Point(412, 48)
         Me.ProgressTextures.Name = "ProgressTextures"
         Me.ProgressTextures.Percentage = 0.0!
-        Me.ProgressTextures.Size = New System.Drawing.Size(237, 24)
+        Me.ProgressTextures.Size = New System.Drawing.Size(150, 24)
         Me.ProgressTextures.TabIndex = 0
         '
         'BtnTextureExportAll
@@ -545,7 +545,7 @@ Partial Class FrmMain
         Me.BtnTextureExportAll.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
         Me.BtnTextureExportAll.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
         Me.BtnTextureExportAll.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        Me.BtnTextureExportAll.Location = New System.Drawing.Point(156, 18)
+        Me.BtnTextureExportAll.Location = New System.Drawing.Point(162, 18)
         Me.BtnTextureExportAll.Name = "BtnTextureExportAll"
         Me.BtnTextureExportAll.Size = New System.Drawing.Size(72, 24)
         Me.BtnTextureExportAll.TabIndex = 3
@@ -557,7 +557,7 @@ Partial Class FrmMain
         Me.BtnTextureExport.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
         Me.BtnTextureExport.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
         Me.BtnTextureExport.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        Me.BtnTextureExport.Location = New System.Drawing.Point(78, 18)
+        Me.BtnTextureExport.Location = New System.Drawing.Point(84, 18)
         Me.BtnTextureExport.Name = "BtnTextureExport"
         Me.BtnTextureExport.Size = New System.Drawing.Size(72, 24)
         Me.BtnTextureExport.TabIndex = 2
@@ -1170,7 +1170,6 @@ Partial Class FrmMain
     Friend WithEvents BtnSearch As System.Windows.Forms.Button
     Friend WithEvents Splash As System.Windows.Forms.PictureBox
     Friend WithEvents BtnModelMirror As System.Windows.Forms.Button
-    Friend WithEvents BtnTextureImport As System.Windows.Forms.Button
     Friend WithEvents BtnTextureInsert As System.Windows.Forms.Button
     Friend WithEvents BtnTextureSave As System.Windows.Forms.Button
     Friend WithEvents GrpTextOptions As Ohana3DS.MyGroupbox
@@ -1190,5 +1189,6 @@ Partial Class FrmMain
     Friend WithEvents BtnGARCCompression As System.Windows.Forms.Button
     Friend WithEvents BtnModelVertexEditor As System.Windows.Forms.Button
     Friend WithEvents BtnModelSave As System.Windows.Forms.Button
+    Friend WithEvents BtnModelMapEditor As System.Windows.Forms.Button
 
 End Class

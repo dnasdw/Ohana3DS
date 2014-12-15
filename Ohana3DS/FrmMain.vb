@@ -588,36 +588,6 @@ Public Class FrmMain
         Update_Progress(ProgressTextures, 0, Nothing)
         Update_Button_Text(BtnTextureExportAllFF, "Export all from folder")
     End Sub
-    Private Sub BtnTextureImport_Click(sender As Object, e As EventArgs) Handles BtnTextureImport.Click
-        Dim InputDlg As New FolderBrowserDialog
-        If InputDlg.ShowDialog = Windows.Forms.DialogResult.OK Then
-            MyOhana.Current_Texture = Nothing
-            MyOhana.Model_Texture = New List(Of Ohana.OhanaTexture)
-            LstTextures.Clear()
-            ImgTexture.Image = Nothing
-
-            Dim Input_Files() As FileInfo = New DirectoryInfo(InputDlg.SelectedPath).GetFiles()
-            For Each File As FileInfo In Input_Files
-                If LCase(Path.GetExtension(File.Name)) = ".png" Then
-                    Dim MyTex As New Ohana.OhanaTexture
-
-                    With MyTex
-                        .Name = Path.GetFileNameWithoutExtension(File.Name)
-                        LstTextures.AddItem(.Name)
-                        .Image = Bitmap.FromFile(File.FullName)
-                        Dim Temp As New Bitmap(.Image)
-                        Temp.RotateFlip(RotateFlipType.RotateNoneFlipY)
-                        .Texture = MyOhana.Get_Texture(Temp)
-                    End With
-
-                    MyOhana.Model_Texture.Add(MyTex)
-                End If
-            Next
-
-            ImgTexture_Container.Refresh()
-            LstTextures.Refresh()
-        End If
-    End Sub
     Private Sub BtnTextureMode_Click(sender As Object, e As EventArgs) Handles BtnTextureMode.Click
         Select Case Texture_Mode
             Case TextureMode.Original
