@@ -85,6 +85,7 @@ Public Class FrmVertexEditor
         For Face As Integer = 0 To MyOhana.Model_Object(Index).Per_Face_Index.Count - 1
             LstFaces.AddItem("face_" & Face)
         Next
+        TxtTexID.Text = MyOhana.Model_Object(Index).Texture_ID.ToString()
         LstFaces.Refresh()
         MyOhana.Edit_Mode = True
     End Sub
@@ -137,6 +138,45 @@ Public Class FrmVertexEditor
             MessageBox.Show("You must select an object first!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
         End If
     End Sub
+    Private Sub BtnExportFace_Click(sender As Object, e As EventArgs) Handles BtnExportFace.Click
+        If LstFaces.SelectedIndex > -1 Then
+            Dim SaveDlg As New SaveFileDialog
+            SaveDlg.Filter = "Wavefront OBJ|*.obj"
+            If SaveDlg.ShowDialog = Windows.Forms.DialogResult.OK Then
+                Dim Out As New StringBuilder
+                Dim Info As New NumberFormatInfo
+                Info.NumberDecimalSeparator = "."
+                Info.NumberDecimalDigits = 6
+
+                With MyOhana.Model_Object(MyOhana.Selected_Object)
+                    Dim Temp As List(Of Integer) = .Per_Face_Index(LstFaces.SelectedIndex).ToList
+                    Dim Vertex_Remap(.Vertice.Length - 1) As Integer
+                    Dim Count As Integer
+                    For i As Integer = 0 To .Vertice.Length - 1
+                        If Temp.IndexOf(i) > -1 Then 'Verifica se o vértice é de fato usado na face
+                            Out.AppendLine("v " & ((.Vertice(i).X * If(MyOhana.Load_Mirror, -1, 1)) * MyOhana.Load_Scale).ToString("N", Info) & " " & (.Vertice(i).Y * MyOhana.Load_Scale).ToString("N", Info) & " " & (.Vertice(i).Z * MyOhana.Load_Scale).ToString("N", Info))
+                            Out.AppendLine("vn " & ((.Vertice(i).NX * If(MyOhana.Load_Mirror, -1, 1)) * MyOhana.Load_Scale).ToString("N", Info) & " " & (.Vertice(i).NY * MyOhana.Load_Scale).ToString("N", Info) & " " & (.Vertice(i).NZ * MyOhana.Load_Scale).ToString("N", Info))
+                            Out.AppendLine("vt " & .Vertice(i).U.ToString("N", Info) & " " & .Vertice(i).V.ToString("N", Info))
+                            Vertex_Remap(i) = Count
+                            Count += 1
+                        End If
+                    Next
+
+                    For i As Integer = 0 To .Per_Face_Index(LstFaces.SelectedIndex).Length - 1 Step 3
+                        Dim a As String = (Vertex_Remap(.Per_Face_Index(LstFaces.SelectedIndex)(i)) + 1).ToString()
+                        Dim b As String = (Vertex_Remap(.Per_Face_Index(LstFaces.SelectedIndex)(i + 1)) + 1).ToString()
+                        Dim c As String = (Vertex_Remap(.Per_Face_Index(LstFaces.SelectedIndex)(i + 2)) + 1).ToString()
+
+                        Out.AppendLine("f " & a & "/" & a & "/" & a & " " & b & "/" & b & "/" & b & " " & c & "/" & c & "/" & c)
+                    Next
+                End With
+
+                File.WriteAllText(SaveDlg.FileName, Out.ToString)
+            End If
+        Else
+            MessageBox.Show("You must select an face first!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+        End If
+    End Sub
 
     Private Sub BtnClear_Click(sender As Object, e As EventArgs) Handles BtnClear.Click
         If MyOhana.Selected_Face > -1 Then
@@ -162,6 +202,20 @@ Public Class FrmVertexEditor
             File.WriteAllBytes(MyOhana.Temp_Model_File, Data)
         Else
             MessageBox.Show("You must select an face first!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+        End If
+    End Sub
+
+    Private Sub TxtTexID_TextChanged(sender As Object, e As EventArgs) Handles TxtTexID.TextChanged
+        If LstObjects.SelectedIndex > -1 Then
+            Dim TexID As Integer = Int32.Parse(TxtTexID.Text)
+            If TexID < MyOhana.Model_Texture_Index.Length Then
+                With MyOhana.Model_Object(MyOhana.Selected_Object)
+                    .Texture_ID = TexID
+                    Dim Data() As Byte = File.ReadAllBytes(MyOhana.Temp_Model_File)
+                    Data(.Texture_ID_Offset) = Convert.ToByte(TexID And &HFF)
+                    File.WriteAllBytes(MyOhana.Temp_Model_File, Data)
+                End With
+            End If
         End If
     End Sub
 End Class

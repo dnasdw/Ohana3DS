@@ -184,57 +184,58 @@ Public Class FrmMain
 
 #Region "Model"
     Private Sub BtnModelOpen_Click(sender As Object, e As EventArgs) Handles BtnModelOpen.Click
-        First_Click = True
-
         Dim OpenDlg As New OpenFileDialog
         OpenDlg.Title = "Open Pokémon BCH Model"
         OpenDlg.Filter = "BCH Model|*.*"
         If OpenDlg.ShowDialog = Windows.Forms.DialogResult.OK Then
-            Load_Model(OpenDlg.FileName)
+            If File.Exists(OpenDlg.FileName) Then
+                First_Click = True
+                Load_Model(OpenDlg.FileName)
+            End If
         End If
     End Sub
     Private Sub Load_Model(File_Name As String)
-        'Try
-        Current_Model = File_Name
-        MyOhana.Load_Model(File_Name)
-        LblModelName.Text = Path.GetFileName(File_Name)
-        Update_Info()
+        Try
+            Current_Model = File_Name
+            MyOhana.Load_Model(File_Name)
+            LblModelName.Text = Path.GetFileName(File_Name)
+            Update_Info()
 
-        Dim Temp() As Byte = File.ReadAllBytes(File_Name)
-        Dim File_Magic As String = Nothing
-        For i As Integer = 0 To 2
-            File_Magic &= Chr(Temp(i))
-        Next
-        If File_Magic.Substring(0, 2) = "MM" Or File_Magic = "BCH" Then
-            LstTextures.Clear()
-            ImgTexture.Image = Nothing
-
-            For Index As Integer = 0 To MyOhana.Model_Texture.Count - 1
-                LstTextures.AddItem(MyOhana.Model_Texture(Index).Name)
+            Dim Temp() As Byte = File.ReadAllBytes(File_Name)
+            Dim File_Magic As String = Nothing
+            For i As Integer = 0 To 2
+                File_Magic &= Chr(Temp(i))
             Next
-        End If
+            If File_Magic.Substring(0, 2) = "MM" Or File_Magic = "BCH" Then
+                LstTextures.Clear()
+                ImgTexture.Image = Nothing
 
-        Rot_InitX = 0
-        Rot_InitY = 0
-        Rot_FinalX = 0
-        Rot_FinalY = 0
-        Mov_InitX = 0
-        Mov_InitY = 0
-        Mov_FinalX = 0
-        Mov_FinalY = 0
+                For Index As Integer = 0 To MyOhana.Model_Texture.Count - 1
+                    LstTextures.AddItem(MyOhana.Model_Texture(Index).Name)
+                Next
+            End If
 
-        MyOhana.Rotation.X = 0
-        MyOhana.Rotation.Y = 0
-        MyOhana.Translation.X = 0
-        MyOhana.Translation.Y = 0
+            Rot_InitX = 0
+            Rot_InitY = 0
+            Rot_FinalX = 0
+            Rot_FinalY = 0
+            Mov_InitX = 0
+            Mov_InitY = 0
+            Mov_FinalX = 0
+            Mov_FinalY = 0
 
-        Application.DoEvents()
-        First_Click = False
-        'Catch
-        'MyOhana.Model_Object = Nothing
-        'Screen.Refresh()
-        ' MsgBox("Sorry, something went wrong.", vbExclamation, "Error")
-        'End Try
+            MyOhana.Rotation.X = 0
+            MyOhana.Rotation.Y = 0
+            MyOhana.Translation.X = 0
+            MyOhana.Translation.Y = 0
+
+            Application.DoEvents()
+            First_Click = False
+        Catch
+            MyOhana.Model_Object = Nothing
+            Screen.Refresh()
+            MsgBox("Sorry, something went wrong.", vbExclamation, "Error")
+        End Try
 
         MyOhana.Render()
     End Sub
@@ -433,7 +434,7 @@ Public Class FrmMain
         OpenDlg.Title = "Open Pokémon BCH Texture"
         OpenDlg.Filter = "BCH Texture|*.*"
         If OpenDlg.ShowDialog = Windows.Forms.DialogResult.OK Then
-            Open_Texture(OpenDlg.FileName)
+            If File.Exists(OpenDlg.FileName) Then Open_Texture(OpenDlg.FileName)
         End If
     End Sub
     Private Sub Open_Texture(File_Name As String)
@@ -623,7 +624,7 @@ Public Class FrmMain
         End If
     End Sub
     Private Sub BtnTextureSave_Click(sender As Object, e As EventArgs) Handles BtnTextureSave.Click
-        If MsgBox("The file will be modified, are you sure?", vbYesNo) = vbYes Then
+        If MyOhana.Temp_Texture_File <> Nothing Then
             File.Delete(MyOhana.Current_Texture)
             File.Copy(MyOhana.Temp_Texture_File, MyOhana.Current_Texture)
         End If

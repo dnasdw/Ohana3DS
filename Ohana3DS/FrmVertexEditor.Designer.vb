@@ -31,6 +31,9 @@ Partial Class FrmVertexEditor
         Me.Title = New Ohana3DS.MyWindowTitle()
         Me.BtnMinimize = New System.Windows.Forms.Label()
         Me.BtnClose = New System.Windows.Forms.Label()
+        Me.BtnExportFace = New System.Windows.Forms.Button()
+        Me.LblTexID = New System.Windows.Forms.Label()
+        Me.TxtTexID = New System.Windows.Forms.TextBox()
         Me.SuspendLayout()
         '
         'LstObjects
@@ -64,7 +67,7 @@ Partial Class FrmVertexEditor
         Me.BtnImportObj.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
         Me.BtnImportObj.FlatStyle = System.Windows.Forms.FlatStyle.Flat
         Me.BtnImportObj.ForeColor = System.Drawing.Color.White
-        Me.BtnImportObj.Location = New System.Drawing.Point(106, 444)
+        Me.BtnImportObj.Location = New System.Drawing.Point(200, 444)
         Me.BtnImportObj.Name = "BtnImportObj"
         Me.BtnImportObj.Size = New System.Drawing.Size(88, 24)
         Me.BtnImportObj.TabIndex = 7
@@ -135,12 +138,51 @@ Partial Class FrmVertexEditor
         Me.BtnClose.Text = "X"
         Me.BtnClose.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
         '
+        'BtnExportFace
+        '
+        Me.BtnExportFace.BackColor = System.Drawing.Color.Transparent
+        Me.BtnExportFace.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
+        Me.BtnExportFace.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
+        Me.BtnExportFace.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        Me.BtnExportFace.ForeColor = System.Drawing.Color.White
+        Me.BtnExportFace.Location = New System.Drawing.Point(106, 444)
+        Me.BtnExportFace.Name = "BtnExportFace"
+        Me.BtnExportFace.Size = New System.Drawing.Size(88, 24)
+        Me.BtnExportFace.TabIndex = 25
+        Me.BtnExportFace.Text = "Export face..."
+        Me.BtnExportFace.UseVisualStyleBackColor = False
+        '
+        'LblTexID
+        '
+        Me.LblTexID.AutoSize = True
+        Me.LblTexID.BackColor = System.Drawing.Color.Transparent
+        Me.LblTexID.ForeColor = System.Drawing.Color.White
+        Me.LblTexID.Location = New System.Drawing.Point(428, 450)
+        Me.LblTexID.Name = "LblTexID"
+        Me.LblTexID.Size = New System.Drawing.Size(60, 13)
+        Me.LblTexID.TabIndex = 26
+        Me.LblTexID.Text = "Texture ID:"
+        '
+        'TxtTexID
+        '
+        Me.TxtTexID.BackColor = System.Drawing.Color.Black
+        Me.TxtTexID.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle
+        Me.TxtTexID.Font = New System.Drawing.Font("Segoe UI", 9.5!)
+        Me.TxtTexID.ForeColor = System.Drawing.Color.White
+        Me.TxtTexID.Location = New System.Drawing.Point(494, 444)
+        Me.TxtTexID.Name = "TxtTexID"
+        Me.TxtTexID.Size = New System.Drawing.Size(40, 24)
+        Me.TxtTexID.TabIndex = 27
+        '
         'FrmVertexEditor
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.BackgroundImage = CType(resources.GetObject("$this.BackgroundImage"), System.Drawing.Image)
         Me.ClientSize = New System.Drawing.Size(640, 480)
+        Me.Controls.Add(Me.TxtTexID)
+        Me.Controls.Add(Me.LblTexID)
+        Me.Controls.Add(Me.BtnExportFace)
         Me.Controls.Add(Me.Title)
         Me.Controls.Add(Me.BtnMinimize)
         Me.Controls.Add(Me.BtnClose)
@@ -165,4 +207,7 @@ Partial Class FrmVertexEditor
     Friend WithEvents Title As Ohana3DS.MyWindowTitle
     Friend WithEvents BtnMinimize As System.Windows.Forms.Label
     Friend WithEvents BtnClose As System.Windows.Forms.Label
+    Friend WithEvents BtnExportFace As System.Windows.Forms.Button
+    Friend WithEvents LblTexID As System.Windows.Forms.Label
+    Friend WithEvents TxtTexID As System.Windows.Forms.TextBox
 End Class
