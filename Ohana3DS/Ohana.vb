@@ -63,6 +63,7 @@ Public Class Ohana
         XY
         ORAS
     End Enum
+    Public Magic As String
     Public Model_Object() As VertexList
     Public Model_Texture As List(Of OhanaTexture)
     Public Model_Bone() As OhanaBone
@@ -172,7 +173,7 @@ Public Class Ohana
         For i As Integer = 0 To 2
             File_Magic &= Chr(Temp(i))
         Next
-
+        Magic = File_Magic
         Dim BCH_Offset As Integer
         If Left(File_Magic, 2) = "PC" Or Left(File_Magic, 2) = "MM" Then
             BCH_Offset = &H80
@@ -1935,4 +1936,38 @@ Public Class Ohana
 
         File.WriteAllBytes(Temp_Model_File, Data)
     End Sub
+
+    Public Function makeMapIMG(byteArray As Byte())
+        Using dataStream As Stream = New MemoryStream(byteArray)
+            Using br As New BinaryReader(dataStream)
+                Dim width As UShort = br.ReadUInt16()
+                Dim height As UShort = br.ReadUInt16()
+
+                Dim img As New Bitmap(width * 8, height * 8)
+                Dim c As New Color()
+                For i As Integer = 0 To width * height - 1
+                    Dim col2 As UInteger = br.ReadUInt32()
+                    If col2 = &H1000021 Then
+                        c = Color.Black
+                    Else
+                        col2 = LCG(col2, 4)
+                        c = Color.FromArgb(&HFF, &HFF - CByte(col2 And &HFF), &HFF - CByte((col2 >> 8) And &HFF), &HFF - CByte(col2 >> 24 And &HFF))
+                    End If
+                    For x As Integer = 0 To 7
+                        For y As Integer = 0 To 7
+                            img.SetPixel((x + (i * 8) Mod (img.Width)), y + ((i \ width) * 8), c)
+                        Next
+                    Next
+                Next
+                FrmMapProp.mapPicBox.Image = img
+            End Using
+        End Using
+    End Function
+    Public Function LCG(seed As Long, ctr As Integer) As UInteger
+        For i As Integer = 0 To ctr - 1
+            seed *= &H41C64E6D
+            seed += &H6073
+        Next
+        Return seed
+    End Function
 End Class
