@@ -56,24 +56,27 @@ Public Class Ohana
         Dim Rotation As Vector3
         Dim Scale As Vector3
     End Structure
-    Private Enum ModelType
+    Public Enum ModelType
         Character
         Map
     End Enum
-    Public Enum BCH_Version
+    Private Enum BCH_Version
         XY
         ORAS
     End Enum
-    Public Magic As String
+
     Public Model_Object() As VertexList
     Public Model_Texture As List(Of OhanaTexture)
     Public Model_Bone() As OhanaBone
     Public Model_Texture_Index() As String
     Public Model_Bump_Map_Index() As String
-    Private Model_Type As ModelType
+
+    Public Magic As String
+    Public Model_Type As ModelType
 
     Public Scale As Single = 32.0F
     Public Model_Mirror_X As Boolean = True
+    Public Lighting As Boolean = True
     Public Load_Scale As Single
     Public Load_Mirror As Boolean
 
@@ -1637,22 +1640,7 @@ Public Class Ohana
         Device.Transform.View = Matrix.LookAtLH(New Vector3(0.0F, 0.0F, 20.0F), New Vector3(0.0F, 0.0F, 0.0F), New Vector3(0.0F, 1.0F, 0.0F))
 
         'Configura iluminação
-        With Device
-            If Has_Normals Then
-                .RenderState.Lighting = True
-                .RenderState.Ambient = Color.FromArgb(64, 64, 64)
-                .Lights(0).Type = LightType.Point
-                .Lights(0).Diffuse = Color.White
-                .Lights(0).Position = New Vector3(0.0F, 10.0F, 30.0F)
-                .Lights(0).Range = 520.0F
-                .Lights(0).Attenuation0 = 2.0F / Scale
-                .Lights(0).Enabled = True
-            Else
-                .RenderState.Lighting = False
-                .RenderState.Ambient = Color.White
-                .Lights(0).Enabled = False
-            End If
-        End With
+        Switch_Lighting(Lighting)
 
         Rendering = True
         While Rendering
@@ -1758,6 +1746,25 @@ Public Class Ohana
             Application.DoEvents()
         End While
     End Sub
+
+    Public Sub Switch_Lighting(Enabled As Boolean)
+        With Device
+            If Enabled And Has_Normals Then
+                .RenderState.Lighting = True
+                .RenderState.Ambient = Color.FromArgb(64, 64, 64)
+                .Lights(0).Type = LightType.Point
+                .Lights(0).Diffuse = Color.White
+                .Lights(0).Position = New Vector3(0.0F, 10.0F, 30.0F)
+                .Lights(0).Range = 520.0F
+                .Lights(0).Attenuation0 = 2.0F / Scale
+                .Lights(0).Enabled = True
+            Else
+                .RenderState.Lighting = False
+                .RenderState.Ambient = Color.White
+                .Lights(0).Enabled = False
+            End If
+        End With
+    End Sub
 #End Region
 
 #Region "OBJ Inserter"
@@ -1808,29 +1815,57 @@ Public Class Ohana
 
             Vertice_Index = 0
             Offset = Current_Vertex_Offset
-            For Each Normal As Match In Normals
-                Dim NX_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(Normal.Groups(1).Value, CultureInfo.InvariantCulture))
-                Dim NY_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(Normal.Groups(3).Value, CultureInfo.InvariantCulture))
-                Dim NZ_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(Normal.Groups(5).Value, CultureInfo.InvariantCulture))
+            If Normals.Count = 0 Then
+                If MessageBox.Show("Your OBJ file doesn't have normals..." & Environment.NewLine & "Would like to remove them from the object?", "Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Question) = DialogResult.Yes Then
+                    Dim NX_Bytes() As Byte = BitConverter.GetBytes(Convert.ToSingle(0))
+                    Dim NY_Bytes() As Byte = BitConverter.GetBytes(Convert.ToSingle(0))
+                    Dim NZ_Bytes() As Byte = BitConverter.GetBytes(Convert.ToSingle(0))
 
-                Select Case .Vertex_Entry.Format
-                    Case &H20, &H24, &H28, &H2C, &H30, &H34, &H38
-                        Buffer.BlockCopy(NX_Bytes, 0, Data, Offset + 12, 4)
-                        Buffer.BlockCopy(NY_Bytes, 0, Data, Offset + 16, 4)
-                        Buffer.BlockCopy(NZ_Bytes, 0, Data, Offset + 20, 4)
-                End Select
+                    For Each Vertex As OhanaVertex In Model_Object(Selected_Object).Vertice
+                        Select Case .Vertex_Entry.Format
+                            Case &H20, &H24, &H28, &H2C, &H30, &H34, &H38
+                                Buffer.BlockCopy(NX_Bytes, 0, Data, Offset + 12, 4)
+                                Buffer.BlockCopy(NY_Bytes, 0, Data, Offset + 16, 4)
+                                Buffer.BlockCopy(NZ_Bytes, 0, Data, Offset + 20, 4)
+                        End Select
 
-                With Model_Object(Selected_Object).Vertice(Vertice_Index)
-                    .NX = Single.Parse(Normal.Groups(1).Value, CultureInfo.InvariantCulture) / Load_Scale
-                    .NY = Single.Parse(Normal.Groups(3).Value, CultureInfo.InvariantCulture) / Load_Scale
-                    .NZ = Single.Parse(Normal.Groups(5).Value, CultureInfo.InvariantCulture) / Load_Scale
-                    If Load_Mirror Then .NX *= -1
-                End With
+                        With Model_Object(Selected_Object).Vertice(Vertice_Index)
+                            .NX = 0
+                            .NY = 0
+                            .NZ = 0
+                        End With
 
-                Vertice_Index += 1
-                Offset += .Vertex_Entry.Format
-                If Offset - .Vertex_Entry.Offset >= Vertex_Length Then Exit For
-            Next
+                        Vertice_Index += 1
+                        Offset += .Vertex_Entry.Format
+                        If Offset - .Vertex_Entry.Offset >= Vertex_Length Then Exit For
+                    Next
+                End If
+            Else
+                For Each Normal As Match In Normals
+                    Dim NX_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(Normal.Groups(1).Value, CultureInfo.InvariantCulture))
+                    Dim NY_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(Normal.Groups(3).Value, CultureInfo.InvariantCulture))
+                    Dim NZ_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(Normal.Groups(5).Value, CultureInfo.InvariantCulture))
+
+                    Select Case .Vertex_Entry.Format
+                        Case &H20, &H24, &H28, &H2C, &H30, &H34, &H38
+                            Buffer.BlockCopy(NX_Bytes, 0, Data, Offset + 12, 4)
+                            Buffer.BlockCopy(NY_Bytes, 0, Data, Offset + 16, 4)
+                            Buffer.BlockCopy(NZ_Bytes, 0, Data, Offset + 20, 4)
+                    End Select
+
+                    With Model_Object(Selected_Object).Vertice(Vertice_Index)
+                        .NX = Single.Parse(Normal.Groups(1).Value, CultureInfo.InvariantCulture) / Load_Scale
+                        .NY = Single.Parse(Normal.Groups(3).Value, CultureInfo.InvariantCulture) / Load_Scale
+                        .NZ = Single.Parse(Normal.Groups(5).Value, CultureInfo.InvariantCulture) / Load_Scale
+                        If Load_Mirror Then .NX *= -1
+                    End With
+
+                    Vertice_Index += 1
+                    Offset += .Vertex_Entry.Format
+                    If Offset - .Vertex_Entry.Offset >= Vertex_Length Then Exit For
+                Next
+            End If
+
 
             Vertice_Index = 0
             Offset = Current_Vertex_Offset

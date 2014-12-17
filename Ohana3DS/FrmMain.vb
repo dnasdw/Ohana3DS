@@ -86,6 +86,12 @@ Public Class FrmMain
                         Next
                 End Select
             End If
+
+            Select Case e.KeyCode
+                Case Keys.F9
+                    MyOhana.Lighting = Not MyOhana.Lighting
+                    MyOhana.Switch_Lighting(MyOhana.Lighting)
+            End Select
         End If
     End Sub
     Private Sub FrmMain_DragDrop(sender As System.Object, e As System.Windows.Forms.DragEventArgs) Handles Me.DragDrop
@@ -512,7 +518,7 @@ Public Class FrmMain
                 Dim SaveDlg As New SaveFileDialog
                 SaveDlg.Title = "Save image"
                 SaveDlg.Filter = "Image|*.png"
-                SaveDlg.FileName = Path.GetFileNameWithoutExtension(MyOhana.Current_Texture) & ".png"
+                SaveDlg.FileName = MyOhana.Model_Texture(LstTextures.SelectedIndex).Name & ".png"
                 If SaveDlg.ShowDialog = Windows.Forms.DialogResult.OK Then
                     Dim Img As New Bitmap(MyOhana.Model_Texture(LstTextures.SelectedIndex).Image)
                     If Texture_Mode = TextureMode.FlipY Or Texture_Mode = TextureMode.FlipY_Mirror Then Img.RotateFlip(RotateFlipType.RotateNoneFlipY)
