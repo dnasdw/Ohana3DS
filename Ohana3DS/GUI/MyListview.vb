@@ -5,6 +5,7 @@ Public Class MyListview
     Inherits Control
 
     Private Selected As Color = Color.FromArgb(15, 82, 186)
+    Private Ash_Gray As Color = Color.FromArgb(178, 190, 181)
 
     Public Structure ListText
         Dim Text As String
@@ -28,6 +29,8 @@ Public Class MyListview
     Private Scroll_Mouse_Y As Integer
     Private Mouse_Drag As Boolean
     Private Clicked As Boolean
+
+    Private Bar_Fore_Color As Color
     Public Sub New()
         Me.DoubleBuffered = True
         SetStyle(ControlStyles.AllPaintingInWmPaint Or _
@@ -64,6 +67,22 @@ Public Class MyListview
     Public Sub AddItem(Item As ListItem)
         LstItems.Add(Item)
     End Sub
+    Public Sub ChangeItem(Index As Integer, Item As ListItem)
+        Dim Temp() As ListItem = LstItems.ToArray()
+        Dim j As Integer
+        For i As Integer = 0 To Temp.Length - 1
+            If Not Temp(i).Header Then
+                If j = Index Then
+                    Temp(i) = Item
+                    Exit For
+                End If
+                j += 1
+            End If
+        Next
+        LstItems.Clear()
+        LstItems.AddRange(Temp)
+        Me.Refresh()
+    End Sub
     Public Sub Clear()
         LstItems.Clear()
         Selected_Index = -1
@@ -76,25 +95,29 @@ Public Class MyListview
         e.Graphics.FillRectangle(New SolidBrush(Me.BackColor), e.ClipRectangle)
 
         If LstItems IsNot Nothing Then
-            Dim Start_Y As Integer = Scroll_Y * -1
+            Dim Total_Size As Integer = LstItems.Count * Tile_Height
+            Dim Start_Y As Integer
+            If Total_Size > Me.Height Then Start_Y = Scroll_Y * -1
             Dim Total_Index, Index As Integer
 
             For Each Item As ListItem In LstItems
                 'Item selecionado (e detecção de click no Item)
                 If Start_Y >= -Tile_Height Then
                     If Start_Y > Me.Height Then Exit For
-                    If Clicked Then
-                        Dim Item_Rect As New Rectangle(0, Start_Y, Me.Width, TileHeight)
-                        Dim Mouse_Rect As New Rectangle(Mouse_Position, New Size(1, 1))
-                        If Item_Rect.IntersectsWith(Mouse_Rect) And Not Item.Header Then 'Selecionado
-                            Clicked = False
-                            e.Graphics.FillRectangle(New SolidBrush(Selected), New Rectangle(0, Start_Y, Me.Width, TileHeight))
-                            Selected_Index = Index
-                            Selected_Index_Total = Total_Index
-                            RaiseEvent SelectedIndexChanged(Index)
+                    If Not Item.Header Then
+                        If Clicked Then
+                            Dim Item_Rect As New Rectangle(0, Start_Y, Me.Width, TileHeight)
+                            Dim Mouse_Rect As New Rectangle(Mouse_Position, New Size(1, 1))
+                            If Item_Rect.IntersectsWith(Mouse_Rect) Then 'Selecionado
+                                Clicked = False
+                                e.Graphics.FillRectangle(New SolidBrush(Selected), New Rectangle(0, Start_Y, Me.Width, TileHeight))
+                                Selected_Index = Index
+                                Selected_Index_Total = Total_Index
+                                RaiseEvent SelectedIndexChanged(Index)
+                            End If
+                        Else
+                            If Index = Selected_Index Then e.Graphics.FillRectangle(New SolidBrush(Selected), New Rectangle(0, Start_Y, Me.Width, TileHeight))
                         End If
-                    Else
-                        If Index = Selected_Index Then e.Graphics.FillRectangle(New SolidBrush(Selected), New Rectangle(0, Start_Y, Me.Width, TileHeight))
                     End If
 
                     'Textos e afins
@@ -129,10 +152,9 @@ Public Class MyListview
             Next
 
             'Barra de rolagem
-            Dim Total_Size As Integer = LstItems.Count * Tile_Height
             If Total_Size > Me.Height Then
-                e.Graphics.FillRectangle(Brushes.White, New Rectangle(Me.Width - 10, Scroll_Bar_Y + 1, 9, Scroll_Bar_Height - 2))
-                Draw_Rounded_Rectangle(e.Graphics, New Rectangle(Me.Width - 11, Scroll_Bar_Y, 10, Scroll_Bar_Height - 1), 4, Color.White)
+                e.Graphics.FillRectangle(New SolidBrush(Bar_Fore_Color), New Rectangle(Me.Width - 10, Scroll_Bar_Y + 1, 9, Scroll_Bar_Height - 2))
+                Draw_Rounded_Rectangle(e.Graphics, New Rectangle(Me.Width - 11, Scroll_Bar_Y, 10, Scroll_Bar_Height - 1), 4, Bar_Fore_Color)
             End If
         End If
 
@@ -165,6 +187,19 @@ Public Class MyListview
         MyBase.OnMouseUp(e)
     End Sub
     Protected Overrides Sub OnMouseMove(e As MouseEventArgs)
+        Dim Scroll_Rect As New Rectangle(Me.Width - 10, Scroll_Bar_Y, 10, Scroll_Bar_Height)
+        If Scroll_Rect.IntersectsWith(New Rectangle(e.X, e.Y, 1, 1)) Then
+            If Bar_Fore_Color <> Ash_Gray Then
+                Bar_Fore_Color = Ash_Gray
+                Me.Refresh()
+            End If
+        ElseIf Not Mouse_Drag Then
+            If Bar_Fore_Color <> Color.White Then
+                Bar_Fore_Color = Color.White
+                Me.Refresh()
+            End If
+        End If
+
         If e.Button = Windows.Forms.MouseButtons.Left And Mouse_Drag Then
             Dim Y As Integer = e.Y - Scroll_Mouse_Y
             If Y < 0 Then
@@ -187,9 +222,9 @@ Public Class MyListview
             Dim Y As Integer
 
             If e.Delta > 0 Then
-                Y = Scroll_Bar_Y - 8
+                Y = Scroll_Bar_Y - 16
             ElseIf e.Delta < 0 Then
-                Y = Scroll_Bar_Y + 8
+                Y = Scroll_Bar_Y + 16
             End If
 
             If Y < 0 Then
@@ -204,6 +239,14 @@ Public Class MyListview
         End If
 
         MyBase.OnMouseWheel(e)
+    End Sub
+    Protected Overrides Sub OnMouseLeave(e As EventArgs)
+        If Not Mouse_Drag Then
+            Bar_Fore_Color = Color.White
+            Me.Refresh()
+        End If
+
+        MyBase.OnMouseLeave(e)
     End Sub
     Protected Overrides Function IsInputKey(keyData As Keys) As Boolean
         Select Case keyData
@@ -230,7 +273,7 @@ Public Class MyListview
                     If Y = 0 Then Exit While
                 End While
             Case Keys.Down
-                If Selected_Index < LstItems.Count - 1 Then
+                If Selected_Index < Get_Headerless_Length() - 1 Then
                     Selected_Index += 1
                     Selected_Index_Total += 1
                     RaiseEvent SelectedIndexChanged(Selected_Index)
@@ -274,6 +317,14 @@ Public Class MyListview
         Gfx.DrawArc(Pen, Arc_Rect, 90, 90)
         Gfx.DrawLine(Pen, Rect.X, Rect.Y + CInt(Width / 2), Rect.X, Rect.Y + Rect.Height - CInt(Width / 2))
     End Sub
+
+    Private Function Get_Headerless_Length() As Integer
+        Dim j As Integer
+        For i As Integer = 0 To LstItems.Count - 1
+            If Not LstItems(i).Header Then j += 1
+        Next
+        Return j
+    End Function
 
     Public Event SelectedIndexChanged(New_Index As Integer)
 End Class

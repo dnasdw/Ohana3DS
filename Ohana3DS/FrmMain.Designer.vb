@@ -70,8 +70,7 @@ Partial Class FrmMain
         Me.LblInfoTextureIndex = New System.Windows.Forms.Label()
         Me.LblInfoTextureIndexDummy = New System.Windows.Forms.Label()
         Me.GrpTexturePreview = New Ohana3DS.MyGroupbox()
-        Me.ImgTexture_Container = New System.Windows.Forms.Panel()
-        Me.ImgTexture = New System.Windows.Forms.PictureBox()
+        Me.ImgTexture = New Ohana3DS.MyPicturebox()
         Me.GrpTextures = New Ohana3DS.MyGroupbox()
         Me.LstTextures = New Ohana3DS.MyListview()
         Me.TextPage = New System.Windows.Forms.TabPage()
@@ -81,7 +80,7 @@ Partial Class FrmMain
         Me.BtnTextExport = New System.Windows.Forms.Button()
         Me.BtnTextOpen = New System.Windows.Forms.Button()
         Me.GrpTextStrings = New Ohana3DS.MyGroupbox()
-        Me.TxtGameStrings = New System.Windows.Forms.TextBox()
+        Me.LstStrings = New Ohana3DS.MyListview()
         Me.GARCPage = New System.Windows.Forms.TabPage()
         Me.GrpGARCOptions = New Ohana3DS.MyGroupbox()
         Me.BtnGARCCompression = New System.Windows.Forms.Button()
@@ -113,7 +112,6 @@ Partial Class FrmMain
         Me.GrpTexOptions.SuspendLayout()
         Me.GrpTexInfo.SuspendLayout()
         Me.GrpTexturePreview.SuspendLayout()
-        Me.ImgTexture_Container.SuspendLayout()
         CType(Me.ImgTexture, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.GrpTextures.SuspendLayout()
         Me.TextPage.SuspendLayout()
@@ -346,7 +344,7 @@ Partial Class FrmMain
         Me.LblModelName.Font = New System.Drawing.Font("Segoe UI Light", 8.25!)
         Me.LblModelName.Location = New System.Drawing.Point(112, 18)
         Me.LblModelName.Name = "LblModelName"
-        Me.LblModelName.Size = New System.Drawing.Size(88, 13)
+        Me.LblModelName.Size = New System.Drawing.Size(88, 16)
         Me.LblModelName.TabIndex = 6
         '
         'BtnModelTexturesMore
@@ -677,7 +675,7 @@ Partial Class FrmMain
         '
         'GrpTexturePreview
         '
-        Me.GrpTexturePreview.Controls.Add(Me.ImgTexture_Container)
+        Me.GrpTexturePreview.Controls.Add(Me.ImgTexture)
         Me.GrpTexturePreview.ForeColor = System.Drawing.Color.White
         Me.GrpTexturePreview.Location = New System.Drawing.Point(206, 0)
         Me.GrpTexturePreview.Name = "GrpTexturePreview"
@@ -686,22 +684,13 @@ Partial Class FrmMain
         Me.GrpTexturePreview.TabStop = False
         Me.GrpTexturePreview.Text = "View"
         '
-        'ImgTexture_Container
-        '
-        Me.ImgTexture_Container.AutoScroll = True
-        Me.ImgTexture_Container.Controls.Add(Me.ImgTexture)
-        Me.ImgTexture_Container.Location = New System.Drawing.Point(0, 18)
-        Me.ImgTexture_Container.Name = "ImgTexture_Container"
-        Me.ImgTexture_Container.Size = New System.Drawing.Size(562, 460)
-        Me.ImgTexture_Container.TabIndex = 0
-        '
         'ImgTexture
         '
-        Me.ImgTexture.Location = New System.Drawing.Point(0, 0)
+        Me.ImgTexture.Image = Nothing
+        Me.ImgTexture.Location = New System.Drawing.Point(0, 18)
         Me.ImgTexture.Name = "ImgTexture"
-        Me.ImgTexture.Size = New System.Drawing.Size(128, 128)
-        Me.ImgTexture.SizeMode = System.Windows.Forms.PictureBoxSizeMode.AutoSize
-        Me.ImgTexture.TabIndex = 1
+        Me.ImgTexture.Size = New System.Drawing.Size(562, 462)
+        Me.ImgTexture.TabIndex = 0
         Me.ImgTexture.TabStop = False
         '
         'GrpTextures
@@ -801,7 +790,7 @@ Partial Class FrmMain
         '
         'GrpTextStrings
         '
-        Me.GrpTextStrings.Controls.Add(Me.TxtGameStrings)
+        Me.GrpTextStrings.Controls.Add(Me.LstStrings)
         Me.GrpTextStrings.ForeColor = System.Drawing.Color.White
         Me.GrpTextStrings.Location = New System.Drawing.Point(0, 0)
         Me.GrpTextStrings.Name = "GrpTextStrings"
@@ -810,17 +799,15 @@ Partial Class FrmMain
         Me.GrpTextStrings.TabStop = False
         Me.GrpTextStrings.Text = "Texts (Preview only!)"
         '
-        'TxtGameStrings
+        'LstStrings
         '
-        Me.TxtGameStrings.BackColor = System.Drawing.Color.Black
-        Me.TxtGameStrings.BorderStyle = System.Windows.Forms.BorderStyle.None
-        Me.TxtGameStrings.ForeColor = System.Drawing.Color.White
-        Me.TxtGameStrings.Location = New System.Drawing.Point(0, 18)
-        Me.TxtGameStrings.Multiline = True
-        Me.TxtGameStrings.Name = "TxtGameStrings"
-        Me.TxtGameStrings.ScrollBars = System.Windows.Forms.ScrollBars.Vertical
-        Me.TxtGameStrings.Size = New System.Drawing.Size(768, 460)
-        Me.TxtGameStrings.TabIndex = 0
+        Me.LstStrings.Location = New System.Drawing.Point(0, 18)
+        Me.LstStrings.Name = "LstStrings"
+        Me.LstStrings.SelectedIndex = -1
+        Me.LstStrings.Size = New System.Drawing.Size(768, 460)
+        Me.LstStrings.TabIndex = 0
+        Me.LstStrings.Text = "MyListview1"
+        Me.LstStrings.TileHeight = 16
         '
         'GARCPage
         '
@@ -858,11 +845,11 @@ Partial Class FrmMain
         Me.BtnGARCCompression.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
         Me.BtnGARCCompression.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
         Me.BtnGARCCompression.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        Me.BtnGARCCompression.Location = New System.Drawing.Point(680, 18)
+        Me.BtnGARCCompression.Location = New System.Drawing.Point(615, 18)
         Me.BtnGARCCompression.Name = "BtnGARCCompression"
-        Me.BtnGARCCompression.Size = New System.Drawing.Size(88, 24)
+        Me.BtnGARCCompression.Size = New System.Drawing.Size(150, 24)
         Me.BtnGARCCompression.TabIndex = 7
-        Me.BtnGARCCompression.Text = "Fast comp."
+        Me.BtnGARCCompression.Text = "Optimal compression"
         Me.BtnGARCCompression.UseVisualStyleBackColor = True
         '
         'ProgressGARCInsertion
@@ -1091,14 +1078,11 @@ Partial Class FrmMain
         Me.GrpTexInfo.ResumeLayout(False)
         Me.GrpTexInfo.PerformLayout()
         Me.GrpTexturePreview.ResumeLayout(False)
-        Me.ImgTexture_Container.ResumeLayout(False)
-        Me.ImgTexture_Container.PerformLayout()
         CType(Me.ImgTexture, System.ComponentModel.ISupportInitialize).EndInit()
         Me.GrpTextures.ResumeLayout(False)
         Me.TextPage.ResumeLayout(False)
         Me.GrpTextOptions.ResumeLayout(False)
         Me.GrpTextStrings.ResumeLayout(False)
-        Me.GrpTextStrings.PerformLayout()
         Me.GARCPage.ResumeLayout(False)
         Me.GrpGARCOptions.ResumeLayout(False)
         Me.GrpFiles.ResumeLayout(False)
@@ -1154,8 +1138,6 @@ Partial Class FrmMain
     Friend WithEvents LblInfoTextureIndex As System.Windows.Forms.Label
     Friend WithEvents LblInfoTextureIndexDummy As System.Windows.Forms.Label
     Friend WithEvents GrpTexturePreview As Ohana3DS.MyGroupbox
-    Friend WithEvents ImgTexture_Container As System.Windows.Forms.Panel
-    Friend WithEvents ImgTexture As System.Windows.Forms.PictureBox
     Friend WithEvents GrpTextures As Ohana3DS.MyGroupbox
     Friend WithEvents GrpGARCOptions As Ohana3DS.MyGroupbox
     Friend WithEvents ProgressGARC As Ohana3DS.MyProgressbar
@@ -1176,7 +1158,6 @@ Partial Class FrmMain
     Friend WithEvents BtnTextExport As System.Windows.Forms.Button
     Friend WithEvents BtnTextOpen As System.Windows.Forms.Button
     Friend WithEvents GrpTextStrings As Ohana3DS.MyGroupbox
-    Friend WithEvents TxtGameStrings As System.Windows.Forms.TextBox
     Friend WithEvents BtnTextImport As System.Windows.Forms.Button
     Friend WithEvents BtnTextSave As System.Windows.Forms.Button
     Friend WithEvents LstTextures As Ohana3DS.MyListview
@@ -1190,5 +1171,7 @@ Partial Class FrmMain
     Friend WithEvents BtnModelVertexEditor As System.Windows.Forms.Button
     Friend WithEvents BtnModelSave As System.Windows.Forms.Button
     Friend WithEvents BtnModelMapEditor As System.Windows.Forms.Button
+    Friend WithEvents LstStrings As Ohana3DS.MyListview
+    Friend WithEvents ImgTexture As Ohana3DS.MyPicturebox
 
 End Class

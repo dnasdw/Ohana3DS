@@ -24,10 +24,10 @@
 
         If Scrolling_Needed Then
             If Scroll_X > Text_Width Then Scroll_X = 0
-            e.Graphics.DrawString(Me.Text, Me.Font, New SolidBrush(Me.ForeColor), New Point(Scroll_X * -1, 0))
-            e.Graphics.DrawString(Me.Text, Me.Font, New SolidBrush(Me.ForeColor), New Point(Text_Width + (Scroll_X * -1), 0))
+            e.Graphics.DrawString(Me.Text, Me.Font, New SolidBrush(Me.ForeColor), New Point(Scroll_X * -1, -1))
+            e.Graphics.DrawString(Me.Text, Me.Font, New SolidBrush(Me.ForeColor), New Point(Text_Width + (Scroll_X * -1), -1))
         Else
-            e.Graphics.DrawString(Me.Text, Me.Font, New SolidBrush(Me.ForeColor), Point.Empty)
+            e.Graphics.DrawString(Me.Text, Me.Font, New SolidBrush(Me.ForeColor), New Point(0, -1))
         End If
 
         MyBase.OnPaint(e)

@@ -38,9 +38,7 @@ Public Class FrmMain
         Select Case m.Msg
             Case &H84
                 Dim Mouse_Position As Point = PointToClient(Cursor.Position)
-                If Mouse_Position.Y < 32 Then
-                    If m.Result = New IntPtr(1) Then m.Result = New IntPtr(2)
-                End If
+                If Mouse_Position.Y < 32 Then If m.Result = New IntPtr(1) Then m.Result = New IntPtr(2)
         End Select
     End Sub
     Private Delegate Sub FileDrop(File_Name As String)
@@ -68,6 +66,7 @@ Public Class FrmMain
                 BtnTextureMode.Text = "Flip/Mirror"
                 Texture_Mode = TextureMode.FlipY_Mirror
         End Select
+        MyNako.Fast_Compression = My.Settings.FastCompression
 
         Show()
     End Sub
@@ -79,11 +78,11 @@ Public Class FrmMain
                 Select Case e.KeyCode
                     Case Keys.Left
                         For Index As Integer = 1 To Input_Files.Count - 1
-                            If Input_Files(Index).Name = Model_Name Then Load_Model(Input_Files(Index - 1).FullName)
+                            If Input_Files(Index).Name = Model_Name Then Open_Model(Input_Files(Index - 1).FullName)
                         Next
                     Case Keys.Right
                         For Index As Integer = 0 To Input_Files.Count - 2
-                            If Input_Files(Index).Name = Model_Name Then Load_Model(Input_Files(Index + 1).FullName)
+                            If Input_Files(Index).Name = Model_Name Then Open_Model(Input_Files(Index + 1).FullName)
                         Next
                 End Select
             End If
@@ -111,7 +110,7 @@ Public Class FrmMain
 
         If Magic_2_Bytes = "PC" Or Magic_2_Bytes = "MM" Or Magic_2_Bytes = "GR" Or Magic_3_Bytes = "BCH" Then
             MainTabs.SelectTab(0)
-            Load_Model(File_Name)
+            Open_Model(File_Name)
         ElseIf Magic_2_Bytes = "PT" Or CLIM_Magic = "CLIM" Then
             MainTabs.SelectTab(1)
             Open_Texture(File_Name)
@@ -190,51 +189,54 @@ Public Class FrmMain
         If OpenDlg.ShowDialog = Windows.Forms.DialogResult.OK Then
             If File.Exists(OpenDlg.FileName) Then
                 First_Click = True
-                Load_Model(OpenDlg.FileName)
+                Open_Model(OpenDlg.FileName)
             End If
         End If
     End Sub
-    Private Sub Load_Model(File_Name As String)
+    Private Sub Open_Model(File_Name As String)
         Try
             Current_Model = File_Name
-            MyOhana.Load_Model(File_Name)
-            LblModelName.Text = Path.GetFileName(File_Name)
-            Update_Info()
+            If MyOhana.Load_Model(File_Name) Then
+                LblModelName.Text = Path.GetFileName(File_Name)
+                Update_Info()
 
-            Dim Temp() As Byte = File.ReadAllBytes(File_Name)
-            Dim File_Magic As String = Nothing
-            For i As Integer = 0 To 2
-                File_Magic &= Chr(Temp(i))
-            Next
-            If File_Magic.Substring(0, 2) = "MM" Or File_Magic = "BCH" Then
-                LstTextures.Clear()
-                ImgTexture.Image = Nothing
-
-                For Index As Integer = 0 To MyOhana.Model_Texture.Count - 1
-                    LstTextures.AddItem(MyOhana.Model_Texture(Index).Name)
+                Dim Temp() As Byte = File.ReadAllBytes(File_Name)
+                Dim File_Magic As String = Nothing
+                For i As Integer = 0 To 2
+                    File_Magic &= Chr(Temp(i))
                 Next
+                If File_Magic.Substring(0, 2) = "MM" Or File_Magic = "BCH" Then
+                    LstTextures.Clear()
+                    ImgTexture.Image = Nothing
+
+                    For Index As Integer = 0 To MyOhana.Model_Texture.Count - 1
+                        LstTextures.AddItem(MyOhana.Model_Texture(Index).Name)
+                    Next
+                End If
+
+                Rot_InitX = 0
+                Rot_InitY = 0
+                Rot_FinalX = 0
+                Rot_FinalY = 0
+                Mov_InitX = 0
+                Mov_InitY = 0
+                Mov_FinalX = 0
+                Mov_FinalY = 0
+
+                MyOhana.Rotation.X = 0
+                MyOhana.Rotation.Y = 0
+                MyOhana.Translation.X = 0
+                MyOhana.Translation.Y = 0
+
+                Application.DoEvents()
+                First_Click = False
+            Else
+                MessageBox.Show("This file is not a model file!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
             End If
-
-            Rot_InitX = 0
-            Rot_InitY = 0
-            Rot_FinalX = 0
-            Rot_FinalY = 0
-            Mov_InitX = 0
-            Mov_InitY = 0
-            Mov_FinalX = 0
-            Mov_FinalY = 0
-
-            MyOhana.Rotation.X = 0
-            MyOhana.Rotation.Y = 0
-            MyOhana.Translation.X = 0
-            MyOhana.Translation.Y = 0
-
-            Application.DoEvents()
-            First_Click = False
         Catch
             MyOhana.Model_Object = Nothing
             Screen.Refresh()
-            MsgBox("Sorry, something went wrong.", vbExclamation, "Error")
+            MessageBox.Show("Sorry, something went wrong.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
 
         MyOhana.Render()
@@ -244,6 +246,7 @@ Public Class FrmMain
             Dim SaveDlg As New SaveFileDialog
             SaveDlg.Title = "Save model"
             SaveDlg.Filter = "Valve SMD|*.smd"
+            SaveDlg.FileName = Path.GetFileNameWithoutExtension(MyOhana.Current_Model) & ".smd"
             If SaveDlg.ShowDialog = Windows.Forms.DialogResult.OK Then
                 MyOhana.Export_SMD(SaveDlg.FileName)
             End If
@@ -280,8 +283,8 @@ Public Class FrmMain
         Dim Total_Index, Index As Integer
         For Each File As FileInfo In Input_Files
             Try
-                Exporter.Load_Model(File.FullName, False, False)
-                If Exporter.Model_Object IsNot Nothing Then
+
+                If Exporter.Load_Model(File.FullName, False) Then
                     If Exporter.Model_Object.Length > 0 Then
                         Dim File_Name As String = Path.Combine(OutFolder, File.Name & ".smd")
                         Exporter.Export_SMD(File_Name)
@@ -441,7 +444,6 @@ Public Class FrmMain
         Try
             LstTextures.Clear()
             ImgTexture.Image = Nothing
-            ImgTexture_Container.Refresh()
 
             MyOhana.Load_Textures(File_Name)
             For Each Texture As Ohana.OhanaTexture In MyOhana.Model_Texture
@@ -449,7 +451,7 @@ Public Class FrmMain
             Next
             LstTextures.Refresh()
         Catch
-            MsgBox("Sorry, something went wrong.", vbExclamation, "Error")
+            MessageBox.Show("Sorry, something went wrong.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub
     Private Sub LstTextures_SelectedIndexChanged(Index As Integer) Handles LstTextures.SelectedIndexChanged
@@ -510,6 +512,7 @@ Public Class FrmMain
                 Dim SaveDlg As New SaveFileDialog
                 SaveDlg.Title = "Save image"
                 SaveDlg.Filter = "Image|*.png"
+                SaveDlg.FileName = Path.GetFileNameWithoutExtension(MyOhana.Current_Texture) & ".png"
                 If SaveDlg.ShowDialog = Windows.Forms.DialogResult.OK Then
                     Dim Img As New Bitmap(MyOhana.Model_Texture(LstTextures.SelectedIndex).Image)
                     If Texture_Mode = TextureMode.FlipY Or Texture_Mode = TextureMode.FlipY_Mirror Then Img.RotateFlip(RotateFlipType.RotateNoneFlipY)
@@ -663,11 +666,7 @@ Public Class FrmMain
             If File.Exists(OpenDlg.FileName) Then
                 Current_Opened_Text = OpenDlg.FileName
                 MyMinko.Extract_Strings(OpenDlg.FileName)
-                Dim Out As New StringBuilder
-                For Each Line As String In MyMinko.Strings
-                    Out.AppendLine(Line & vbCrLf)
-                Next
-                TxtGameStrings.Text = Out.ToString.Trim
+                Update_Texts()
             End If
         End If
     End Sub
@@ -680,9 +679,12 @@ Public Class FrmMain
             Out.AppendLine("<!--OhanaXY Pokémon Text Rip :P-->")
             Out.AppendLine("<textfile>")
             For Each Line As String In MyMinko.Strings
-                Out.AppendLine("<text>")
-                Out.AppendLine(Line)
-                Out.AppendLine("</text>")
+                Out.AppendLine("    <text>")
+                Dim Temp() As String = Line.Split(Convert.ToChar(&HA))
+                For Each Temp_Line As String In Temp
+                    Out.AppendLine("        " & Temp_Line)
+                Next
+                Out.AppendLine("    </text>")
             Next
             Out.AppendLine("</textfile>")
             File.WriteAllText(SaveDlg.FileName, Out.ToString)
@@ -697,18 +699,24 @@ Public Class FrmMain
             Dim Strings(TextData.Count - 1) As String
             Dim Index As Integer
             For Each Text As Match In TextData
-                Strings(Index) = Text.Groups(1).Value.Trim
+                Dim Value As String = Text.Groups(1).Value.Trim
+
+                Dim Temp() As String = Value.Split(Environment.NewLine)
+                Strings(Index) = Nothing
+                Dim i As Integer = 1
+                For Each Temp_Line As String In Temp
+                    Strings(Index) &= Temp_Line.Trim
+                    If i < Temp.Count Then Strings(Index) &= Convert.ToChar(&HA)
+                    i += 1
+                Next
                 Index += 1
             Next
+
             Current_Text_Temp = Path.GetTempFileName
             MyMinko.Insert_Strings(Strings, Current_Text_Temp)
 
             MyMinko.Extract_Strings(Current_Text_Temp)
-            Dim Out As New StringBuilder
-            For Each Line As String In MyMinko.Strings
-                Out.AppendLine(Line & vbCrLf)
-            Next
-            TxtGameStrings.Text = Out.ToString.Trim
+            Update_Texts()
         End If
     End Sub
     Private Sub BtnTextSave_Click(sender As Object, e As EventArgs) Handles BtnTextSave.Click
@@ -716,6 +724,16 @@ Public Class FrmMain
             File.Delete(Current_Opened_Text)
             File.Copy(Current_Text_Temp, Current_Opened_Text)
         End If
+    End Sub
+
+    Private Sub Update_Texts()
+        LstStrings.Clear()
+        For Each Line As String In MyMinko.Strings
+            Dim Temp() As String = Line.Split(Convert.ToChar(&HA))
+            If Temp.Count > 1 Then Temp(0) &= " [...]"
+            LstStrings.AddItem(Temp(0))
+        Next
+        LstStrings.Refresh()
     End Sub
 #End Region
 
@@ -730,9 +748,10 @@ Public Class FrmMain
     End Sub
     Private Sub Open_GARC(File_Name As String)
         MyNako.Load(File_Name)
-        Dim Index As Integer
+        Update_GARC_List()
+    End Sub
+    Private Sub Update_GARC_List()
         LstFiles.Clear()
-
         Dim Header As MyListview.ListItem
         ReDim Header.Text(2)
         Header.Text(0).Text = "File"
@@ -747,7 +766,7 @@ Public Class FrmMain
             Dim Item As MyListview.ListItem
             ReDim Item.Text(2)
             With File
-                Item.Text(0).Text = "file_" & Index
+                Item.Text(0).Text = .Name
                 Item.Text(1).Left = 400
                 If .Compressed Then
                     Item.Text(1).Text = Format_Size(.Length)
@@ -758,8 +777,6 @@ Public Class FrmMain
                 Item.Text(2).Text = Format_Size(.Uncompressed_Length)
             End With
             LstFiles.AddItem(Item)
-
-            Index += 1
         Next
         LstFiles.Refresh()
     End Sub
@@ -779,6 +796,7 @@ Public Class FrmMain
             If LstFiles.SelectedIndex > -1 Then
                 Dim SaveDlg As New SaveFileDialog
                 SaveDlg.Title = "Extract file"
+                SaveDlg.FileName = MyNako.Files(LstFiles.SelectedIndex).Name
                 If SaveDlg.ShowDialog = Windows.Forms.DialogResult.OK Then
                     MyNako.Extract(SaveDlg.FileName, LstFiles.SelectedIndex)
                 End If
@@ -810,8 +828,8 @@ Public Class FrmMain
     End Sub
     Private Sub GARC_ExtractAll(OutFolder As String)
         For Index As Integer = 0 To MyNako.Files.Length - 1
-            MyNako.Extract(Path.Combine(OutFolder, "file_" & Index), Index)
-            If MyNako.Files.Length > 1 Then Update_Progress(ProgressGARC, Convert.ToSingle((Index / (MyNako.Files.Length - 1)) * 100), "Extracting file_" & Index & "...")
+            MyNako.Extract(Path.Combine(OutFolder, MyNako.Files(Index).Name), Index)
+            If MyNako.Files.Length > 1 Then Update_Progress(ProgressGARC, Convert.ToSingle((Index / (MyNako.Files.Length - 1)) * 100), "Extracting " & MyNako.Files(Index).Name & "...")
         Next
 
         Update_Progress(ProgressGARC, 0, Nothing)
@@ -826,6 +844,20 @@ Public Class FrmMain
                     Item.Index = LstFiles.SelectedIndex
                     Item.File_Name = OpenDlg.FileName
                     MyNako.Inserted_Files.Add(Item)
+
+                    Dim Temp As New FileStream(OpenDlg.FileName, FileMode.Open)
+                    Dim Magic As String = Encoding.ASCII.GetString(BitConverter.GetBytes(Read32(Temp, 0)))
+
+                    Dim Header As MyListview.ListItem
+                    ReDim Header.Text(2)
+                    Header.Text(0).Text = "file_" & LstFiles.SelectedIndex & MyNako.Guess_Format(Magic)
+                    Header.Text(1).Left = 400
+                    Header.Text(1).Text = "???"
+                    Header.Text(2).Left = 500
+                    Header.Text(2).Text = Format_Size(Convert.ToInt32(Temp.Length))
+                    LstFiles.ChangeItem(LstFiles.SelectedIndex, Header)
+
+                    Temp.Close()
                 End If
             End If
         End If
@@ -864,6 +896,17 @@ Public Class FrmMain
         End While
         Update_Progress(ProgressGARCInsertion, 0, Nothing)
         Update_Button_Text(BtnGARCSave, "Save")
+    End Sub
+    Private Sub BtnGARCCompression_Click(sender As Object, e As EventArgs) Handles BtnGARCCompression.Click
+        MyNako.Fast_Compression = Not MyNako.Fast_Compression
+        If MyNako.Fast_Compression Then
+            BtnGARCCompression.Text = "Fast compression"
+        Else
+            BtnGARCCompression.Text = "Optimal compression"
+        End If
+
+        My.Settings.FastCompression = Not MyNako.Fast_Compression
+        My.Settings.Save()
     End Sub
 #End Region
 
@@ -938,13 +981,14 @@ Public Class FrmMain
 #End Region
 
     Private Sub BtnModelMapEditor_Click(sender As Object, e As EventArgs) Handles BtnModelMapEditor.Click
-        If MyOhana.Magic.Substring(0, 2) = "GR" Then
-            FrmMapProp.Show()
-            MyOhana.makeMapIMG(GetMapProps())
+        If MyOhana.Model_Object IsNot Nothing Then
+            If MyOhana.Magic.Substring(0, 2) = "GR" Then
+                FrmMapProp.Show()
+                MyOhana.makeMapIMG(GetMapProps())
+            End If
         End If
     End Sub
-
-Private Function GetMapProps() As Byte()
+    Private Function GetMapProps() As Byte()
         Dim size As Integer = 0
         Dim br As New BinaryReader(System.IO.File.OpenRead(MyOhana.Current_Model))
         br.BaseStream.Position = &H80

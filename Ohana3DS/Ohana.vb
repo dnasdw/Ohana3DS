@@ -7,8 +7,9 @@ Imports System.Runtime.InteropServices
 Imports System.Text
 Imports System.Globalization
 Imports System.Text.RegularExpressions
-
 Public Class Ohana
+
+#Region "Declares"
     Private Device As Device
 
     Public Structure Data_Entry
@@ -122,6 +123,9 @@ Public Class Ohana
         {24, 80, -24, -80}, _
         {33, 106, -33, -106}, _
         {47, 183, -47, -183}}
+#End Region
+
+#Region "DirectX Initialize"
     Public Sub Initialize(Picture As PictureBox)
         Dim Present As New PresentParameters
         With Present
@@ -156,7 +160,10 @@ Public Class Ohana
             .SamplerState(0).MaxAnisotropy = 16
         End With
     End Sub
-    Public Sub Load_Model(File_Name As String, Optional Create_DX_Texture As Boolean = True, Optional Show_Warning As Boolean = True)
+#End Region
+
+#Region "Model"
+    Public Function Load_Model(File_Name As String, Optional Create_DX_Texture As Boolean = True) As Boolean
         Dim Version As BCH_Version
 
         Total_Vertex = 0
@@ -164,6 +171,12 @@ Public Class Ohana
         Max_Y_Pos = 0
         Has_Normals = False
         Rendering = False
+        Model_Object = Nothing
+        Current_Model = Nothing
+        If Temp_Model_File <> Nothing Then
+            File.Delete(Temp_Model_File)
+            Temp_Model_File = Nothing
+        End If
 
         Load_Scale = Scale
         Load_Mirror = Model_Mirror_X
@@ -185,9 +198,8 @@ Public Class Ohana
             BCH_Offset = Read32(Temp, 8)
             Model_Type = ModelType.Map
         Else
-            Model_Object = Nothing
-            If Show_Warning Then MsgBox("Sorry, this file format is not supported.", vbExclamation, "Error")
-            Exit Sub
+
+            Return False
         End If
 
         Current_Model = File_Name
@@ -223,6 +235,9 @@ Public Class Ohana
         End If
         Table_Offset = Header_Offset + Read32(Data, Table_Offset + &H14)
 
+        '+==========+
+        '| Vertices |
+        '+==========+
         Dim Vertex_Offsets As New List(Of Integer)
         Dim Face_Offsets As New List(Of Integer)
         For Entry As Integer = 0 To Entries - 1
@@ -400,6 +415,9 @@ Public Class Ohana
         Next
         Max_Y = Math.Abs(Max_Y_Pos - Max_Y_Neg)
 
+        '+==========+
+        '| Texturas |
+        '+==========+
         Dim Name_Table_Base_Pointer As Integer
         Dim Name_Table_Length As Integer
         If Version = BCH_Version.XY Then
@@ -465,9 +483,6 @@ Public Class Ohana
                 MyTex.Image = Img
                 MyTex.Image.RotateFlip(RotateFlipType.RotateNoneFlipY)
 
-                'Out = Mirror_Texture(Out, Width, Height)
-                'Width *= 2
-
                 Dim Texture As Texture = Nothing
                 If Create_DX_Texture Then
                     Texture = New Texture(Device, Width, Height, 1, Usage.None, Direct3D.Format.A8R8G8B8, Pool.Managed)
@@ -514,6 +529,9 @@ Public Class Ohana
             Next
         End If
 
+        '+=======+
+        '| Bones |
+        '+=======+
         ReDim Model_Bone(Bone_Entries - 1)
         Bones_Offset += (Bone_Entries * &HC) + &HC
         For Bone As Integer = 0 To Bone_Entries - 1
@@ -574,7 +592,82 @@ Public Class Ohana
             .Bones_Count = Bone_Entries
             .Textures_Count = Texture_ID_List.Count - (Texture_Entries - TempLst.Count)
         End With
+
+        Return True
+    End Function
+
+    Public Sub Export_SMD(File_Name As String)
+        Dim Info As New NumberFormatInfo
+        Info.NumberDecimalSeparator = "."
+        Info.NumberDecimalDigits = 6
+
+        Dim Out As New StringBuilder
+        Out.AppendLine("version 1")
+        Out.AppendLine("nodes")
+        Dim Node_Index As Integer
+        For Each Bone As OhanaBone In Model_Bone
+            With Bone
+                Out.AppendLine(Node_Index & " """ & Bone.Name & """ " & Bone.Parent_ID)
+                Node_Index += 1
+            End With
+        Next
+        Out.AppendLine("end")
+        Out.AppendLine("skeleton")
+        Out.AppendLine("time 0")
+        Dim Bone_Index As Integer
+        For Each Bone As OhanaBone In Model_Bone
+            With Bone
+                Out.AppendLine(Bone_Index & _
+                               " " & .Translation.X.ToString("N", Info) & " " & .Translation.Y.ToString("N", Info) & " " & .Translation.Z.ToString("N", Info) & _
+                               " " & .Rotation.X.ToString("N", Info) & " " & .Rotation.Y.ToString("N", Info) & " " & .Rotation.Z.ToString("N", Info))
+                Bone_Index += 1
+            End With
+        Next
+        Out.AppendLine("end")
+        Out.AppendLine("triangles")
+        Dim Temp_Count As Integer
+        For Each Model As VertexList In Model_Object
+            With Model
+                For Each Index As Integer In .Index
+                    If Temp_Count = 0 Then Out.AppendLine(Model_Texture_Index(.Texture_ID) & ".png")
+                    Dim CurrVert As OhanaVertex
+                    If Index < .Vertice.Length Then CurrVert = .Vertice(Index)
+
+                    Dim Bone_Info As String = Nothing
+                    Dim Links As Integer = 0
+                    If CurrVert.Weight_1 > 0 Then
+                        Links = 1
+                        Bone_Info = " " & CurrVert.Bone_1 & " " & CurrVert.Weight_1.ToString(Info)
+                    End If
+                    If CurrVert.Weight_2 > 0 Then
+                        Links += 1
+                        Bone_Info &= " " & CurrVert.Bone_2 & " " & CurrVert.Weight_2.ToString(Info)
+                    End If
+                    If CurrVert.Weight_3 > 0 Then
+                        Links += 1
+                        Bone_Info &= " " & CurrVert.Bone_3 & " " & CurrVert.Weight_3.ToString(Info)
+                    End If
+                    If CurrVert.Weight_4 > 0 Then
+                        Links += 1
+                        Bone_Info &= " " & CurrVert.Bone_4 & " " & CurrVert.Weight_4.ToString(Info)
+                    End If
+                    Bone_Info = Links & Bone_Info
+
+                    Out.AppendLine(Model_Bone.Length & " " & _
+                                   CurrVert.X.ToString(Info) & " " & CurrVert.Y.ToString(Info) & " " & CurrVert.Z.ToString(Info) & " " & _
+                                   CurrVert.NX.ToString(Info) & " " & CurrVert.NY.ToString(Info) & " " & CurrVert.NZ.ToString(Info) & " " & _
+                                   CurrVert.U.ToString(Info) & " " & CurrVert.V.ToString(Info) & " " & Bone_Info)
+                    If Temp_Count < 2 Then Temp_Count += 1 Else Temp_Count = 0
+                Next
+            End With
+        Next
+        Out.AppendLine("end")
+
+        File.WriteAllText(File_Name, Out.ToString)
     End Sub
+#End Region
+
+#Region "Textures"
     Public Sub Load_Textures(File_Name As String, Optional Create_DX_Texture As Boolean = True)
         Dim Version As BCH_Version
 
@@ -772,12 +865,7 @@ Public Class Ohana
             End While
         End If
     End Sub
-    Private Function Check_Alpha(Img() As Byte) As Boolean
-        For Offset As Integer = 0 To Img.Length - 1 Step 4
-            If Img(Offset + 3) < &HFF Then Return True
-        Next
-        Return False
-    End Function
+
     Private Function Convert_Texture(Data() As Byte, Texture_Data_Offset As Integer, Format As Integer, Width As Integer, Height As Integer, Optional Linear As Boolean = False) As Byte()
         Dim Out((Width * Height * 4) - 1) As Byte
         Dim Offset As Integer = Texture_Data_Offset
@@ -803,33 +891,7 @@ Public Class Ohana
             Dim Temp_2() As Byte = ETC1_Decompress(Temp_Buffer, Alphas, Width, Height)
 
             'Os tiles com compressão ETC1 no 3DS estão embaralhados
-            Dim Tile_Scramble(((Width \ 4) * (Height \ 4)) - 1) As Integer
-            Dim Base_Accumulator As Integer = 0, Line_Accumulator As Integer = 0
-            Dim Base_Number As Integer = 0, Line_Number As Integer = 0
-
-            For Tile As Integer = 0 To Tile_Scramble.Length - 1
-                If (Tile Mod (Width \ 4) = 0) And Tile > 0 Then
-                    If Line_Accumulator < 1 Then
-                        Line_Accumulator += 1
-                        Line_Number += 2
-                        Base_Number = Line_Number
-                    Else
-                        Line_Accumulator = 0
-                        Base_Number -= 2
-                        Line_Number = Base_Number
-                    End If
-                End If
-
-                Tile_Scramble(Tile) = Base_Number
-
-                If Base_Accumulator < 1 Then
-                    Base_Accumulator += 1
-                    Base_Number += 1
-                Else
-                    Base_Accumulator = 0
-                    Base_Number += 3
-                End If
-            Next
+            Dim Tile_Scramble() As Integer = Get_ETC1_Scramble(Width, Height)
 
             Dim i As Integer = 0
             For Tile_Y As Integer = 0 To (Height \ 4) - 1
@@ -935,6 +997,8 @@ Public Class Ohana
 
         Return Out
     End Function
+
+#Region "Texture inserter/ETC1 Compressor"
     Public Sub Insert_Texture(File_Name As String, LstIndex As Integer)
         Dim Offset As Integer = Model_Texture(LstIndex).Offset
         Dim Format As Integer = Model_Texture(LstIndex).Format
@@ -959,33 +1023,7 @@ Public Class Ohana
             Case 12, 13
                 'Os tiles com compressão ETC1 no 3DS estão embaralhados
                 Dim Out((Img.Width * Img.Height * 4) - 1) As Byte
-                Dim Tile_Scramble(((Img.Width \ 4) * (Img.Height \ 4)) - 1) As Integer
-                Dim Base_Accumulator As Integer = 0, Line_Accumulator As Integer = 0
-                Dim Base_Number As Integer = 0, Line_Number As Integer = 0
-
-                For Tile As Integer = 0 To Tile_Scramble.Length - 1
-                    If (Tile Mod (Img.Width \ 4) = 0) And Tile > 0 Then
-                        If Line_Accumulator < 1 Then
-                            Line_Accumulator += 1
-                            Line_Number += 2
-                            Base_Number = Line_Number
-                        Else
-                            Line_Accumulator = 0
-                            Base_Number -= 2
-                            Line_Number = Base_Number
-                        End If
-                    End If
-
-                    Tile_Scramble(Tile) = Base_Number
-
-                    If Base_Accumulator < 1 Then
-                        Base_Accumulator += 1
-                        Base_Number += 1
-                    Else
-                        Base_Accumulator = 0
-                        Base_Number += 3
-                    End If
-                Next
+                Dim Tile_Scramble() As Integer = Get_ETC1_Scramble(Img.Width, Img.Height)
 
                 Dim i As Integer = 0
                 For Tile_Y As Integer = 0 To (Img.Height \ 4) - 1
@@ -1375,88 +1413,9 @@ Public Class Ohana
         Buffer.BlockCopy(Out_Data, 0, Temp_Data, Model_Texture(LstIndex).Offset, Out_Data.Length)
         File.WriteAllBytes(Temp_Texture_File, Temp_Data)
     End Sub
-    Public Sub Export_SMD(File_Name As String)
-        Dim Info As New NumberFormatInfo
-        Info.NumberDecimalSeparator = "."
-        Info.NumberDecimalDigits = 6
+#End Region
 
-        Dim Out As New StringBuilder
-        Out.AppendLine("version 1")
-        Out.AppendLine("nodes")
-        Dim Node_Index As Integer
-        For Each Bone As OhanaBone In Model_Bone
-            With Bone
-                Out.AppendLine(Node_Index & " """ & Bone.Name & """ " & Bone.Parent_ID)
-                Node_Index += 1
-            End With
-        Next
-        Out.AppendLine("end")
-        Out.AppendLine("skeleton")
-        Out.AppendLine("time 0")
-        Dim Bone_Index As Integer
-        For Each Bone As OhanaBone In Model_Bone
-            With Bone
-                Out.AppendLine(Bone_Index & _
-                               " " & .Translation.X.ToString("N", Info) & " " & .Translation.Y.ToString("N", Info) & " " & .Translation.Z.ToString("N", Info) & _
-                               " " & .Rotation.X.ToString("N", Info) & " " & .Rotation.Y.ToString("N", Info) & " " & .Rotation.Z.ToString("N", Info))
-                Bone_Index += 1
-            End With
-        Next
-        Out.AppendLine("end")
-        Out.AppendLine("triangles")
-        Dim Temp_Count As Integer
-        For Each Model As VertexList In Model_Object
-            With Model
-                For Each Index As Integer In .Index
-                    If Temp_Count = 0 Then Out.AppendLine(Model_Texture_Index(.Texture_ID) & ".png")
-                    Dim CurrVert As OhanaVertex
-                    If Index < .Vertice.Length Then CurrVert = .Vertice(Index)
-
-                    Dim Bone_Info As String = Nothing
-                    Dim Links As Integer = 0
-                    If CurrVert.Weight_1 > 0 Then
-                        Links = 1
-                        Bone_Info = " " & CurrVert.Bone_1 & " " & CurrVert.Weight_1.ToString(Info)
-                    End If
-                    If CurrVert.Weight_2 > 0 Then
-                        Links += 1
-                        Bone_Info &= " " & CurrVert.Bone_2 & " " & CurrVert.Weight_2.ToString(Info)
-                    End If
-                    If CurrVert.Weight_3 > 0 Then
-                        Links += 1
-                        Bone_Info &= " " & CurrVert.Bone_3 & " " & CurrVert.Weight_3.ToString(Info)
-                    End If
-                    If CurrVert.Weight_4 > 0 Then
-                        Links += 1
-                        Bone_Info &= " " & CurrVert.Bone_4 & " " & CurrVert.Weight_4.ToString(Info)
-                    End If
-                    Bone_Info = Links & Bone_Info
-
-                    Out.AppendLine(Model_Bone.Length & " " & _
-                                   CurrVert.X.ToString(Info) & " " & CurrVert.Y.ToString(Info) & " " & CurrVert.Z.ToString(Info) & " " & _
-                                   CurrVert.NX.ToString(Info) & " " & CurrVert.NY.ToString(Info) & " " & CurrVert.NZ.ToString(Info) & " " & _
-                                   CurrVert.U.ToString(Info) & " " & CurrVert.V.ToString(Info) & " " & Bone_Info)
-                    If Temp_Count < 2 Then Temp_Count += 1 Else Temp_Count = 0
-                Next
-            End With
-        Next
-        Out.AppendLine("end")
-
-        File.WriteAllText(File_Name, Out.ToString)
-    End Sub
-    Private Function Mirror_Texture(Data() As Byte, Width As Integer, Height As Integer) As Byte()
-        Dim Out(((Width * 2) * Height * 4) - 1) As Byte
-        For Y As Integer = 0 To Height - 1
-            For X As Integer = 0 To Width - 1
-                Dim Offset As Integer = (X + (Y * Width)) * 4
-                Dim Offset_2 As Integer = (X + (Y * (Width * 2))) * 4
-                Dim Offset_3 As Integer = ((Width + (Width - X - 1)) + (Y * (Width * 2))) * 4
-                Buffer.BlockCopy(Data, Offset, Out, Offset_2, 4)
-                Buffer.BlockCopy(Data, Offset, Out, Offset_3, 4)
-            Next
-        Next
-        Return Out
-    End Function
+#Region "ETC1 Decompressor"
     Private Function ETC1_Decompress(Data() As Byte, Alphas() As Byte, Width As Integer, Height As Integer) As Byte()
         Dim Out((Width * Height * 4) - 1) As Byte
         Dim Offset As Integer
@@ -1499,8 +1458,8 @@ Public Class Ohana
         Dim Block_Top As Integer = Read32(Data, 0)
         Dim Block_Bottom As Integer = Read32(Data, 4)
 
-        Dim Flip As Boolean = Block_Top And &H1000000
-        Dim Difference As Boolean = Block_Top And &H2000000
+        Dim Flip As Boolean = (Block_Top And &H1000000) > 0
+        Dim Difference As Boolean = (Block_Top And &H2000000) > 0
 
         Dim R1, G1, B1, R2, G2, B2 As Integer
         Dim R, G, B As Integer
@@ -1510,9 +1469,9 @@ Public Class Ohana
             G1 = (Block_Top And &HF800) >> 8
             B1 = (Block_Top And &HF80000) >> 16
 
-            R = Signed_Byte(R1 >> 3) + (Signed_Byte((Block_Top And 7) << 5) >> 5)
-            G = Signed_Byte(G1 >> 3) + (Signed_Byte((Block_Top And &H700) >> 3) >> 5)
-            B = Signed_Byte(B1 >> 3) + (Signed_Byte((Block_Top And &H70000) >> 11) >> 5)
+            R = Signed_Byte(Convert.ToByte(R1 >> 3)) + (Signed_Byte(Convert.ToByte((Block_Top And 7) << 5)) >> 5)
+            G = Signed_Byte(Convert.ToByte(G1 >> 3)) + (Signed_Byte(Convert.ToByte((Block_Top And &H700) >> 3)) >> 5)
+            B = Signed_Byte(Convert.ToByte(B1 >> 3)) + (Signed_Byte(Convert.ToByte((Block_Top And &H70000) >> 11)) >> 5)
 
             R2 = R
             G2 = G
@@ -1598,20 +1557,80 @@ Public Class Ohana
         ElseIf Value < 0 Then
             Return 0
         Else
-            Return Value And &HFF
+            Return Convert.ToByte(Value And &HFF)
         End If
     End Function
+#End Region
+
+#Region "Misc. functions"
     Private Function Signed_Byte(Byte_To_Convert As Byte) As SByte
-        If (Byte_To_Convert < &H80) Then Return Byte_To_Convert
-        Return Byte_To_Convert - &H100
+        If (Byte_To_Convert < &H80) Then Return Convert.ToSByte(Byte_To_Convert)
+        Return Convert.ToSByte(Byte_To_Convert - &H100)
     End Function
     Private Function Signed_Short(Short_To_Convert As Integer) As Integer
         If (Short_To_Convert < &H8000) Then Return Short_To_Convert
         Return Short_To_Convert - &H10000
     End Function
+
     Public Function Get_Texture(Image As Bitmap) As Texture
         Return New Texture(Device, Image, Usage.None, Pool.Managed)
     End Function
+    Private Function Mirror_Texture(Data() As Byte, Width As Integer, Height As Integer) As Byte()
+        Dim Out(((Width * 2) * Height * 4) - 1) As Byte
+        For Y As Integer = 0 To Height - 1
+            For X As Integer = 0 To Width - 1
+                Dim Offset As Integer = (X + (Y * Width)) * 4
+                Dim Offset_2 As Integer = (X + (Y * (Width * 2))) * 4
+                Dim Offset_3 As Integer = ((Width + (Width - X - 1)) + (Y * (Width * 2))) * 4
+                Buffer.BlockCopy(Data, Offset, Out, Offset_2, 4)
+                Buffer.BlockCopy(Data, Offset, Out, Offset_3, 4)
+            Next
+        Next
+        Return Out
+    End Function
+    Private Function Check_Alpha(Img() As Byte) As Boolean
+        For Offset As Integer = 0 To Img.Length - 1 Step 4
+            If Img(Offset + 3) < &HFF Then Return True
+        Next
+        Return False
+    End Function
+
+    Private Function Get_ETC1_Scramble(Width As Integer, Height As Integer) As Integer()
+        Dim Tile_Scramble(((Width \ 4) * (Height \ 4)) - 1) As Integer
+        Dim Base_Accumulator As Integer = 0, Line_Accumulator As Integer = 0
+        Dim Base_Number As Integer = 0, Line_Number As Integer = 0
+
+        For Tile As Integer = 0 To Tile_Scramble.Length - 1
+            If (Tile Mod (Width \ 4) = 0) And Tile > 0 Then
+                If Line_Accumulator < 1 Then
+                    Line_Accumulator += 1
+                    Line_Number += 2
+                    Base_Number = Line_Number
+                Else
+                    Line_Accumulator = 0
+                    Base_Number -= 2
+                    Line_Number = Base_Number
+                End If
+            End If
+
+            Tile_Scramble(Tile) = Base_Number
+
+            If Base_Accumulator < 1 Then
+                Base_Accumulator += 1
+                Base_Number += 1
+            Else
+                Base_Accumulator = 0
+                Base_Number += 3
+            End If
+        Next
+
+        Return Tile_Scramble
+    End Function
+#End Region
+
+#End Region
+
+#Region "Renderer"
     Public Sub Render()
         'Define a posição da "câmera"
         Device.Transform.Projection = Matrix.PerspectiveFovLH(Math.PI / 4, CSng(SWidth / SHeight), 0.1F, 500.0F)
@@ -1739,6 +1758,9 @@ Public Class Ohana
             Application.DoEvents()
         End While
     End Sub
+#End Region
+
+#Region "OBJ Inserter"
     Public Sub Insert_OBJ(File_Name As String)
         Dim Data() As Byte = File.ReadAllBytes(Temp_Model_File)
         Dim Obj As String = File.ReadAllText(File_Name)
@@ -1927,7 +1949,7 @@ Public Class Ohana
 
             If Not All_Vertices_Inserted And Face_Index < .Index.Length Then
                 MessageBox.Show("The inserted object have too much faces and vertices." & vbCrLf & "Try limiting it to the original counts.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
-            ElseIf Face_Index < .Index.Length Then
+            ElseIf Face_Index \ 3 < Faces.Count Then
                 MessageBox.Show("The inserted object have more faces than the original one." & vbCrLf & "Some faces couldn't be added.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
             ElseIf Not All_Vertices_Inserted Then
                 MessageBox.Show("The inserted object have more vertices than the original one." & vbCrLf & "Some vertices couldn't be added.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
@@ -1936,8 +1958,10 @@ Public Class Ohana
 
         File.WriteAllBytes(Temp_Model_File, Data)
     End Sub
+#End Region
 
-    Public Function makeMapIMG(byteArray As Byte())
+#Region "Map"
+    Public Sub makeMapIMG(byteArray As Byte())
         Using dataStream As Stream = New MemoryStream(byteArray)
             Using br As New BinaryReader(dataStream)
                 Dim width As UShort = br.ReadUInt16()
@@ -1962,7 +1986,7 @@ Public Class Ohana
                 FrmMapProp.mapPicBox.Image = img
             End Using
         End Using
-    End Function
+    End Sub
     Public Function LCG(seed As Long, ctr As Integer) As UInteger
         For i As Integer = 0 To ctr - 1
             seed *= &H41C64E6D
@@ -1970,4 +1994,6 @@ Public Class Ohana
         Next
         Return seed
     End Function
+#End Region
+
 End Class

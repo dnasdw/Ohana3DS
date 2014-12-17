@@ -35,7 +35,7 @@ Partial Class FrmMapProp
         Me.BtnClose.BackColor = System.Drawing.Color.Transparent
         Me.BtnClose.Font = New System.Drawing.Font("Segoe UI Semibold", 8.25!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.BtnClose.ForeColor = System.Drawing.Color.White
-        Me.BtnClose.Location = New System.Drawing.Point(300, 9)
+        Me.BtnClose.Location = New System.Drawing.Point(300, 4)
         Me.BtnClose.Name = "BtnClose"
         Me.BtnClose.Size = New System.Drawing.Size(32, 24)
         Me.BtnClose.TabIndex = 20
@@ -47,7 +47,7 @@ Partial Class FrmMapProp
         Me.BtnMinimize.BackColor = System.Drawing.Color.Transparent
         Me.BtnMinimize.Font = New System.Drawing.Font("Segoe UI Semibold", 8.25!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.BtnMinimize.ForeColor = System.Drawing.Color.White
-        Me.BtnMinimize.Location = New System.Drawing.Point(271, 9)
+        Me.BtnMinimize.Location = New System.Drawing.Point(268, 4)
         Me.BtnMinimize.Name = "BtnMinimize"
         Me.BtnMinimize.Size = New System.Drawing.Size(32, 24)
         Me.BtnMinimize.TabIndex = 21
@@ -69,7 +69,7 @@ Partial Class FrmMapProp
         Me.Title.BackColor = System.Drawing.Color.Transparent
         Me.Title.Font = New System.Drawing.Font("Segoe UI Semibold", 14.25!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.Title.ForeColor = System.Drawing.Color.White
-        Me.Title.Location = New System.Drawing.Point(25, 3)
+        Me.Title.Location = New System.Drawing.Point(14, 4)
         Me.Title.Name = "Title"
         Me.Title.Size = New System.Drawing.Size(240, 25)
         Me.Title.TabIndex = 22
@@ -87,6 +87,7 @@ Partial Class FrmMapProp
         Me.Controls.Add(Me.BtnClose)
         Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None
         Me.Name = "FrmMapProp"
+        Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
         Me.Text = "FrmMapProp"
         CType(Me.mapPicBox, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)

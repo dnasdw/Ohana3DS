@@ -25,7 +25,9 @@ Public Class FrmVertexEditor
     Protected Overrides Sub WndProc(ByRef m As System.Windows.Forms.Message)
         If m.Msg <> &HA3 Then MyBase.WndProc(m)
         Select Case m.Msg
-            Case &H84 : If m.Result = New IntPtr(1) Then m.Result = New IntPtr(2)
+            Case &H84
+                Dim Mouse_Position As Point = PointToClient(Cursor.Position)
+                If Mouse_Position.Y < 32 Then If m.Result = New IntPtr(1) Then m.Result = New IntPtr(2)
             Case &H85 'Cria sombra (com Aero)
                 Dim val = 2
                 DwmSetWindowAttribute(Handle, 2, val, 4)

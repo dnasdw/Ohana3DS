@@ -1,4 +1,5 @@
 ﻿Imports System.IO
+Imports System.Text
 Public Class Nako
     Public Structure GARC_File
         Dim Bits As Integer
@@ -7,6 +8,7 @@ Public Class Nako
         Dim Length As Integer
         Dim Uncompressed_Length As Integer
         Dim Compressed As Boolean
+        Dim Name As String
     End Structure
     Public Files() As GARC_File
     Private Data_Offset As Integer
@@ -20,6 +22,7 @@ Public Class Nako
     Public Inserted_Files As List(Of Inserted_File)
 
     Public Compression_Percentage As Single
+    Public Fast_Compression As Boolean = False
     Public Sub Load(File_Name As String)
         Current_File = File_Name
         Dim InFile As New FileStream(File_Name, FileMode.Open)
@@ -56,6 +59,10 @@ Public Class Nako
                 Else
                     .Uncompressed_Length = .Length
                 End If
+
+                Dim File_Magic As String = Encoding.ASCII.GetString(BitConverter.GetBytes(Read32(InFile, Data_Offset + .Start_Offset + If(.Compressed, 5, 0))))
+                Dim Format As String = Guess_Format(File_Magic)
+                .Name = "file_" & Current_File & Format
             End With
             Offset += 16
         Next
@@ -64,6 +71,23 @@ Public Class Nako
 
         Inserted_Files = New List(Of Inserted_File)
     End Sub
+    Public Function Guess_Format(File_Magic As String) As String
+        Dim Format As String
+        Dim Temp As String = File_Magic.Substring(0, 2)
+        Select Case Temp
+            Case "PC", "PT", "PB", "PF", "PK", "PO", "GR", "MM", "AD"
+                Format = "." & LCase(Temp)
+            Case Else
+                If File_Magic.Substring(0, 3) = "BCH" Then
+                    Format = ".bch"
+                ElseIf File_Magic = "CGFX" Then
+                    Format = ".cgfx"
+                Else
+                    Format = ".bin"
+                End If
+        End Select
+        Return Format
+    End Function
     Public Sub Extract(Output_File As String, File_Index As Integer)
         Dim InFile As New FileStream(Current_File, FileMode.Open)
 
@@ -72,27 +96,7 @@ Public Class Nako
             Dim Data(.Length - 1) As Byte
             InFile.Read(Data, 0, .Length)
 
-            Dim Format As String
-            Dim Magic As String = Nothing
-            For i As Integer = If(.Compressed, 5, 0) To If(.Compressed, 8, 3)
-                Magic &= Chr(Data(i))
-            Next
-            Dim Temp As String = Left(Magic, 2)
-            Select Case Temp
-                Case "PC", "PT", "PB", "PF", "PK", "PO", "GR", "MM", "AD"
-                    Format = "." & LCase(Temp)
-                Case Else
-                    If Left(Magic, 3) = "BCH" Then
-                        Format = ".bch"
-                    ElseIf Left(Magic, 4) = "CGFX" Then
-                        Format = ".cgfx"
-                    Else
-                        Format = ".bin"
-                    End If
-            End Select
-
-            Dim OutFile As New FileStream(Output_File & Format, FileMode.Create)
-
+            Dim OutFile As New FileStream(Output_File, FileMode.Create)
             If .Compressed Then
                 Data = LZSS_Decompress(Data)
                 OutFile.Write(Data, 0, Data.Length)
@@ -190,7 +194,7 @@ Public Class Nako
                 BitCount = 0
             End If
 
-            If (BitFlags And (2 ^ (7 - BitCount))) = 0 Then
+            If (BitFlags And Convert.ToByte(2 ^ (7 - BitCount))) = 0 Then
                 Dic(DicPtr) = InData(SrcPtr)
                 SrcPtr += 1
                 Data(DstPtr) = Dic(DicPtr)
@@ -286,6 +290,7 @@ Public Class Nako
                             End If
                         End If
                     End If
+                    If Fast_Compression Then Exit Do
                     Index = Array.IndexOf(Dic, InData(SrcPtr), Index + 1)
                     If Index = -1 Then Exit Do
                 Loop
