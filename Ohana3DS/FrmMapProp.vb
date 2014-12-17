@@ -62,4 +62,18 @@ Public Class FrmMapProp
         Lbl.ForeColor = Color.White
     End Sub
 #End Region
+
+    Private Sub mapPicBox_Click(sender As Object, e As EventArgs) Handles mapPicBox.Click
+        Dim mouseEventArgs = TryCast(e, MouseEventArgs)
+        If mouseEventArgs IsNot Nothing Then
+            Dim X As Integer = Math.Round(mouseEventArgs.X / 8)
+            Dim Y As Integer = Math.Round(mouseEventArgs.Y / 8)
+            mapCoords.Text = "X= " & Convert.ToString(X) & " Y= " & Convert.ToString(Y)
+            'mapPropText.Text = Hex(MyOhana.mapVals(X, Y))
+        End If
+    End Sub
+
+    Private Sub mapPropSave_Click(sender As Object, e As EventArgs) Handles mapPropSave.Click
+
+    End Sub
 End Class

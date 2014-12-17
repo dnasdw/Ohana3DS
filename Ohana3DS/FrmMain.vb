@@ -126,6 +126,22 @@ Public Class FrmMain
         End If
     End Sub
 
+    Private Sub BtnModelMapEditor_Click(sender As Object, e As EventArgs) Handles BtnModelMapEditor.Click
+        If MyOhana.Magic.Substring(0, 2) = "GR" Then
+            FrmMapProp.Show()
+            MyOhana.makeMapIMG(MapProps())
+        End If
+    End Sub
+
+    Private Function MapProps() As Byte()
+        Dim br As New BinaryReader(System.IO.File.OpenRead(MyOhana.Current_Model))
+        Dim buff As Byte() = br.ReadBytes(&H10)
+        br.BaseStream.Position = &H80
+        buff = br.ReadBytes(Read32(buff, 8) - Read32(buff, 4))
+        br.Close()
+        Return buff
+    End Function
+
 #Region "GUI"
 
 #Region "General"
@@ -985,24 +1001,4 @@ Public Class FrmMain
 #End Region
 
 #End Region
-
-    Private Sub BtnModelMapEditor_Click(sender As Object, e As EventArgs) Handles BtnModelMapEditor.Click
-        If MyOhana.Model_Object IsNot Nothing Then
-            If MyOhana.Magic.Substring(0, 2) = "GR" Then
-                FrmMapProp.Show()
-                MyOhana.makeMapIMG(GetMapProps())
-            End If
-        End If
-    End Sub
-    Private Function GetMapProps() As Byte()
-        Dim size As Integer = 0
-        Dim br As New BinaryReader(System.IO.File.OpenRead(MyOhana.Current_Model))
-        br.BaseStream.Position = &H80
-        While Encoding.ASCII.GetString(br.ReadBytes(3)) <> "BCH"
-            br.BaseStream.Position += &HD
-            size += &H10
-        End While
-        br.BaseStream.Position = &H80
-        Return br.ReadBytes(size)
-    End Function
 End Class

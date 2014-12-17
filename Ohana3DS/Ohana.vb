@@ -73,6 +73,7 @@ Public Class Ohana
 
     Public Magic As String
     Public Model_Type As ModelType
+    Public mapVals As UInteger(,)
 
     Public Scale As Single = 32.0F
     Public Model_Mirror_X As Boolean = True
@@ -2001,7 +2002,6 @@ Public Class Ohana
             Using br As New BinaryReader(dataStream)
                 Dim width As UShort = br.ReadUInt16()
                 Dim height As UShort = br.ReadUInt16()
-
                 Dim img As New Bitmap(width * 8, height * 8)
                 Dim c As New Color()
                 For i As Integer = 0 To width * height - 1
@@ -2018,6 +2018,7 @@ Public Class Ohana
                         Next
                     Next
                 Next
+                br.Close()
                 FrmMapProp.mapPicBox.Image = img
             End Using
         End Using
