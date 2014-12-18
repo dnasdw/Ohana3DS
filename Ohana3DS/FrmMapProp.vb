@@ -76,4 +76,5 @@ Public Class FrmMapProp
     Private Sub mapPropSave_Click(sender As Object, e As EventArgs) Handles mapPropSave.Click
 
     End Sub
+
 End Class

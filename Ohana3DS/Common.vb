@@ -34,4 +34,20 @@ Module Common
         Return (Data(Address) And &HFF) + _
             ((Data(Address + 1) And &HFF) << 8)
     End Function
+
+    Public Function ReadMagic(Data As FileStream, Address As Integer, Length As Integer) As String
+        Data.Seek(Address, SeekOrigin.Begin)
+        Dim Magic As String = Nothing
+        For i As Integer = 0 To Length - 1
+            Magic &= Chr(Data.ReadByte)
+        Next
+        Return Magic
+    End Function
+    Public Function ReadMagic(Data() As Byte, Address As Integer, Length As Integer) As String
+        Dim Magic As String = Nothing
+        For Offset As Integer = Address To Address + Length - 1
+            Magic &= Chr(Data(Offset))
+        Next
+        Return Magic
+    End Function
 End Module

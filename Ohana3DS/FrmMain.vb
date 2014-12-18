@@ -6,7 +6,7 @@ Imports System.Text
 Imports System.Text.RegularExpressions
 
 Public Class FrmMain
-    'Classes de gerenciamento 3D e compressão/extração
+    'Classes de Compressão/Extração
     Dim MyMinko As New Minko
     Dim MyNako As New Nako
 
@@ -32,7 +32,6 @@ Public Class FrmMain
     Dim Search_Thread As Thread
 
     Dim Old_Index As Integer = -1
-    Dim First_Click As Boolean
     Protected Overrides Sub WndProc(ByRef m As System.Windows.Forms.Message)
         If m.Msg <> &HA3 Then MyBase.WndProc(m)
         Select Case m.Msg
@@ -78,11 +77,25 @@ Public Class FrmMain
                 Select Case e.KeyCode
                     Case Keys.Left
                         For Index As Integer = 1 To Input_Files.Count - 1
-                            If Input_Files(Index).Name = Model_Name Then Open_Model(Input_Files(Index - 1).FullName)
+                            If Input_Files(Index).Name = Model_Name Then
+                                Dim i As Integer = 1
+                                While Not Open_Model(Input_Files(Index - i).FullName, False)
+                                    i += 1
+                                    If Index - i < 1 Then Exit For
+                                End While
+                                Exit For
+                            End If
                         Next
                     Case Keys.Right
                         For Index As Integer = 0 To Input_Files.Count - 2
-                            If Input_Files(Index).Name = Model_Name Then Open_Model(Input_Files(Index + 1).FullName)
+                            If Input_Files(Index).Name = Model_Name Then
+                                Dim i As Integer = 1
+                                While Not Open_Model(Input_Files(Index + i).FullName, False)
+                                    i += 1
+                                    If Index + i > Input_Files.Count - 2 Then Exit For
+                                End While
+                                Exit For
+                            End If
                         Next
                 End Select
             End If
@@ -107,11 +120,10 @@ Public Class FrmMain
     Private Sub File_Dropped(File_Name As String)
         Dim Temp As New FileStream(File_Name, FileMode.Open)
 
-        Dim Magic_2_Bytes As String = Chr(Temp.ReadByte) & Chr(Temp.ReadByte)
-        Dim Magic_3_Bytes As String = Magic_2_Bytes & Chr(Temp.ReadByte)
-        Dim Magic_4_Bytes As String = Magic_3_Bytes & Chr(Temp.ReadByte)
-        Temp.Seek(-40, SeekOrigin.End)
-        Dim CLIM_Magic As String = Chr(Temp.ReadByte) & Chr(Temp.ReadByte) & Chr(Temp.ReadByte) & Chr(Temp.ReadByte)
+        Dim Magic_2_Bytes As String = ReadMagic(Temp, 0, 2)
+        Dim Magic_3_Bytes As String = ReadMagic(Temp, 0, 3)
+        Dim Magic_4_Bytes As String = ReadMagic(Temp, 0, 4)
+        Dim CLIM_Magic As String = ReadMagic(Temp, Convert.ToInt32(Temp.Length - 40), 4)
         Temp.Close()
 
         If Magic_2_Bytes = "PC" Or Magic_2_Bytes = "MM" Or Magic_2_Bytes = "GR" Or Magic_3_Bytes = "BCH" Then
@@ -206,28 +218,23 @@ Public Class FrmMain
 #Region "Model"
     Private Sub BtnModelOpen_Click(sender As Object, e As EventArgs) Handles BtnModelOpen.Click
         Dim OpenDlg As New OpenFileDialog
-        OpenDlg.Title = "Open Pokémon BCH Model"
+        OpenDlg.Title = "Open Pokémon BCH model"
         OpenDlg.Filter = "BCH Model|*.*"
         If OpenDlg.ShowDialog = Windows.Forms.DialogResult.OK Then
-            If File.Exists(OpenDlg.FileName) Then
-                First_Click = True
-                Open_Model(OpenDlg.FileName)
-            End If
+            If File.Exists(OpenDlg.FileName) Then Open_Model(OpenDlg.FileName)
         End If
     End Sub
-    Private Sub Open_Model(File_Name As String)
+    Private Function Open_Model(File_Name As String, Optional Show_Warning As Boolean = True) As Boolean
+        Dim Response As Boolean
+        LblModelName.Text = Nothing
+
         Try
             Current_Model = File_Name
-            If MyOhana.Load_Model(File_Name) Then
+            Response = MyOhana.Load_Model(File_Name)
+            If Response Then
                 LblModelName.Text = Path.GetFileName(File_Name)
-                Update_Info()
 
-                Dim Temp() As Byte = File.ReadAllBytes(File_Name)
-                Dim File_Magic As String = Nothing
-                For i As Integer = 0 To 2
-                    File_Magic &= Chr(Temp(i))
-                Next
-                If File_Magic.Substring(0, 2) = "MM" Or File_Magic = "BCH" Then
+                If MyOhana.BCH_Have_Textures Then
                     LstTextures.Clear()
                     ImgTexture.Image = Nothing
 
@@ -249,20 +256,25 @@ Public Class FrmMain
                 MyOhana.Rotation.Y = 0
                 MyOhana.Translation.X = 0
                 MyOhana.Translation.Y = 0
-
-                Application.DoEvents()
-                First_Click = False
             Else
-                MessageBox.Show("This file is not a model file!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                If Show_Warning Then MessageBox.Show("This file is not a model file!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
             End If
         Catch
+            Response = False
             MyOhana.Model_Object = Nothing
-            Screen.Refresh()
-            MessageBox.Show("Sorry, something went wrong.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            If Show_Warning Then MessageBox.Show("Sorry, something went wrong.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
 
-        MyOhana.Render()
-    End Sub
+        LblInfoVertices.Text = MyOhana.Info.Vertex_Count.ToString()
+        LblInfoTriangles.Text = MyOhana.Info.Triangles_Count.ToString()
+        LblInfoBones.Text = MyOhana.Info.Bones_Count.ToString()
+        LblInfoTextures.Text = MyOhana.Info.Textures_Count.ToString()
+
+        Screen.Refresh()
+        If Response Then MyOhana.Render()
+
+        Return Response
+    End Function
     Private Sub BtnModelExport_Click(sender As Object, e As EventArgs) Handles BtnModelExport.Click
         If MyOhana.Model_Object IsNot Nothing Then
             Dim SaveDlg As New SaveFileDialog
@@ -402,45 +414,32 @@ Public Class FrmMain
         End If
     End Sub
 
-    Private Sub Update_Info()
-        LblInfoVertices.Text = MyOhana.Info.Vertex_Count.ToString
-        LblInfoTriangles.Text = MyOhana.Info.Triangles_Count.ToString
-        LblInfoBones.Text = MyOhana.Info.Bones_Count.ToString
-        LblInfoTextures.Text = MyOhana.Info.Textures_Count.ToString
-    End Sub
     Private Sub Screen_MouseDown(sender As Object, e As System.Windows.Forms.MouseEventArgs) Handles Screen.MouseDown
-        If Not First_Click Then
-            If e.Button = MouseButtons.Left Then
-                Rot_InitX = MousePosition.X
-                Rot_InitY = MousePosition.Y
-            ElseIf e.Button = MouseButtons.Right Then
-                Mov_InitX = MousePosition.X
-                Mov_InitY = MousePosition.Y
-            End If
+        If e.Button = MouseButtons.Left Then
+            Rot_InitX = MousePosition.X
+            Rot_InitY = MousePosition.Y
+        ElseIf e.Button = MouseButtons.Right Then
+            Mov_InitX = MousePosition.X
+            Mov_InitY = MousePosition.Y
         End If
     End Sub
     Private Sub Screen_MouseUp(sender As Object, e As System.Windows.Forms.MouseEventArgs) Handles Screen.MouseUp
-        If Not First_Click Then
-            If e.Button = MouseButtons.Left Then
-                Rot_FinalX += (Rot_InitX - MousePosition.X)
-                Rot_FinalY += (Rot_InitY - MousePosition.Y)
-            ElseIf e.Button = MouseButtons.Right Then
-                Mov_FinalX += (Mov_InitX - MousePosition.X)
-                Mov_FinalY += (Mov_InitY - MousePosition.Y)
-            End If
+        If e.Button = MouseButtons.Left Then
+            Rot_FinalX += (Rot_InitX - MousePosition.X)
+            Rot_FinalY += (Rot_InitY - MousePosition.Y)
+        ElseIf e.Button = MouseButtons.Right Then
+            Mov_FinalX += (Mov_InitX - MousePosition.X)
+            Mov_FinalY += (Mov_InitY - MousePosition.Y)
         End If
     End Sub
     Private Sub Screen_MouseMove(sender As Object, e As System.Windows.Forms.MouseEventArgs) Handles Screen.MouseMove
         If Not Screen.Focused Then Screen.Select()
-
-        If Not First_Click Then
-            If e.Button = MouseButtons.Left Then
-                MyOhana.Rotation.X = (Rot_InitX - MousePosition.X) + Rot_FinalX
-                MyOhana.Rotation.Y = (Rot_InitY - MousePosition.Y) + Rot_FinalY
-            ElseIf e.Button = MouseButtons.Right Then
-                MyOhana.Translation.X = (Mov_InitX - MousePosition.X) + Mov_FinalX
-                MyOhana.Translation.Y = (Mov_InitY - MousePosition.Y) + Mov_FinalY
-            End If
+        If e.Button = MouseButtons.Left Then
+            MyOhana.Rotation.X = (Rot_InitX - MousePosition.X) + Rot_FinalX
+            MyOhana.Rotation.Y = (Rot_InitY - MousePosition.Y) + Rot_FinalY
+        ElseIf e.Button = MouseButtons.Right Then
+            MyOhana.Translation.X = (Mov_InitX - MousePosition.X) + Mov_FinalX
+            MyOhana.Translation.Y = (Mov_InitY - MousePosition.Y) + Mov_FinalY
         End If
     End Sub
     Private Sub Screen_MouseWheel(sender As Object, e As System.Windows.Forms.MouseEventArgs) Handles Screen.MouseWheel
@@ -637,7 +636,7 @@ Public Class FrmMain
         My.Settings.Save()
     End Sub
     Private Sub BtnTextureInsert_Click(sender As Object, e As EventArgs) Handles BtnTextureInsert.Click
-        If MyOhana.Current_Texture <> Nothing And LstTextures.SelectedIndex > -1 Then
+        If (MyOhana.Current_Texture <> Nothing Or MyOhana.BCH_Have_Textures) And LstTextures.SelectedIndex > -1 Then
             Dim OpenDlg As New OpenFileDialog
             OpenDlg.Title = "Select the Texture to insert"
             OpenDlg.Filter = "PNG|*.png"
@@ -649,9 +648,12 @@ Public Class FrmMain
         End If
     End Sub
     Private Sub BtnTextureSave_Click(sender As Object, e As EventArgs) Handles BtnTextureSave.Click
-        If MyOhana.Temp_Texture_File <> Nothing Then
+        If MyOhana.Current_Texture <> Nothing Then
             File.Delete(MyOhana.Current_Texture)
             File.Copy(MyOhana.Temp_Texture_File, MyOhana.Current_Texture)
+        ElseIf MyOhana.BCH_Have_Textures Then
+            File.Delete(MyOhana.Current_Model)
+            File.Copy(MyOhana.Temp_Model_File, MyOhana.Current_Model)
         End If
     End Sub
 
@@ -885,22 +887,24 @@ Public Class FrmMain
         End If
     End Sub
     Private Sub BtnGARCSave_Click(sender As Object, e As EventArgs) Handles BtnGARCSave.Click
-        If GARC_Insertion_Thread IsNot Nothing Then
-            If GARC_Insertion_Thread.IsAlive Then
-                GARC_Insertion_Thread.Abort()
-                BtnGARCSave.Text = "Save"
-                ProgressGARCInsertion.Text = Nothing
-                ProgressGARCInsertion.Percentage = 0
-                ProgressGARCInsertion.Refresh()
+        If MyNako.Files.Count > 0 Then
+            If GARC_Insertion_Thread IsNot Nothing Then
+                If GARC_Insertion_Thread.IsAlive Then
+                    GARC_Insertion_Thread.Abort()
+                    BtnGARCSave.Text = "Save"
+                    ProgressGARCInsertion.Text = Nothing
+                    ProgressGARCInsertion.Percentage = 0
+                    ProgressGARCInsertion.Refresh()
 
-                Exit Sub
+                    Exit Sub
+                End If
             End If
+
+            Dim Trd As New Thread(AddressOf GARC_Save)
+            Trd.Start()
+
+            BtnGARCSave.Text = "Cancel"
         End If
-
-        Dim Trd As New Thread(AddressOf GARC_Save)
-        Trd.Start()
-
-        BtnGARCSave.Text = "Cancel"
     End Sub
     Private Sub GARC_Save()
         Update_Progress(ProgressGARCInsertion, 0, "Please wait, rebuilding GARC...")
@@ -927,7 +931,7 @@ Public Class FrmMain
             BtnGARCCompression.Text = "Optimal compression"
         End If
 
-        My.Settings.FastCompression = Not MyNako.Fast_Compression
+        My.Settings.FastCompression = MyNako.Fast_Compression
         My.Settings.Save()
     End Sub
 #End Region
@@ -1001,4 +1005,5 @@ Public Class FrmMain
 #End Region
 
 #End Region
+
 End Class
