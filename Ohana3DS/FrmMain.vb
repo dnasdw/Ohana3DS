@@ -491,7 +491,7 @@ Public Class FrmMain
             If File.Exists(OpenDlg.FileName) Then Open_Texture(OpenDlg.FileName)
         End If
     End Sub
-    Private Sub Open_Texture(File_Name As String)
+    Private Sub Open_Texture(File_Name As String, Optional Show_Warning As Boolean = True)
         Try
             LstTextures.Clear()
             ImgTexture.Image = Nothing
@@ -502,7 +502,7 @@ Public Class FrmMain
             Next
             LstTextures.Refresh()
         Catch
-            MessageBox.Show("Sorry, something went wrong.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            If Show_Warning Then MessageBox.Show("Sorry, something went wrong.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub
     Private Sub LstTextures_SelectedIndexChanged(Index As Integer) Handles LstTextures.SelectedIndexChanged

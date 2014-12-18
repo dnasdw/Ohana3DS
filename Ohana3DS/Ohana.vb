@@ -455,10 +455,10 @@ Public Class Ohana
             End If
             Name_Table_Length = &H58
         ElseIf Version = BCH_Version.ORAS Then
-            If Magic = "BCH" Then
-                Name_Table_Base_Pointer = &H18
-            Else
+            If Magic_2_Bytes = "MM" Then
                 Name_Table_Base_Pointer = &H1C
+            Else
+                Name_Table_Base_Pointer = &H18
             End If
             Name_Table_Length = &H2C
         End If
