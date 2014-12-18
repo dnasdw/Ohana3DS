@@ -79,10 +79,14 @@ Public Class FrmMain
                         For Index As Integer = 1 To Input_Files.Count - 1
                             If Input_Files(Index).Name = Model_Name Then
                                 Dim i As Integer = 1
-                                While Not Open_Model(Input_Files(Index - i).FullName, False)
+                                Do
+                                    Dim CurrFile As String = Input_Files(Index - i).FullName
+                                    If IsModel(CurrFile) Then
+                                        If Open_Model(CurrFile, False) Then Exit Sub
+                                    End If
                                     i += 1
                                     If Index - i < 1 Then Exit For
-                                End While
+                                Loop
                                 Exit For
                             End If
                         Next
@@ -90,10 +94,14 @@ Public Class FrmMain
                         For Index As Integer = 0 To Input_Files.Count - 2
                             If Input_Files(Index).Name = Model_Name Then
                                 Dim i As Integer = 1
-                                While Not Open_Model(Input_Files(Index + i).FullName, False)
+                                Do
+                                    Dim CurrFile As String = Input_Files(Index + i).FullName
+                                    If IsModel(CurrFile) Then
+                                        If Open_Model(CurrFile, False) Then Exit Sub
+                                    End If
                                     i += 1
-                                    If Index + i > Input_Files.Count - 2 Then Exit For
-                                End While
+                                    If Index + i > Input_Files.Count - 2 Then Exit Sub
+                                Loop
                                 Exit For
                             End If
                         Next
@@ -117,6 +125,7 @@ Public Class FrmMain
             e.Effect = DragDropEffects.Copy
         End If
     End Sub
+
     Private Sub File_Dropped(File_Name As String)
         Dim Temp As New FileStream(File_Name, FileMode.Open)
 
@@ -137,6 +146,22 @@ Public Class FrmMain
             Open_GARC(File_Name)
         End If
     End Sub
+    Private Function IsModel(File_Name As String) As Boolean
+        Dim Input As New FileStream(File_Name, FileMode.Open)
+        Dim Magic As String = ReadMagic(Input, 0, 3)
+        Dim Magic_2_Bytes As String = Magic.Substring(0, 2)
+        Dim Length As Long = Input.Length
+        Input.Close()
+        If (Magic_2_Bytes <> "MM" And _
+            Magic_2_Bytes <> "TM" And _
+            Magic_2_Bytes <> "PC" And _
+            Magic_2_Bytes <> "GR" And _
+            Magic <> "BCH") Or _
+            Length < &H80 Then 'Verifica se é um modelo válido
+            Return False
+        End If
+        Return True
+    End Function
 
     Private Sub BtnModelMapEditor_Click(sender As Object, e As EventArgs) Handles BtnModelMapEditor.Click
         If MyOhana.Magic.Substring(0, 2) = "GR" Then
@@ -226,7 +251,12 @@ Public Class FrmMain
     End Sub
     Private Function Open_Model(File_Name As String, Optional Show_Warning As Boolean = True) As Boolean
         Dim Response As Boolean
+
         LblModelName.Text = Nothing
+        LblInfoVertices.Text = "0"
+        LblInfoTriangles.Text = "0"
+        LblInfoBones.Text = "0"
+        LblInfoTextures.Text = "0"
 
         Try
             Current_Model = File_Name
@@ -256,6 +286,11 @@ Public Class FrmMain
                 MyOhana.Rotation.Y = 0
                 MyOhana.Translation.X = 0
                 MyOhana.Translation.Y = 0
+
+                LblInfoVertices.Text = MyOhana.Info.Vertex_Count.ToString()
+                LblInfoTriangles.Text = MyOhana.Info.Triangles_Count.ToString()
+                LblInfoBones.Text = MyOhana.Info.Bones_Count.ToString()
+                LblInfoTextures.Text = MyOhana.Info.Textures_Count.ToString()
             Else
                 If Show_Warning Then MessageBox.Show("This file is not a model file!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
             End If
@@ -264,11 +299,6 @@ Public Class FrmMain
             MyOhana.Model_Object = Nothing
             If Show_Warning Then MessageBox.Show("Sorry, something went wrong.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
-
-        LblInfoVertices.Text = MyOhana.Info.Vertex_Count.ToString()
-        LblInfoTriangles.Text = MyOhana.Info.Triangles_Count.ToString()
-        LblInfoBones.Text = MyOhana.Info.Bones_Count.ToString()
-        LblInfoTextures.Text = MyOhana.Info.Textures_Count.ToString()
 
         Screen.Refresh()
         If Response Then MyOhana.Render()
