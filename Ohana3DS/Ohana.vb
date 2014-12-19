@@ -1090,41 +1090,86 @@ Public Class Ohana
                 For Tile_Y As Integer = 0 To (Img.Height \ 4) - 1
                     For Tile_X As Integer = 0 To (Img.Width \ 4) - 1
                         Dim Flip As Boolean = False
+                        Dim Difference As Boolean = False
+                        Dim Block_Top As Integer = 0
+                        Dim Block_Bottom As Integer = 0
 
-                        Dim Test_R1 As Integer = 0, Test_G1 As Integer = 0, Test_B1 As Integer = 0
-                        Dim Test_R2 As Integer = 0, Test_G2 As Integer = 0, Test_B2 As Integer = 0
-                        For Y As Integer = 0 To 1
+                        'Teste do Difference Bit
+                        Dim Diff_Match_V As Integer = 0
+                        Dim Diff_Match_H As Integer = 0
+                        For Y As Integer = 0 To 3
                             For X As Integer = 0 To 1
+                                Dim Image_Offset_1 As Integer = ((Tile_X * 4) + X + (((Tile_Y * 4) + Y) * Img.Width)) * 4
+                                Dim Image_Offset_2 As Integer = ((Tile_X * 4) + (2 + X) + (((Tile_Y * 4) + Y) * Img.Width)) * 4
+
+                                Dim Bits_R1 As Byte = Convert.ToByte(Out(Image_Offset_1) And &HF8)
+                                Dim Bits_G1 As Byte = Convert.ToByte(Out(Image_Offset_1 + 1) And &HF8)
+                                Dim Bits_B1 As Byte = Convert.ToByte(Out(Image_Offset_1 + 2) And &HF8)
+
+                                Dim Bits_R2 As Byte = Convert.ToByte(Out(Image_Offset_2) And &HF8)
+                                Dim Bits_G2 As Byte = Convert.ToByte(Out(Image_Offset_2 + 1) And &HF8)
+                                Dim Bits_B2 As Byte = Convert.ToByte(Out(Image_Offset_2 + 2) And &HF8)
+
+                                If (Bits_R1 = Bits_R2) And (Bits_G1 = Bits_G2) And (Bits_B1 = Bits_B2) Then Diff_Match_V += 1
+                            Next
+                        Next
+                        For Y As Integer = 0 To 1
+                            For X As Integer = 0 To 3
                                 Dim Image_Offset_1 As Integer = ((Tile_X * 4) + X + (((Tile_Y * 4) + Y) * Img.Width)) * 4
                                 Dim Image_Offset_2 As Integer = ((Tile_X * 4) + X + (((Tile_Y * 4) + (2 + Y)) * Img.Width)) * 4
 
-                                Test_R1 += Out(Image_Offset_1)
-                                Test_G1 += Out(Image_Offset_1 + 1)
-                                Test_B1 += Out(Image_Offset_1 + 2)
+                                Dim Bits_R1 As Byte = Convert.ToByte(Out(Image_Offset_1) And &HF8)
+                                Dim Bits_G1 As Byte = Convert.ToByte(Out(Image_Offset_1 + 1) And &HF8)
+                                Dim Bits_B1 As Byte = Convert.ToByte(Out(Image_Offset_1 + 2) And &HF8)
 
-                                Test_R2 += Out(Image_Offset_2)
-                                Test_G2 += Out(Image_Offset_2 + 1)
-                                Test_B2 += Out(Image_Offset_2 + 2)
+                                Dim Bits_R2 As Byte = Convert.ToByte(Out(Image_Offset_2) And &HF8)
+                                Dim Bits_G2 As Byte = Convert.ToByte(Out(Image_Offset_2 + 1) And &HF8)
+                                Dim Bits_B2 As Byte = Convert.ToByte(Out(Image_Offset_2 + 2) And &HF8)
+
+                                If (Bits_R1 = Bits_R2) And (Bits_G1 = Bits_G2) And (Bits_B1 = Bits_B2) Then Diff_Match_H += 1
                             Next
                         Next
+                        If Diff_Match_H = 8 Then 'Difference + Flip
+                            Difference = True
+                            Flip = True
+                        ElseIf Diff_Match_V = 8 Then 'Difference
+                            Difference = True
+                        Else 'Individual
+                            Dim Test_R1 As Integer = 0, Test_G1 As Integer = 0, Test_B1 As Integer = 0
+                            Dim Test_R2 As Integer = 0, Test_G2 As Integer = 0, Test_B2 As Integer = 0
+                            For Y As Integer = 0 To 1
+                                For X As Integer = 0 To 1
+                                    Dim Image_Offset_1 As Integer = ((Tile_X * 4) + X + (((Tile_Y * 4) + Y) * Img.Width)) * 4
+                                    Dim Image_Offset_2 As Integer = ((Tile_X * 4) + (2 + X) + (((Tile_Y * 4) + (2 + Y)) * Img.Width)) * 4
 
-                        Test_R1 \= 8
-                        Test_G1 \= 8
-                        Test_B1 \= 8
+                                    Test_R1 += Out(Image_Offset_1)
+                                    Test_G1 += Out(Image_Offset_1 + 1)
+                                    Test_B1 += Out(Image_Offset_1 + 2)
 
-                        Test_R2 \= 8
-                        Test_G2 \= 8
-                        Test_B2 \= 8
+                                    Test_R2 += Out(Image_Offset_2)
+                                    Test_G2 += Out(Image_Offset_2 + 1)
+                                    Test_B2 += Out(Image_Offset_2 + 2)
+                                Next
+                            Next
 
-                        Dim Test_Luma_1 As Integer = Convert.ToInt32(0.299F * Test_R1 + 0.587F * Test_G1 + 0.114F * Test_B1)
-                        Dim Test_Luma_2 As Integer = Convert.ToInt32(0.299F * Test_R2 + 0.587F * Test_G2 + 0.114F * Test_B2)
-                        Dim Test_Flip_Diff As Integer = Math.Abs(Test_Luma_1 - Test_Luma_2)
-                        If Test_Flip_Diff > 48 Then Flip = True
+                            Test_R1 \= 8
+                            Test_G1 \= 8
+                            Test_B1 \= 8
 
-                        'Primeiro, cálcula a média de cores de cada bloco
+                            Test_R2 \= 8
+                            Test_G2 \= 8
+                            Test_B2 \= 8
+
+                            Dim Test_Luma_1 As Integer = Convert.ToInt32(0.299F * Test_R1 + 0.587F * Test_G1 + 0.114F * Test_B1)
+                            Dim Test_Luma_2 As Integer = Convert.ToInt32(0.299F * Test_R2 + 0.587F * Test_G2 + 0.114F * Test_B2)
+                            Dim Test_Flip_Diff As Integer = Math.Abs(Test_Luma_1 - Test_Luma_2)
+                            If Test_Flip_Diff > 48 Then Flip = True
+                        End If
+
                         Dim Avg_R1 As Integer = 0, Avg_G1 As Integer = 0, Avg_B1 As Integer = 0
                         Dim Avg_R2 As Integer = 0, Avg_G2 As Integer = 0, Avg_B2 As Integer = 0
 
+                        'Primeiro, cálcula a média de cores de cada bloco
                         If Flip Then
                             For Y As Integer = 0 To 1
                                 For X As Integer = 0 To 3
@@ -1165,22 +1210,62 @@ Public Class Ohana
                         Avg_G2 \= 8
                         Avg_B2 \= 8
 
-                        Dim Block_Top As Integer = 0
-                        Dim Block_Bottom As Integer = 0
+                        If Difference Then
+                            '+============+
+                            '| Difference |
+                            '+============+
+                            If (Avg_R1 And 7) > 3 Then If Math.Abs(Avg_R1 - Avg_R2) > 3 Then Avg_R2 = Clip(Avg_R2 + 8) : Avg_R1 = Clip(Avg_R1 + 8)
+                            If (Avg_G1 And 7) > 3 Then If Math.Abs(Avg_G1 - Avg_G2) > 3 Then Avg_G2 = Clip(Avg_G2 + 8) : Avg_G1 = Clip(Avg_G1 + 8)
+                            If (Avg_B1 And 7) > 3 Then If Math.Abs(Avg_B1 - Avg_B2) > 3 Then Avg_B2 = Clip(Avg_B2 + 8) : Avg_B1 = Clip(Avg_B1 + 8)
+                            Block_Top = (Avg_R1 And &HF8) Or Get_Differece_Bits(Avg_R1, Avg_R2)
+                            Block_Top = Block_Top Or (((Avg_G1 And &HF8) << 8) Or (Get_Differece_Bits(Avg_G1, Avg_G2) << 8))
+                            Block_Top = Block_Top Or (((Avg_B1 And &HF8) << 16) Or (Get_Differece_Bits(Avg_B1, Avg_B2) << 16))
 
-                        Block_Top = ((Avg_R2 And &HF0) >> 4) Or (Avg_R1 And &HF0)
-                        Block_Top = Block_Top Or (((Avg_G2 And &HF0) << 4) Or ((Avg_G1 And &HF0) << 8))
-                        Block_Top = Block_Top Or (((Avg_B2 And &HF0) << 12) Or ((Avg_B1 And &HF0) << 16))
+                            'Vamos ter certeza de que os mesmos valores obtidos pelo descompressor serão usados na comparação
+                            Avg_R1 = Block_Top And &HF8
+                            Avg_G1 = (Block_Top And &HF800) >> 8
+                            Avg_B1 = (Block_Top And &HF80000) >> 16
+
+                            Dim R As Integer = Signed_Byte(Convert.ToByte(Avg_R1 >> 3)) + (Signed_Byte(Convert.ToByte((Block_Top And 7) << 5)) >> 5)
+                            Dim G As Integer = Signed_Byte(Convert.ToByte(Avg_G1 >> 3)) + (Signed_Byte(Convert.ToByte((Block_Top And &H700) >> 3)) >> 5)
+                            Dim B As Integer = Signed_Byte(Convert.ToByte(Avg_B1 >> 3)) + (Signed_Byte(Convert.ToByte((Block_Top And &H70000) >> 11)) >> 5)
+
+                            Avg_R2 = R
+                            Avg_G2 = G
+                            Avg_B2 = B
+
+                            Avg_R1 = Avg_R1 + (Avg_R1 >> 5)
+                            Avg_G1 = Avg_G1 + (Avg_G1 >> 5)
+                            Avg_B1 = Avg_B1 + (Avg_B1 >> 5)
+
+                            Avg_R2 = (Avg_R2 << 3) + (Avg_R2 >> 2)
+                            Avg_G2 = (Avg_G2 << 3) + (Avg_G2 >> 2)
+                            Avg_B2 = (Avg_B2 << 3) + (Avg_B2 >> 2)
+                        Else
+                            '+============+
+                            '| Individual |
+                            '+============+
+                            If (Avg_R1 And &HF) > 7 Then Avg_R1 = Clip(Avg_R1 + &H10)
+                            If (Avg_G1 And &HF) > 7 Then Avg_G1 = Clip(Avg_G1 + &H10)
+                            If (Avg_B1 And &HF) > 7 Then Avg_B1 = Clip(Avg_B1 + &H10)
+                            If (Avg_R2 And &HF) > 7 Then Avg_R2 = Clip(Avg_R2 + &H10)
+                            If (Avg_G2 And &HF) > 7 Then Avg_G2 = Clip(Avg_G2 + &H10)
+                            If (Avg_B2 And &HF) > 7 Then Avg_B2 = Clip(Avg_B2 + &H10)
+                            Block_Top = ((Avg_R2 And &HF0) >> 4) Or (Avg_R1 And &HF0)
+                            Block_Top = Block_Top Or (((Avg_G2 And &HF0) << 4) Or ((Avg_G1 And &HF0) << 8))
+                            Block_Top = Block_Top Or (((Avg_B2 And &HF0) << 12) Or ((Avg_B1 And &HF0) << 16))
+
+                            Avg_R1 = (Avg_R1 And &HF0) + ((Avg_R1 And &HF0) >> 4)
+                            Avg_G1 = (Avg_G1 And &HF0) + ((Avg_G1 And &HF0) >> 4)
+                            Avg_B1 = (Avg_B1 And &HF0) + ((Avg_B1 And &HF0) >> 4)
+
+                            Avg_R2 = (Avg_R2 And &HF0) + ((Avg_R2 And &HF0) >> 4)
+                            Avg_G2 = (Avg_G2 And &HF0) + ((Avg_G2 And &HF0) >> 4)
+                            Avg_B2 = (Avg_B2 And &HF0) + ((Avg_B2 And &HF0) >> 4)
+                        End If
 
                         If Flip Then Block_Top = Block_Top Or &H1000000
-
-                        Avg_R1 = (Avg_R1 And &HF0) + ((Avg_R1 And &HF0) >> 4)
-                        Avg_G1 = (Avg_G1 And &HF0) + ((Avg_G1 And &HF0) >> 4)
-                        Avg_B1 = (Avg_B1 And &HF0) + ((Avg_B1 And &HF0) >> 4)
-
-                        Avg_R2 = (Avg_R2 And &HF0) + ((Avg_R2 And &HF0) >> 4)
-                        Avg_G2 = (Avg_G2 And &HF0) + ((Avg_G2 And &HF0) >> 4)
-                        Avg_B2 = (Avg_B2 And &HF0) + ((Avg_B2 And &HF0) >> 4)
+                        If Difference Then Block_Top = Block_Top Or &H2000000
 
                         Dim Mod_Table_1 As Integer = 0
                         Dim Min_Diff_1(7) As Integer
@@ -1195,9 +1280,9 @@ Public Class Ohana
                                 For a As Integer = 0 To 7
                                     Dim Optimal_Diff As Integer = 255 * 4
                                     For b As Integer = 0 To 3
-                                        Dim CR As Integer = Avg_R1 + Modulation_Table(a, b)
-                                        Dim CG As Integer = Avg_G1 + Modulation_Table(a, b)
-                                        Dim CB As Integer = Avg_B1 + Modulation_Table(a, b)
+                                        Dim CR As Integer = Clip(Avg_R1 + Modulation_Table(a, b))
+                                        Dim CG As Integer = Clip(Avg_G1 + Modulation_Table(a, b))
+                                        Dim CB As Integer = Clip(Avg_B1 + Modulation_Table(a, b))
 
                                         Dim Test_Luma As Integer = Convert.ToInt32(0.299F * CR + 0.587F * CG + 0.114F * CB)
                                         Dim Diff As Integer = Math.Abs(Luma - Test_Luma)
@@ -1229,9 +1314,9 @@ Public Class Ohana
                                 For a As Integer = 0 To 7
                                     Dim Optimal_Diff As Integer = 255 * 4
                                     For b As Integer = 0 To 3
-                                        Dim CR As Integer = Avg_R2 + Modulation_Table(a, b)
-                                        Dim CG As Integer = Avg_G2 + Modulation_Table(a, b)
-                                        Dim CB As Integer = Avg_B2 + Modulation_Table(a, b)
+                                        Dim CR As Integer = Clip(Avg_R2 + Modulation_Table(a, b))
+                                        Dim CG As Integer = Clip(Avg_G2 + Modulation_Table(a, b))
+                                        Dim CB As Integer = Clip(Avg_B2 + Modulation_Table(a, b))
 
                                         Dim Test_Luma As Integer = Convert.ToInt32(0.299F * CR + 0.587F * CG + 0.114F * CB)
                                         Dim Diff As Integer = Math.Abs(Luma - Test_Luma)
@@ -1669,6 +1754,9 @@ Public Class Ohana
         Next
 
         Return Tile_Scramble
+    End Function
+    Private Function Get_Differece_Bits(Val_1 As Integer, Val_2 As Integer) As Byte
+        Return Convert.ToByte(((Val_2 - Val_1) \ 8) And 7)
     End Function
 #End Region
 
