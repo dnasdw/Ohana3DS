@@ -73,7 +73,6 @@ Public Class Ohana
 
     Public Magic As String
     Public Model_Type As ModelType
-    Public mapVals As UInteger(,)
 
     Public Scale As Single = 32.0F
     Public Model_Mirror_X As Boolean = True
@@ -2122,42 +2121,6 @@ Public Class Ohana
 
         File.WriteAllBytes(Temp_Model_File, Data)
     End Sub
-#End Region
-
-#Region "Map"
-    Public Sub makeMapIMG(byteArray As Byte())
-        Using dataStream As Stream = New MemoryStream(byteArray)
-            Using br As New BinaryReader(dataStream)
-                Dim width As UShort = br.ReadUInt16()
-                Dim height As UShort = br.ReadUInt16()
-                Dim img As New Bitmap(width * 8, height * 8)
-                Dim c As New Color()
-                For i As Integer = 0 To width * height - 1
-                    Dim col2 As UInteger = br.ReadUInt32()
-                    If col2 = &H1000021 Then
-                        c = Color.Black
-                    Else
-                        col2 = LCG(col2, 4)
-                        c = Color.FromArgb(&HFF, &HFF - CByte(col2 And &HFF), &HFF - CByte((col2 >> 8) And &HFF), &HFF - CByte(col2 >> 24 And &HFF))
-                    End If
-                    For x As Integer = 0 To 7
-                        For y As Integer = 0 To 7
-                            img.SetPixel((x + (i * 8) Mod (img.Width)), y + ((i \ width) * 8), c)
-                        Next
-                    Next
-                Next
-                br.Close()
-                FrmMapProp.mapPicBox.Image = img
-            End Using
-        End Using
-    End Sub
-    Public Function LCG(seed As Long, ctr As Integer) As UInteger
-        For i As Integer = 0 To ctr - 1
-            seed *= &H41C64E6D
-            seed += &H6073
-        Next
-        Return seed
-    End Function
 #End Region
 
 End Class

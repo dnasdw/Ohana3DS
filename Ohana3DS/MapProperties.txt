@@ -1,0 +1,30 @@
+16777249,(None)
+32,Walk(1)
+40,Walk(2)
+96,Raised Ground(?)
+24608,Dock
+49184,Railing(?)
+16801825,???
+34242592,Sand
+537411588,Grass
+118136864,Shore(sea)
+124690464,Shore(still water)
+151031808,Quick Sand
+1085800483,Shore edge
+1025114118,Surf
+1075314723,???
+1092222982,Dive(to surface)
+1102577670,Dive(to below)
+1627389984,Bicycle only
+3557687297,Desk
+3557687361,Table
+3658350593,Dresser
+3708682241,Wall(Horizontal)
+3708682305,Wall(Vertical)
+3876454433,Chair(North)
+3842900001,Chair(West)
+3926786081,Chair(East)
+3960340513,Bench(North)
+3993894945,Bench(West)
+3977117729,Bed(East)
+4010672161,Bed(North)

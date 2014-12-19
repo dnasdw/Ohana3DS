@@ -166,7 +166,7 @@ Public Class FrmMain
     Private Sub BtnModelMapEditor_Click(sender As Object, e As EventArgs) Handles BtnModelMapEditor.Click
         If MyOhana.Magic.Substring(0, 2) = "GR" Then
             FrmMapProp.Show()
-            MyOhana.makeMapIMG(MapProps())
+            FrmMapProp.makeMapIMG(MapProps())
         End If
     End Sub
 

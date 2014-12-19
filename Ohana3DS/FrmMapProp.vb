@@ -13,6 +13,9 @@ Public Class FrmMapProp
         Dim LeftWidth As Integer
         Dim RightWidth As Integer
     End Structure
+
+    Dim mapVals(100) As UInteger
+
     Protected Overrides ReadOnly Property CreateParams() As CreateParams 'Cria sombra (sem Aero)
         Get
             Dim Create_Params As CreateParams = MyBase.CreateParams
@@ -39,6 +42,44 @@ Public Class FrmMapProp
                 DwmExtendFrameIntoClientArea(Handle, Margins)
         End Select
     End Sub
+
+    Public Sub makeMapIMG(byteArray As Byte())
+        Dim proplist As New List(Of UInteger)
+        Using dataStream As IO.Stream = New IO.MemoryStream(byteArray)
+            Using br As New IO.BinaryReader(dataStream)
+                Dim width As UShort = br.ReadUInt16()
+                Dim height As UShort = br.ReadUInt16()
+                Dim img As New Bitmap(width * 8, height * 8)
+                Dim c As New Color()
+                For i As Integer = 0 To width * height - 1
+                    Dim col2 As UInteger = br.ReadUInt32()
+                    proplist.Add(col2)
+                    If col2 = &H1000021 Then
+                        c = Color.Black
+                    Else
+                        col2 = LCG(col2, 4)
+                        c = Color.FromArgb(&HFF, &HFF - CByte(col2 And &HFF), &HFF - CByte((col2 >> 8) And &HFF), &HFF - CByte(col2 >> 24 And &HFF))
+                    End If
+                    For x As Integer = 0 To 7
+                        For y As Integer = 0 To 7
+                            img.SetPixel((x + (i * 8) Mod (img.Width)), y + ((i \ width) * 8), c)
+                        Next
+                    Next
+                Next
+                br.Close()
+                mapPicBox.Image = img
+                mapVals = proplist.ToArray
+            End Using
+        End Using
+    End Sub
+    Public Function LCG(seed As Long, ctr As Integer) As UInteger
+        For i As Integer = 0 To ctr - 1
+            seed *= &H41C64E6D
+            seed += &H6073
+        Next
+        Return seed
+    End Function
+
 #Region "GUI"
     Private Sub BtnClose_Click(sender As Object, e As EventArgs) Handles BtnClose.Click
         Me.Close()
@@ -66,15 +107,23 @@ Public Class FrmMapProp
     Private Sub mapPicBox_Click(sender As Object, e As EventArgs) Handles mapPicBox.Click
         Dim mouseEventArgs = TryCast(e, MouseEventArgs)
         If mouseEventArgs IsNot Nothing Then
+            Dim mapProps As String() = My.Resources.MapProperties.Split(New Char() {Environment.NewLine, ","}, StringSplitOptions.None)
             Dim X As Integer = Math.Round(mouseEventArgs.X / 8)
             Dim Y As Integer = Math.Round(mouseEventArgs.Y / 8)
             mapCoords.Text = "X= " & Convert.ToString(X) & " Y= " & Convert.ToString(Y)
-            'mapPropText.Text = Hex(MyOhana.mapVals(X, Y))
+            For i As UInteger = 0 To mapProps.Length - 1 Step 2
+                Dim p1 As UInteger = UInteger.Parse(mapProps(i))
+                Dim p2 As String = mapProps(i + 1)
+                Clipboard.SetText(mapVals(((Y * 40) + X)))
+                If p1 = mapVals(((Y * 40) + X)) Then
+                    mapPropCom.Text = p2
+                End If
+            Next
         End If
     End Sub
 
     Private Sub mapPropSave_Click(sender As Object, e As EventArgs) Handles mapPropSave.Click
-
+        MessageBox.Show("Not finished.")
     End Sub
 
 End Class

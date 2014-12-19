@@ -26,11 +26,11 @@ Partial Class FrmMapProp
         Me.BtnClose = New System.Windows.Forms.Label()
         Me.BtnMinimize = New System.Windows.Forms.Label()
         Me.mapPicBox = New System.Windows.Forms.PictureBox()
-        Me.mapPropText = New System.Windows.Forms.TextBox()
         Me.mapPropSave = New System.Windows.Forms.Button()
         Me.LblMapProp = New System.Windows.Forms.Label()
         Me.mapCoords = New System.Windows.Forms.Label()
         Me.Title = New Ohana3DS.MyWindowTitle()
+        Me.mapPropCom = New System.Windows.Forms.ComboBox()
         CType(Me.mapPicBox, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
@@ -66,16 +66,6 @@ Partial Class FrmMapProp
         Me.mapPicBox.Size = New System.Drawing.Size(320, 320)
         Me.mapPicBox.TabIndex = 23
         Me.mapPicBox.TabStop = False
-        '
-        'mapPropText
-        '
-        Me.mapPropText.BackColor = System.Drawing.Color.Black
-        Me.mapPropText.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle
-        Me.mapPropText.ForeColor = System.Drawing.Color.White
-        Me.mapPropText.Location = New System.Drawing.Point(79, 387)
-        Me.mapPropText.Name = "mapPropText"
-        Me.mapPropText.Size = New System.Drawing.Size(163, 20)
-        Me.mapPropText.TabIndex = 24
         '
         'mapPropSave
         '
@@ -124,16 +114,29 @@ Partial Class FrmMapProp
         Me.Title.TabIndex = 22
         Me.Title.Text = "OhanaXY - Map Properties"
         '
+        'mapPropCom
+        '
+        Me.mapPropCom.FormattingEnabled = True
+        Me.mapPropCom.Location = New System.Drawing.Point(79, 382)
+        Me.mapPropCom.Name = "mapPropCom"
+        Me.mapPropCom.Size = New System.Drawing.Size(172, 21)
+        Me.mapPropCom.TabIndex = 28
+        Dim lst As New List(Of String)
+        For Each i In My.Resources.MapProperties.Split(New Char() {Environment.NewLine}, StringSplitOptions.None)
+            lst.Add(i.Substring(i.IndexOf(",") + 1))
+        Next
+        Me.mapPropCom.DataSource = lst
+        '
         'FrmMapProp
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.BackgroundImage = CType(resources.GetObject("$this.BackgroundImage"), System.Drawing.Image)
         Me.ClientSize = New System.Drawing.Size(344, 419)
+        Me.Controls.Add(Me.mapPropCom)
         Me.Controls.Add(Me.mapCoords)
         Me.Controls.Add(Me.LblMapProp)
         Me.Controls.Add(Me.mapPropSave)
-        Me.Controls.Add(Me.mapPropText)
         Me.Controls.Add(Me.mapPicBox)
         Me.Controls.Add(Me.Title)
         Me.Controls.Add(Me.BtnMinimize)
@@ -151,8 +154,8 @@ Partial Class FrmMapProp
     Friend WithEvents BtnMinimize As System.Windows.Forms.Label
     Friend WithEvents Title As Ohana3DS.MyWindowTitle
     Friend WithEvents mapPicBox As System.Windows.Forms.PictureBox
-    Friend WithEvents mapPropText As System.Windows.Forms.TextBox
     Friend WithEvents mapPropSave As System.Windows.Forms.Button
     Friend WithEvents LblMapProp As System.Windows.Forms.Label
     Friend WithEvents mapCoords As System.Windows.Forms.Label
+    Friend WithEvents mapPropCom As System.Windows.Forms.ComboBox
 End Class
