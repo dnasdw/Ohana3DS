@@ -4,6 +4,7 @@ Imports System.Drawing.Design
 Public Class MyListview
     Inherits Control
 
+    Private Bar_Fore_Color As Color = Color.White
     Private Selected As Color = Color.FromArgb(15, 82, 186)
     Private Ash_Gray As Color = Color.FromArgb(178, 190, 181)
 
@@ -29,8 +30,6 @@ Public Class MyListview
     Private Scroll_Mouse_Y As Integer
     Private Mouse_Drag As Boolean
     Private Clicked As Boolean
-
-    Private Bar_Fore_Color As Color
     Public Sub New()
         Me.DoubleBuffered = True
         SetStyle(ControlStyles.AllPaintingInWmPaint Or _
