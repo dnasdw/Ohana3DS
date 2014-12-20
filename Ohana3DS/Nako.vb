@@ -13,7 +13,7 @@ Public Class Nako
     Public Files() As GARC_File
     Private Data_Offset As Integer
     Private FATB_Offset As Integer
-    Private Current_File As String
+    Public Current_File As String
 
     Public Structure Inserted_File
         Dim File_Name As String
@@ -27,12 +27,8 @@ Public Class Nako
         Current_File = File_Name
         Dim InFile As New FileStream(File_Name, FileMode.Open)
 
-        Dim Magic As String = Nothing
-        For Characters As Integer = 0 To 3
-            Magic &= Chr(InFile.ReadByte)
-        Next
-        If StrReverse(Magic) <> "GARC" Then
-            MsgBox("Arquivo não é GARC!")
+        If StrReverse(ReadMagic(InFile, 0, 4)) <> "GARC" Then
+            MessageBox.Show("This file is not a GARC!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
             Exit Sub
         End If
 
@@ -60,7 +56,7 @@ Public Class Nako
                     .Uncompressed_Length = .Length
                 End If
 
-                Dim File_Magic As String = Encoding.ASCII.GetString(BitConverter.GetBytes(Read32(InFile, Data_Offset + .Start_Offset + If(.Compressed, 5, 0))))
+                Dim File_Magic As String = ReadMagic(InFile, Data_Offset + .Start_Offset + If(.Compressed, 5, 0), 4)
                 Dim Format As String = Guess_Format(File_Magic)
                 .Name = "file_" & Current_File & Format
             End With
@@ -88,9 +84,7 @@ Public Class Nako
         End Select
         Return Format
     End Function
-    Public Sub Extract(Output_File As String, File_Index As Integer)
-        Dim InFile As New FileStream(Current_File, FileMode.Open)
-
+    Public Sub Extract(InFile As FileStream, Output_File As String, File_Index As Integer)
         With Files(File_Index)
             InFile.Seek(Data_Offset + .Start_Offset, SeekOrigin.Begin)
             Dim Data(.Length - 1) As Byte
@@ -106,8 +100,6 @@ Public Class Nako
 
             OutFile.Close()
         End With
-
-        InFile.Close()
     End Sub
     Public Sub Insert()
         Dim Original_File As New FileStream(Current_File, FileMode.Open)
@@ -178,7 +170,11 @@ Public Class Nako
         File.Copy(Temp_GARC_File, Current_File)
     End Sub
     Public Shared Function LZSS_Decompress(InData() As Byte) As Byte()
-        If InData(0) <> &H11 Then MsgBox(Hex(InData(0)))
+        Dim Power_Of_Two(7) As Byte
+        For i As Integer = 0 To 7
+            Power_Of_Two(i) = Convert.ToByte(2 ^ i)
+        Next
+
         Dim Decompressed_Size As Integer = (Read32(InData, 0) And &HFFFFFF00) >> 8
         Dim Data(Decompressed_Size - 1) As Byte
         Dim Dic(&HFFF) As Byte
@@ -186,7 +182,7 @@ Public Class Nako
         Dim SrcPtr As Integer = 4, DstPtr As Integer
         Dim BitCount As Integer = 8
         Dim DicPtr As Integer
-        Dim BitFlags As Byte
+        Dim BitFlags As Integer
         While DstPtr < Decompressed_Size And SrcPtr < InData.Length
             If BitCount = 8 Then
                 BitFlags = InData(SrcPtr)
@@ -194,7 +190,7 @@ Public Class Nako
                 BitCount = 0
             End If
 
-            If (BitFlags And Convert.ToByte(2 ^ (7 - BitCount))) = 0 Then
+            If (BitFlags And Power_Of_Two(7 - BitCount)) = 0 Then
                 Dic(DicPtr) = InData(SrcPtr)
                 SrcPtr += 1
                 Data(DstPtr) = Dic(DicPtr)
@@ -202,7 +198,6 @@ Public Class Nako
                 DstPtr += 1
             Else
                 Dim Back, Len As Integer
-                Back = -1
                 Dim Indicator As Integer = (InData(SrcPtr) And &HF0) >> 4
                 Select Case Indicator
                     Case 0
@@ -233,9 +228,9 @@ Public Class Nako
                 Back += 1
 
                 If DstPtr + Len > Decompressed_Size Then Len = Decompressed_Size - DstPtr
-                Dim Original_Dictionary_Pointer As Integer = DicPtr
+                Dim OldPtr As Integer = DicPtr
                 For i As Integer = 0 To Len - 1
-                    Dic(DicPtr) = Dic((Original_Dictionary_Pointer - Back + i) And &HFFF)
+                    Dic(DicPtr) = Dic((OldPtr - Back + i) And &HFFF)
                     Data(DstPtr) = Dic(DicPtr)
                     DstPtr += 1
                     DicPtr = (DicPtr + 1) And &HFFF

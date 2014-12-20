@@ -22,10 +22,12 @@ Partial Class FrmMain
     'Não o modifique usando o editor de códigos.
     <System.Diagnostics.DebuggerStepThrough()> _
     Private Sub InitializeComponent()
+        Me.components = New System.ComponentModel.Container()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(FrmMain))
         Me.BtnClose = New System.Windows.Forms.Label()
         Me.BtnMinimize = New System.Windows.Forms.Label()
         Me.Splash = New System.Windows.Forms.PictureBox()
+        Me.ModelNameTip = New System.Windows.Forms.ToolTip(Me.components)
         Me.MainTabs = New Ohana3DS.MyTabcontrol()
         Me.ModelPage = New System.Windows.Forms.TabPage()
         Me.GrpOptions = New Ohana3DS.MyGroupbox()
@@ -39,7 +41,7 @@ Partial Class FrmMain
         Me.BtnModelExport = New System.Windows.Forms.Button()
         Me.BtnModelOpen = New System.Windows.Forms.Button()
         Me.GrpInfo = New Ohana3DS.MyGroupbox()
-        Me.LblModelName = New Ohana3DS.MySliderLabel()
+        Me.LblModelName = New System.Windows.Forms.Label()
         Me.BtnModelTexturesMore = New System.Windows.Forms.Button()
         Me.LblInfoTextures = New System.Windows.Forms.Label()
         Me.LblInfoBones = New System.Windows.Forms.Label()
@@ -52,6 +54,7 @@ Partial Class FrmMain
         Me.Screen = New System.Windows.Forms.PictureBox()
         Me.TexturePage = New System.Windows.Forms.TabPage()
         Me.GrpTexOptions = New Ohana3DS.MyGroupbox()
+        Me.BtnTextureInsertAll = New System.Windows.Forms.Button()
         Me.BtnTextureSave = New System.Windows.Forms.Button()
         Me.BtnTextureInsert = New System.Windows.Forms.Button()
         Me.BtnTextureMode = New System.Windows.Forms.Button()
@@ -84,7 +87,6 @@ Partial Class FrmMain
         Me.GARCPage = New System.Windows.Forms.TabPage()
         Me.GrpGARCOptions = New Ohana3DS.MyGroupbox()
         Me.BtnGARCCompression = New System.Windows.Forms.Button()
-        Me.ProgressGARCInsertion = New Ohana3DS.MyProgressbar()
         Me.BtnGARCSave = New System.Windows.Forms.Button()
         Me.BtnGARCInsert = New System.Windows.Forms.Button()
         Me.ProgressGARC = New Ohana3DS.MyProgressbar()
@@ -341,11 +343,10 @@ Partial Class FrmMain
         '
         'LblModelName
         '
-        Me.LblModelName.Font = New System.Drawing.Font("Segoe UI Light", 8.25!)
         Me.LblModelName.Location = New System.Drawing.Point(112, 18)
         Me.LblModelName.Name = "LblModelName"
         Me.LblModelName.Size = New System.Drawing.Size(88, 16)
-        Me.LblModelName.TabIndex = 6
+        Me.LblModelName.TabIndex = 24
         '
         'BtnModelTexturesMore
         '
@@ -466,6 +467,7 @@ Partial Class FrmMain
         'GrpTexOptions
         '
         Me.GrpTexOptions.BackColor = System.Drawing.Color.Transparent
+        Me.GrpTexOptions.Controls.Add(Me.BtnTextureInsertAll)
         Me.GrpTexOptions.Controls.Add(Me.BtnTextureSave)
         Me.GrpTexOptions.Controls.Add(Me.BtnTextureInsert)
         Me.GrpTexOptions.Controls.Add(Me.BtnTextureMode)
@@ -481,6 +483,18 @@ Partial Class FrmMain
         Me.GrpTexOptions.TabIndex = 26
         Me.GrpTexOptions.TabStop = False
         Me.GrpTexOptions.Text = "Options"
+        '
+        'BtnTextureInsertAll
+        '
+        Me.BtnTextureInsertAll.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
+        Me.BtnTextureInsertAll.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
+        Me.BtnTextureInsertAll.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        Me.BtnTextureInsertAll.Location = New System.Drawing.Point(162, 48)
+        Me.BtnTextureInsertAll.Name = "BtnTextureInsertAll"
+        Me.BtnTextureInsertAll.Size = New System.Drawing.Size(72, 24)
+        Me.BtnTextureInsertAll.TabIndex = 10
+        Me.BtnTextureInsertAll.Text = "Import all"
+        Me.BtnTextureInsertAll.UseVisualStyleBackColor = True
         '
         'BtnTextureSave
         '
@@ -532,7 +546,7 @@ Partial Class FrmMain
         '
         'ProgressTextures
         '
-        Me.ProgressTextures.Location = New System.Drawing.Point(412, 48)
+        Me.ProgressTextures.Location = New System.Drawing.Point(240, 48)
         Me.ProgressTextures.Name = "ProgressTextures"
         Me.ProgressTextures.Percentage = 0.0!
         Me.ProgressTextures.Size = New System.Drawing.Size(150, 24)
@@ -825,7 +839,6 @@ Partial Class FrmMain
         '
         Me.GrpGARCOptions.BackColor = System.Drawing.Color.Transparent
         Me.GrpGARCOptions.Controls.Add(Me.BtnGARCCompression)
-        Me.GrpGARCOptions.Controls.Add(Me.ProgressGARCInsertion)
         Me.GrpGARCOptions.Controls.Add(Me.BtnGARCSave)
         Me.GrpGARCOptions.Controls.Add(Me.BtnGARCInsert)
         Me.GrpGARCOptions.Controls.Add(Me.ProgressGARC)
@@ -851,14 +864,6 @@ Partial Class FrmMain
         Me.BtnGARCCompression.TabIndex = 7
         Me.BtnGARCCompression.Text = "Optimal compression"
         Me.BtnGARCCompression.UseVisualStyleBackColor = True
-        '
-        'ProgressGARCInsertion
-        '
-        Me.ProgressGARCInsertion.Location = New System.Drawing.Point(162, 48)
-        Me.ProgressGARCInsertion.Name = "ProgressGARCInsertion"
-        Me.ProgressGARCInsertion.Percentage = 0.0!
-        Me.ProgressGARCInsertion.Size = New System.Drawing.Size(228, 24)
-        Me.ProgressGARCInsertion.TabIndex = 6
         '
         'BtnGARCSave
         '
@@ -886,10 +891,10 @@ Partial Class FrmMain
         '
         'ProgressGARC
         '
-        Me.ProgressGARC.Location = New System.Drawing.Point(240, 18)
+        Me.ProgressGARC.Location = New System.Drawing.Point(615, 48)
         Me.ProgressGARC.Name = "ProgressGARC"
         Me.ProgressGARC.Percentage = 0.0!
-        Me.ProgressGARC.Size = New System.Drawing.Size(228, 24)
+        Me.ProgressGARC.Size = New System.Drawing.Size(150, 24)
         Me.ProgressGARC.TabIndex = 0
         '
         'BtnGARCExtractAll
@@ -1165,13 +1170,14 @@ Partial Class FrmMain
     Friend WithEvents LstMatches As Ohana3DS.MyListview
     Friend WithEvents BtnGARCInsert As System.Windows.Forms.Button
     Friend WithEvents BtnGARCSave As System.Windows.Forms.Button
-    Friend WithEvents LblModelName As Ohana3DS.MySliderLabel
-    Friend WithEvents ProgressGARCInsertion As Ohana3DS.MyProgressbar
     Friend WithEvents BtnGARCCompression As System.Windows.Forms.Button
     Friend WithEvents BtnModelVertexEditor As System.Windows.Forms.Button
     Friend WithEvents BtnModelSave As System.Windows.Forms.Button
     Friend WithEvents BtnModelMapEditor As System.Windows.Forms.Button
     Friend WithEvents LstStrings As Ohana3DS.MyListview
     Friend WithEvents ImgTexture As Ohana3DS.MyPicturebox
+    Friend WithEvents BtnTextureInsertAll As System.Windows.Forms.Button
+    Friend WithEvents LblModelName As System.Windows.Forms.Label
+    Friend WithEvents ModelNameTip As System.Windows.Forms.ToolTip
 
 End Class

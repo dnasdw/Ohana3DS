@@ -27,10 +27,11 @@ Public Class FrmMain
     Dim Texture_Mode As TextureMode = TextureMode.Original
 
     Dim Model_Export_Thread As Thread
-    Dim Texture_Export_Thread As Thread
-    Dim GARC_Thread, GARC_Insertion_Thread As Thread
+    Dim Texture_Thread As Thread
+    Dim GARC_Thread As Thread
     Dim Search_Thread As Thread
 
+    Dim First_Click As Boolean
     Dim Old_Index As Integer = -1
     Protected Overrides Sub WndProc(ByRef m As System.Windows.Forms.Message)
         If m.Msg <> &HA3 Then MyBase.WndProc(m)
@@ -213,6 +214,8 @@ Public Class FrmMain
     Private Delegate Sub Up_Progress(ProgressBar As MyProgressbar, Percentage As Single, Msg As String)
     Private Delegate Sub Add_Item(List As MyListview, Item As MyListview.ListItem)
     Private Delegate Sub Update_Button(Button As Button, Text As String)
+    Private Delegate Sub Change_Picture(Ctrl As MyPicturebox, Img As Image)
+    Private Delegate Sub Change_Enabled(Ctrl As Control, Enabled As Boolean)
     Private Sub Update_Progress(ProgressBar As MyProgressbar, Percentage As Single, Msg As String)
         If ProgressBar.InvokeRequired Then
             Me.Invoke(New Up_Progress(AddressOf Update_Progress), ProgressBar, Percentage, Msg)
@@ -238,6 +241,21 @@ Public Class FrmMain
             Button.Refresh()
         End If
     End Sub
+    Private Sub Set_Image(Picture As MyPicturebox, Img As Image)
+        If Picture.InvokeRequired Then
+            Me.Invoke(New Change_Picture(AddressOf Set_Image), Picture, Img)
+        Else
+            Picture.Image = Img
+            Picture.Refresh()
+        End If
+    End Sub
+    Private Sub Set_Enabled(Ctrl As Control, Enabled As Boolean)
+        If Ctrl.InvokeRequired Then
+            Me.Invoke(New Change_Enabled(AddressOf Set_Enabled), Ctrl, Enabled)
+        Else
+            Ctrl.Enabled = Enabled
+        End If
+    End Sub
 #End Region
 
 #Region "Model"
@@ -245,6 +263,7 @@ Public Class FrmMain
         Dim OpenDlg As New OpenFileDialog
         OpenDlg.Title = "Open Pokémon BCH model"
         OpenDlg.Filter = "BCH Model|*.*"
+        First_Click = True
         If OpenDlg.ShowDialog = Windows.Forms.DialogResult.OK Then
             If File.Exists(OpenDlg.FileName) Then Open_Model(OpenDlg.FileName)
         End If
@@ -253,6 +272,7 @@ Public Class FrmMain
         Dim Response As Boolean
 
         LblModelName.Text = Nothing
+        ModelNameTip.SetToolTip(LblModelName, Nothing)
         LblInfoVertices.Text = "0"
         LblInfoTriangles.Text = "0"
         LblInfoBones.Text = "0"
@@ -263,6 +283,7 @@ Public Class FrmMain
             Response = MyOhana.Load_Model(File_Name)
             If Response Then
                 LblModelName.Text = Path.GetFileName(File_Name)
+                ModelNameTip.SetToolTip(LblModelName, LblModelName.Text)
 
                 If MyOhana.BCH_Have_Textures Then
                     LstTextures.Clear()
@@ -300,6 +321,8 @@ Public Class FrmMain
             If Show_Warning Then MessageBox.Show("Sorry, something went wrong.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
 
+        Application.DoEvents() 'Processa o click que foi para o PictureBox, porém será ignorado devido ao First_Click
+        First_Click = False
         Screen.Refresh()
         If Response Then MyOhana.Render()
 
@@ -347,7 +370,6 @@ Public Class FrmMain
         Dim Total_Index, Index As Integer
         For Each File As FileInfo In Input_Files
             Try
-
                 If Exporter.Load_Model(File.FullName, False) Then
                     If Exporter.Model_Object.Length > 0 Then
                         Dim File_Name As String = Path.Combine(OutFolder, File.Name & ".smd")
@@ -445,31 +467,37 @@ Public Class FrmMain
     End Sub
 
     Private Sub Screen_MouseDown(sender As Object, e As System.Windows.Forms.MouseEventArgs) Handles Screen.MouseDown
-        If e.Button = MouseButtons.Left Then
-            Rot_InitX = MousePosition.X
-            Rot_InitY = MousePosition.Y
-        ElseIf e.Button = MouseButtons.Right Then
-            Mov_InitX = MousePosition.X
-            Mov_InitY = MousePosition.Y
+        If Not First_Click Then
+            If e.Button = MouseButtons.Left Then
+                Rot_InitX = MousePosition.X
+                Rot_InitY = MousePosition.Y
+            ElseIf e.Button = MouseButtons.Right Then
+                Mov_InitX = MousePosition.X
+                Mov_InitY = MousePosition.Y
+            End If
         End If
     End Sub
     Private Sub Screen_MouseUp(sender As Object, e As System.Windows.Forms.MouseEventArgs) Handles Screen.MouseUp
-        If e.Button = MouseButtons.Left Then
-            Rot_FinalX += (Rot_InitX - MousePosition.X)
-            Rot_FinalY += (Rot_InitY - MousePosition.Y)
-        ElseIf e.Button = MouseButtons.Right Then
-            Mov_FinalX += (Mov_InitX - MousePosition.X)
-            Mov_FinalY += (Mov_InitY - MousePosition.Y)
+        If Not First_Click Then
+            If e.Button = MouseButtons.Left Then
+                Rot_FinalX += (Rot_InitX - MousePosition.X)
+                Rot_FinalY += (Rot_InitY - MousePosition.Y)
+            ElseIf e.Button = MouseButtons.Right Then
+                Mov_FinalX += (Mov_InitX - MousePosition.X)
+                Mov_FinalY += (Mov_InitY - MousePosition.Y)
+            End If
         End If
     End Sub
     Private Sub Screen_MouseMove(sender As Object, e As System.Windows.Forms.MouseEventArgs) Handles Screen.MouseMove
         If Not Screen.Focused Then Screen.Select()
-        If e.Button = MouseButtons.Left Then
-            MyOhana.Rotation.X = (Rot_InitX - MousePosition.X) + Rot_FinalX
-            MyOhana.Rotation.Y = (Rot_InitY - MousePosition.Y) + Rot_FinalY
-        ElseIf e.Button = MouseButtons.Right Then
-            MyOhana.Translation.X = (Mov_InitX - MousePosition.X) + Mov_FinalX
-            MyOhana.Translation.Y = (Mov_InitY - MousePosition.Y) + Mov_FinalY
+        If Not First_Click Then
+            If e.Button = MouseButtons.Left Then
+                MyOhana.Rotation.X = (Rot_InitX - MousePosition.X) + Rot_FinalX
+                MyOhana.Rotation.Y = (Rot_InitY - MousePosition.Y) + Rot_FinalY
+            ElseIf e.Button = MouseButtons.Right Then
+                MyOhana.Translation.X = (Mov_InitX - MousePosition.X) + Mov_FinalX
+                MyOhana.Translation.Y = (Mov_InitY - MousePosition.Y) + Mov_FinalY
+            End If
         End If
     End Sub
     Private Sub Screen_MouseWheel(sender As Object, e As System.Windows.Forms.MouseEventArgs) Handles Screen.MouseWheel
@@ -588,13 +616,18 @@ Public Class FrmMain
         End If
     End Sub
     Private Sub BtnTextureExportAllFF_Click(sender As Object, e As EventArgs) Handles BtnTextureExportAllFF.Click
-        If Texture_Export_Thread IsNot Nothing Then
-            If Texture_Export_Thread.IsAlive Then
-                Texture_Export_Thread.Abort()
+        If Texture_Thread IsNot Nothing Then
+            If Texture_Thread.IsAlive Then
+                Texture_Thread.Abort()
                 BtnTextureExportAllFF.Text = "Export all from folder"
                 ProgressTextures.Text = Nothing
                 ProgressTextures.Percentage = 0
                 ProgressTextures.Refresh()
+
+                BtnTextureOpen.Enabled = True
+                BtnTextureSave.Enabled = True
+                BtnTextureInsert.Enabled = True
+                BtnTextureInsertAll.Enabled = True
 
                 Exit Sub
             End If
@@ -604,10 +637,14 @@ Public Class FrmMain
         If InputDlg.ShowDialog = Windows.Forms.DialogResult.OK Then
             Dim OutputDlg As New FolderBrowserDialog
             If OutputDlg.ShowDialog = Windows.Forms.DialogResult.OK Then
-                Texture_Export_Thread = New Thread(Sub() Texture_Exporter(InputDlg.SelectedPath, OutputDlg.SelectedPath))
-                Texture_Export_Thread.Start()
+                Texture_Thread = New Thread(Sub() Texture_Exporter(InputDlg.SelectedPath, OutputDlg.SelectedPath))
+                Texture_Thread.Start()
 
                 BtnTextureExportAllFF.Text = "Cancel"
+                BtnTextureOpen.Enabled = False
+                BtnTextureSave.Enabled = False
+                BtnTextureInsert.Enabled = False
+                BtnTextureInsertAll.Enabled = False
             End If
         End If
     End Sub
@@ -643,6 +680,11 @@ Public Class FrmMain
 
         Update_Progress(ProgressTextures, 0, Nothing)
         Update_Button_Text(BtnTextureExportAllFF, "Export all from folder")
+
+        Set_Enabled(BtnTextureOpen, True)
+        Set_Enabled(BtnTextureSave, True)
+        Set_Enabled(BtnTextureInsert, True)
+        Set_Enabled(BtnTextureInsertAll, True)
     End Sub
     Private Sub BtnTextureMode_Click(sender As Object, e As EventArgs) Handles BtnTextureMode.Click
         Select Case Texture_Mode
@@ -666,16 +708,125 @@ Public Class FrmMain
         My.Settings.Save()
     End Sub
     Private Sub BtnTextureInsert_Click(sender As Object, e As EventArgs) Handles BtnTextureInsert.Click
+        If Texture_Thread IsNot Nothing Then
+            If Texture_Thread.IsAlive Then
+                Texture_Thread.Abort()
+                BtnTextureInsert.Text = "Import"
+                ProgressTextures.Text = Nothing
+                ProgressTextures.Percentage = 0
+                ProgressTextures.Refresh()
+
+                BtnTextureOpen.Enabled = True
+                BtnTextureSave.Enabled = True
+                BtnTextureExportAllFF.Enabled = True
+                BtnTextureInsertAll.Enabled = True
+
+                Exit Sub
+            End If
+        End If
+
         If (MyOhana.Current_Texture <> Nothing Or MyOhana.BCH_Have_Textures) And LstTextures.SelectedIndex > -1 Then
             Dim OpenDlg As New OpenFileDialog
             OpenDlg.Title = "Select the Texture to insert"
             OpenDlg.Filter = "PNG|*.png"
             If OpenDlg.ShowDialog = DialogResult.OK Then
                 If File.Exists(OpenDlg.FileName) Then
-                    MyOhana.Insert_Texture(OpenDlg.FileName, LstTextures.SelectedIndex)
+                    Dim Trd As New Thread(Sub() Insert_Texture(OpenDlg.FileName, LstTextures.SelectedIndex))
+                    Trd.Start()
+
+                    BtnTextureInsert.Text = "Cancel"
+                    BtnTextureOpen.Enabled = False
+                    BtnTextureSave.Enabled = False
+                    BtnTextureExportAllFF.Enabled = False
+                    BtnTextureInsertAll.Enabled = False
                 End If
             End If
         End If
+    End Sub
+    Private Sub Insert_Texture(File_Name As String, Index As Integer)
+        Update_Progress(ProgressTextures, 0, "Inserting data...")
+
+        Texture_Thread = New Thread(Sub() MyOhana.Insert_Texture(File_Name, Index))
+        Texture_Thread.Start()
+
+        Dim Old_Percentage As Single
+        While Texture_Thread.IsAlive
+            If MyOhana.Texture_Insertion_Percentage <> Old_Percentage Then
+                Update_Progress(ProgressTextures, MyOhana.Texture_Insertion_Percentage, "Inserting data...")
+                Old_Percentage = MyOhana.Texture_Insertion_Percentage
+            End If
+        End While
+
+        Update_Progress(ProgressTextures, 0, Nothing)
+        Update_Button_Text(BtnTextureInsert, "Import")
+
+        If LstTextures.SelectedIndex = Index Then Set_Image(ImgTexture, MyOhana.Model_Texture(Index).Image)
+        Set_Enabled(BtnTextureOpen, True)
+        Set_Enabled(BtnTextureSave, True)
+        Set_Enabled(BtnTextureExportAllFF, True)
+        Set_Enabled(BtnTextureInsertAll, True)
+    End Sub
+    Private Sub BtnTextureInsertAll_Click(sender As Object, e As EventArgs) Handles BtnTextureInsertAll.Click
+        If Texture_Thread IsNot Nothing Then
+            If Texture_Thread.IsAlive Then
+                Texture_Thread.Abort()
+                BtnTextureInsertAll.Text = "Import all"
+                ProgressTextures.Text = Nothing
+                ProgressTextures.Percentage = 0
+                ProgressTextures.Refresh()
+
+                BtnTextureOpen.Enabled = True
+                BtnTextureSave.Enabled = True
+                BtnTextureExportAllFF.Enabled = True
+                BtnTextureInsert.Enabled = True
+
+                Exit Sub
+            End If
+        End If
+
+        If MyOhana.Current_Texture <> Nothing Or MyOhana.BCH_Have_Textures Then
+            Dim FolderDlg As New FolderBrowserDialog
+            If FolderDlg.ShowDialog = DialogResult.OK Then
+                If Directory.Exists(FolderDlg.SelectedPath) Then
+                    Dim Trd As New Thread(Sub() Insert_Textures_From_Folder(FolderDlg.SelectedPath))
+                    Trd.Start()
+
+                    BtnTextureInsertAll.Text = "Cancel"
+                    BtnTextureOpen.Enabled = False
+                    BtnTextureSave.Enabled = False
+                    BtnTextureExportAllFF.Enabled = False
+                    BtnTextureInsert.Enabled = False
+                End If
+            End If
+        End If
+    End Sub
+    Private Sub Insert_Textures_From_Folder(Folder As String)
+        Dim Not_Found As Boolean
+        Dim Not_Found_Files As String = Nothing
+        Dim Index As Integer
+        For Each Texture As Ohana.OhanaTexture In MyOhana.Model_Texture
+            Dim File_Name As String = Path.Combine(Folder, Texture.Name & ".png")
+            If File.Exists(File_Name) Then
+                Update_Progress(ProgressTextures, Convert.ToSingle((Index / MyOhana.Model_Texture.Count) * 100), "Inserting " & Texture.Name & "...")
+                MyOhana.Insert_Texture(File_Name, Index)
+                If LstTextures.SelectedIndex = Index Then Set_Image(ImgTexture, MyOhana.Model_Texture(Index).Image)
+            Else
+                Not_Found = True
+                If Index < 15 Then Not_Found_Files &= Texture.Name & ".png" & Environment.NewLine
+            End If
+            Index += 1
+        Next
+        If MyOhana.Model_Texture.Count > 15 Then Not_Found_Files &= "[Truncated]"
+
+        Update_Progress(ProgressTextures, 0, Nothing)
+        Update_Button_Text(BtnTextureInsertAll, "Import all")
+
+        Set_Enabled(BtnTextureOpen, True)
+        Set_Enabled(BtnTextureSave, True)
+        Set_Enabled(BtnTextureExportAllFF, True)
+        Set_Enabled(BtnTextureInsert, True)
+
+        If Not_Found Then MessageBox.Show("The following files couldn't be found:" & Environment.NewLine & Not_Found_Files, "Warning!", MessageBoxButtons.OK, MessageBoxIcon.Warning)
     End Sub
     Private Sub BtnTextureSave_Click(sender As Object, e As EventArgs) Handles BtnTextureSave.Click
         If MyOhana.Current_Texture <> Nothing Then
@@ -852,7 +1003,9 @@ Public Class FrmMain
                 SaveDlg.Title = "Extract file"
                 SaveDlg.FileName = MyNako.Files(LstFiles.SelectedIndex).Name
                 If SaveDlg.ShowDialog = Windows.Forms.DialogResult.OK Then
-                    MyNako.Extract(SaveDlg.FileName, LstFiles.SelectedIndex)
+                    Dim InFile As New FileStream(MyNako.Current_File, FileMode.Open)
+                    MyNako.Extract(InFile, SaveDlg.FileName, LstFiles.SelectedIndex)
+                    InFile.Close()
                 End If
             End If
         End If
@@ -867,6 +1020,10 @@ Public Class FrmMain
                     ProgressGARC.Percentage = 0
                     ProgressGARC.Refresh()
 
+                    BtnGARCOpen.Enabled = True
+                    BtnGARCInsert.Enabled = True
+                    BtnGARCSave.Enabled = True
+
                     Exit Sub
                 End If
             End If
@@ -877,17 +1034,26 @@ Public Class FrmMain
                 GARC_Thread.Start()
 
                 BtnGARCExtractAll.Text = "Cancel"
+                BtnGARCOpen.Enabled = False
+                BtnGARCInsert.Enabled = False
+                BtnGARCSave.Enabled = False
             End If
         End If
     End Sub
     Private Sub GARC_ExtractAll(OutFolder As String)
+        Dim InFile As New FileStream(MyNako.Current_File, FileMode.Open)
         For Index As Integer = 0 To MyNako.Files.Length - 1
-            MyNako.Extract(Path.Combine(OutFolder, MyNako.Files(Index).Name), Index)
+            MyNako.Extract(InFile, Path.Combine(OutFolder, MyNako.Files(Index).Name), Index)
             If MyNako.Files.Length > 1 Then Update_Progress(ProgressGARC, Convert.ToSingle((Index / (MyNako.Files.Length - 1)) * 100), "Extracting " & MyNako.Files(Index).Name & "...")
         Next
+        InFile.Close()
 
         Update_Progress(ProgressGARC, 0, Nothing)
         Update_Button_Text(BtnGARCExtractAll, "Extract all")
+
+        Set_Enabled(BtnGARCOpen, True)
+        Set_Enabled(BtnGARCInsert, True)
+        Set_Enabled(BtnGARCSave, True)
     End Sub
     Private Sub BtnGARCInsert_Click(sender As Object, e As EventArgs) Handles BtnGARCInsert.Click
         If LstFiles.SelectedIndex > -1 Then
@@ -917,41 +1083,52 @@ Public Class FrmMain
         End If
     End Sub
     Private Sub BtnGARCSave_Click(sender As Object, e As EventArgs) Handles BtnGARCSave.Click
-        If MyNako.Files.Count > 0 Then
-            If GARC_Insertion_Thread IsNot Nothing Then
-                If GARC_Insertion_Thread.IsAlive Then
-                    GARC_Insertion_Thread.Abort()
-                    BtnGARCSave.Text = "Save"
-                    ProgressGARCInsertion.Text = Nothing
-                    ProgressGARCInsertion.Percentage = 0
-                    ProgressGARCInsertion.Refresh()
+        If GARC_Thread IsNot Nothing Then
+            If GARC_Thread.IsAlive Then
+                GARC_Thread.Abort()
+                BtnGARCSave.Text = "Save"
+                ProgressGARC.Text = Nothing
+                ProgressGARC.Percentage = 0
+                ProgressGARC.Refresh()
 
-                    Exit Sub
-                End If
+                BtnGARCOpen.Enabled = True
+                BtnGARCInsert.Enabled = True
+                BtnGARCExtractAll.Enabled = True
+
+                Exit Sub
             End If
+        End If
 
+        If MyNako.Files.Count > 0 Then
             Dim Trd As New Thread(AddressOf GARC_Save)
             Trd.Start()
 
             BtnGARCSave.Text = "Cancel"
+            BtnGARCOpen.Enabled = False
+            BtnGARCInsert.Enabled = False
+            BtnGARCExtractAll.Enabled = False
         End If
     End Sub
     Private Sub GARC_Save()
-        Update_Progress(ProgressGARCInsertion, 0, "Please wait, rebuilding GARC...")
+        Update_Progress(ProgressGARC, 0, "Please wait, rebuilding GARC...")
         MyNako.Compression_Percentage = 0
 
-        GARC_Insertion_Thread = New Thread(AddressOf MyNako.Insert)
-        GARC_Insertion_Thread.Start()
+        GARC_Thread = New Thread(AddressOf MyNako.Insert)
+        GARC_Thread.Start()
 
         Dim Old_Percentage As Single
-        While GARC_Insertion_Thread.IsAlive
+        While GARC_Thread.IsAlive
             If MyNako.Compression_Percentage <> Old_Percentage Then
-                Update_Progress(ProgressGARCInsertion, MyNako.Compression_Percentage, "Compressing data...")
+                Update_Progress(ProgressGARC, MyNako.Compression_Percentage, "Compressing data...")
                 Old_Percentage = MyNako.Compression_Percentage
             End If
         End While
-        Update_Progress(ProgressGARCInsertion, 0, Nothing)
+        Update_Progress(ProgressGARC, 0, Nothing)
         Update_Button_Text(BtnGARCSave, "Save")
+
+        Set_Enabled(BtnGARCOpen, True)
+        Set_Enabled(BtnGARCInsert, True)
+        Set_Enabled(BtnGARCExtractAll, True)
     End Sub
     Private Sub BtnGARCCompression_Click(sender As Object, e As EventArgs) Handles BtnGARCCompression.Click
         MyNako.Fast_Compression = Not MyNako.Fast_Compression
@@ -1005,6 +1182,9 @@ Public Class FrmMain
         Dim Input_Files() As FileInfo = New DirectoryInfo(InFolder).GetFiles()
         Dim Search_Term() As Byte = Encoding.UTF8.GetBytes(Text)
         For Each CurrFile As FileInfo In Input_Files
+            Update_Progress(ProgressSearch, Convert.ToSingle((Index / Input_Files.Count) * 100), "Searching on file " & CurrFile.Name & "...")
+            Index += 1
+
             Dim Data() As Byte = File.ReadAllBytes(CurrFile.FullName)
             Dim Found As Boolean = False
             For Offset As Integer = 0 To Data.Length - Search_Term.Length
@@ -1024,9 +1204,6 @@ Public Class FrmMain
                 Next
                 If Found Then Exit For
             Next
-
-            Update_Progress(ProgressSearch, Convert.ToSingle((Index / (Input_Files.Count - 1)) * 100), "Searching on file " & CurrFile.Name & "...")
-            Index += 1
         Next
 
         Update_Progress(ProgressSearch, 0, Nothing)

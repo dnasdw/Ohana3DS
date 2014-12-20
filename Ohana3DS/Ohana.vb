@@ -95,7 +95,7 @@ Public Class Ohana
     Public Rotation As Vector2
     Public Translation As Vector2
 
-    Public Max_Y_Neg, Max_Y_Pos, Max_Y As Single
+    Public Max_Y_Neg, Max_Y_Pos As Single
     Private Has_Normals As Boolean
 
     Public Rendering As Boolean
@@ -108,6 +108,8 @@ Public Class Ohana
     Public Selected_Object As Integer
     Public Selected_Face As Integer
     Public Edit_Mode As Boolean
+
+    Public Texture_Insertion_Percentage As Single
 
     Private Tile_Order() As Integer = _
         {0, 1, 8, 9, 2, 3, 10, 11, _
@@ -186,12 +188,6 @@ Public Class Ohana
             Temp_Model_File = Nothing
         End If
         BCH_Have_Textures = False
-        With Info
-            .Vertex_Count = 0
-            .Triangles_Count = 0
-            .Bones_Count = 0
-            .Textures_Count = 0
-        End With
 
         Dim Magic_2_Bytes As String = Magic.Substring(0, 2)
         If Magic_2_Bytes <> "MM" And _
@@ -248,9 +244,8 @@ Public Class Ohana
         Dim Texture_Entries As Integer = Read32(Data, Table_Offset + 4)
         Dim Bone_Entries As Integer = Read32(Data, Table_Offset + &H40)
         Dim Bones_Offset As Integer = Header_Offset + Read32(Data, Table_Offset + &H44)
-        Dim Texture_Table_Offset As Integer
-        Dim Vertex_Table_Offset As Integer = Read32(Data, Table_Offset + &HC)
         Dim Entries As Integer = Read32(Data, Table_Offset + &H10)
+        Dim Texture_Table_Offset As Integer
         If Version = BCH_Version.XY Then
             Texture_Table_Offset = &H78 + Read32(Data, Table_Offset)
         ElseIf Version = BCH_Version.ORAS Then
@@ -294,9 +289,7 @@ Public Class Ohana
 
             Face_Offset = Description_Offset + Read32(Data, Face_Offset + (Header_Offset + &H2C))
             Dim Vertex_Data_Offset As Integer = Data_Offset + Read32(Data, Vertex_Offset + &H30)
-
             Dim Vertex_Data_Format As Integer = Data(Vertex_Offset + &H3A)
-            Dim Vertex_Len As Integer = Data(Base_Offset + &HC)
             Dim Vertex_Flags As Integer = Read32(Data, Face_Offset)
             Dim Vertex_Data_Length As Integer
             If Version = BCH_Version.XY Then
@@ -374,8 +367,10 @@ Public Class Ohana
                         Case &H10
                             .Color = Read32(Data, Offset + 12)
                         Case &H14, &H18, &H1C
-                            .U = BitConverter.ToSingle(Data, Offset + 12)
-                            .V = BitConverter.ToSingle(Data, Offset + 16)
+                            If (Vertex_Flags And &HFFFF) <> &H285 Then
+                                .U = BitConverter.ToSingle(Data, Offset + 12)
+                                .V = BitConverter.ToSingle(Data, Offset + 16)
+                            End If
                         Case &H20, &H30, &H38
                             If (Vertex_Flags And &HFFFF) <> &HA680 Then
                                 .NX = BitConverter.ToSingle(Data, Offset + 12) / Scale
@@ -439,7 +434,6 @@ Public Class Ohana
                 .Vertex_Entry.Format = Vertex_Data_Format
             End With
         Next
-        Max_Y = Math.Abs(Max_Y_Pos - Max_Y_Neg)
 
         '+==========+
         '| Texturas |
@@ -644,9 +638,9 @@ Public Class Ohana
                     Bone_Info = Links & Bone_Info
 
                     Out.AppendLine(Model_Bone.Length & " " & _
-                                   CurrVert.X.ToString(Info) & " " & CurrVert.Y.ToString(Info) & " " & CurrVert.Z.ToString(Info) & " " & _
-                                   CurrVert.NX.ToString(Info) & " " & CurrVert.NY.ToString(Info) & " " & CurrVert.NZ.ToString(Info) & " " & _
-                                   CurrVert.U.ToString(Info) & " " & CurrVert.V.ToString(Info) & " " & Bone_Info)
+                                   CurrVert.X.ToString("N", Info) & " " & CurrVert.Y.ToString("N", Info) & " " & CurrVert.Z.ToString("N", Info) & " " & _
+                                   CurrVert.NX.ToString("N", Info) & " " & CurrVert.NY.ToString("N", Info) & " " & CurrVert.NZ.ToString("N", Info) & " " & _
+                                   CurrVert.U.ToString("N", Info) & " " & CurrVert.V.ToString("N", Info) & " " & Bone_Info)
                     If Temp_Count < 2 Then Temp_Count += 1 Else Temp_Count = 0
                 Next
             End With
@@ -658,6 +652,8 @@ Public Class Ohana
 #End Region
 
 #Region "Textures"
+
+#Region "Load"
     Public Sub Load_Textures(File_Name As String, Optional Create_DX_Texture As Boolean = True)
         Dim Version As BCH_Version
 
@@ -1035,6 +1031,7 @@ Public Class Ohana
 
         Return Out
     End Function
+#End Region
 
 #Region "Texture inserter/ETC1 Compressor"
     Public Sub Insert_Texture(File_Name As String, LstIndex As Integer)
@@ -1213,14 +1210,15 @@ Public Class Ohana
                             '+============+
                             '| Difference |
                             '+============+
-                            If (Avg_R1 And 7) > 3 Then If Math.Abs(Avg_R1 - Avg_R2) > 3 Then Avg_R2 = Clip(Avg_R2 + 8) : Avg_R1 = Clip(Avg_R1 + 8)
-                            If (Avg_G1 And 7) > 3 Then If Math.Abs(Avg_G1 - Avg_G2) > 3 Then Avg_G2 = Clip(Avg_G2 + 8) : Avg_G1 = Clip(Avg_G1 + 8)
-                            If (Avg_B1 And 7) > 3 Then If Math.Abs(Avg_B1 - Avg_B2) > 3 Then Avg_B2 = Clip(Avg_B2 + 8) : Avg_B1 = Clip(Avg_B1 + 8)
-                            Block_Top = (Avg_R1 And &HF8) Or Get_Differece_Bits(Avg_R1, Avg_R2)
-                            Block_Top = Block_Top Or (((Avg_G1 And &HF8) << 8) Or (Get_Differece_Bits(Avg_G1, Avg_G2) << 8))
-                            Block_Top = Block_Top Or (((Avg_B1 And &HF8) << 16) Or (Get_Differece_Bits(Avg_B1, Avg_B2) << 16))
+                            If (Avg_R1 And 7) > 3 Then Avg_R1 = Clip(Avg_R1 + 8) : Avg_R2 = Clip(Avg_R2 + 8)
+                            If (Avg_G1 And 7) > 3 Then Avg_G1 = Clip(Avg_G1 + 8) : Avg_G2 = Clip(Avg_G2 + 8)
+                            If (Avg_B1 And 7) > 3 Then Avg_B1 = Clip(Avg_B1 + 8) : Avg_B2 = Clip(Avg_B2 + 8)
 
-                            'Vamos ter certeza de que os mesmos valores obtidos pelo descompressor serão usados na comparação
+                            Block_Top = (Avg_R1 And &HF8) Or (((Avg_R2 - Avg_R1) \ 8) And 7)
+                            Block_Top = Block_Top Or (((Avg_G1 And &HF8) << 8) Or ((((Avg_G2 - Avg_G1) \ 8) And 7) << 8))
+                            Block_Top = Block_Top Or (((Avg_B1 And &HF8) << 16) Or ((((Avg_B2 - Avg_B1) \ 8) And 7) << 16))
+
+                            'Vamos ter certeza de que os mesmos valores obtidos pelo descompressor serão usados na comparação (modo Difference)
                             Avg_R1 = Block_Top And &HF8
                             Avg_G1 = (Block_Top And &HF800) >> 8
                             Avg_B1 = (Block_Top And &HF80000) >> 16
@@ -1250,10 +1248,12 @@ Public Class Ohana
                             If (Avg_R2 And &HF) > 7 Then Avg_R2 = Clip(Avg_R2 + &H10)
                             If (Avg_G2 And &HF) > 7 Then Avg_G2 = Clip(Avg_G2 + &H10)
                             If (Avg_B2 And &HF) > 7 Then Avg_B2 = Clip(Avg_B2 + &H10)
+
                             Block_Top = ((Avg_R2 And &HF0) >> 4) Or (Avg_R1 And &HF0)
                             Block_Top = Block_Top Or (((Avg_G2 And &HF0) << 4) Or ((Avg_G1 And &HF0) << 8))
                             Block_Top = Block_Top Or (((Avg_B2 And &HF0) << 12) Or ((Avg_B1 And &HF0) << 16))
 
+                            'Vamos ter certeza de que os mesmos valores obtidos pelo descompressor serão usados na comparação (modo Individual)
                             Avg_R1 = (Avg_R1 And &HF0) + ((Avg_R1 And &HF0) >> 4)
                             Avg_G1 = (Avg_G1 And &HF0) + ((Avg_G1 And &HF0) >> 4)
                             Avg_B1 = (Avg_B1 And &HF0) + ((Avg_B1 And &HF0) >> 4)
@@ -1266,6 +1266,7 @@ Public Class Ohana
                         If Flip Then Block_Top = Block_Top Or &H1000000
                         If Difference Then Block_Top = Block_Top Or &H2000000
 
+                        'Seleciona a melhor tabela para ser usada nos blocos
                         Dim Mod_Table_1 As Integer = 0
                         Dim Min_Diff_1(7) As Integer
                         For a As Integer = 0 To 7
@@ -1292,7 +1293,7 @@ Public Class Ohana
                             Next
                         Next
 
-                        Dim Temp_1 As Integer = 255 * 32
+                        Dim Temp_1 As Integer = 255 * 8
                         For a As Integer = 0 To 7
                             If Min_Diff_1(a) < Temp_1 Then
                                 Temp_1 = Min_Diff_1(a)
@@ -1326,7 +1327,7 @@ Public Class Ohana
                             Next
                         Next
 
-                        Dim Temp_2 As Integer = 255 * 32
+                        Dim Temp_2 As Integer = 255 * 8
                         For a As Integer = 0 To 7
                             If Min_Diff_2(a) < Temp_2 Then
                                 Temp_2 = Min_Diff_2(a)
@@ -1337,6 +1338,7 @@ Public Class Ohana
                         Block_Top = Block_Top Or (Mod_Table_1 << 29)
                         Block_Top = Block_Top Or (Mod_Table_2 << 26)
 
+                        'Seleciona o melhor valor da tabela que mais se aproxima com a cor original
                         For Y As Integer = 0 To If(Flip, 1, 3)
                             For X As Integer = 0 To If(Flip, 3, 1)
                                 Dim Image_Offset As Integer = ((Tile_X * 4) + X + (((Tile_Y * 4) + Y) * Img.Width)) * 4
@@ -1399,6 +1401,7 @@ Public Class Ohana
                             Next
                         Next
 
+                        'Copia dados para a saída
                         Dim Block(7) As Byte
                         Buffer.BlockCopy(BitConverter.GetBytes(Block_Top), 0, Block, 0, 4)
                         Buffer.BlockCopy(BitConverter.GetBytes(Block_Bottom), 0, Block, 4, 4)
@@ -1430,6 +1433,8 @@ Public Class Ohana
                             Buffer.BlockCopy(New_Block, 0, Out_Data, Out_Data_Offset, 8)
                             Out_Data_Offset += 8
                         End If
+
+                        Texture_Insertion_Percentage = Convert.ToSingle((Out_Data_Offset / Out_Data.Length) * 100)
                     Next
                 Next
             Case Else
@@ -1494,6 +1499,8 @@ Public Class Ohana
                                     End If
                                     Out_Data_Offset += 1
                             End Select
+
+                            Texture_Insertion_Percentage = Convert.ToSingle((Out_Data_Offset / Out_Data.Length) * 100)
                         Next
                     Next
                 Next
@@ -1540,6 +1547,8 @@ Public Class Ohana
 
         Buffer.BlockCopy(Out_Data, 0, Temp_Data, Model_Texture(LstIndex).Offset, Out_Data.Length)
         File.WriteAllBytes(Temp_File, Temp_Data)
+
+        Texture_Insertion_Percentage = 0
     End Sub
 #End Region
 
@@ -1754,9 +1763,6 @@ Public Class Ohana
 
         Return Tile_Scramble
     End Function
-    Private Function Get_Differece_Bits(Val_1 As Integer, Val_2 As Integer) As Byte
-        Return Convert.ToByte(((Val_2 - Val_1) \ 8) And 7)
-    End Function
 #End Region
 
 #End Region
@@ -1770,6 +1776,8 @@ Public Class Ohana
         'Configura iluminação
         Switch_Lighting(Lighting)
 
+        Dim Pos_Y As Single = (Max_Y_Pos / 2) + (Max_Y_Neg / 2)
+        If Pos_Y > 10.0F Then Pos_Y = 0
         Rendering = True
         While Rendering
             If Model_Object IsNot Nothing Then
@@ -1783,7 +1791,7 @@ Public Class Ohana
                 Device.Material = MyMaterial
 
                 Dim Rotation_Matrix As Matrix = Matrix.RotationYawPitchRoll(Rotation.X / 200.0F, -Rotation.Y / 200.0F, 0)
-                Dim Translation_Matrix As Matrix = Matrix.Translation(New Vector3(Translation.X / 50.0F, (Translation.Y / 50.0F), Zoom))
+                Dim Translation_Matrix As Matrix = Matrix.Translation(New Vector3(Translation.X / 50.0F, (Translation.Y / 50.0F) - Pos_Y, Zoom))
                 Device.Transform.World = Rotation_Matrix * Translation_Matrix
 
                 If Edit_Mode Then

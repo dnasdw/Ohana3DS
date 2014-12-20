@@ -15,6 +15,7 @@ Public Class FrmMapProp
     End Structure
 
     Dim mapVals(100) As UInteger
+    Dim width, height As UShort
 
     Protected Overrides ReadOnly Property CreateParams() As CreateParams 'Cria sombra (sem Aero)
         Get
@@ -47,8 +48,8 @@ Public Class FrmMapProp
         Dim proplist As New List(Of UInteger)
         Using dataStream As IO.Stream = New IO.MemoryStream(byteArray)
             Using br As New IO.BinaryReader(dataStream)
-                Dim width As UShort = br.ReadUInt16()
-                Dim height As UShort = br.ReadUInt16()
+                width = br.ReadUInt16()
+                height = br.ReadUInt16()
                 Dim img As New Bitmap(width * 8, height * 8)
                 Dim c As New Color()
                 For i As Integer = 0 To width * height - 1
@@ -108,8 +109,8 @@ Public Class FrmMapProp
         Dim mouseEventArgs = TryCast(e, MouseEventArgs)
         If mouseEventArgs IsNot Nothing Then
             Dim mapProps As String() = My.Resources.MapProperties.Split(New Char() {Environment.NewLine, ","}, StringSplitOptions.None)
-            Dim X As Integer = Math.Round(mouseEventArgs.X / 8)
-            Dim Y As Integer = Math.Round(mouseEventArgs.Y / 8)
+            Dim X As Integer = Math.Floor(mouseEventArgs.X / 8)
+            Dim Y As Integer = Math.Floor(mouseEventArgs.Y / 8)
             mapCoords.Text = "X= " & Convert.ToString(X) & " Y= " & Convert.ToString(Y)
             For i As UInteger = 0 To mapProps.Length - 1 Step 2
                 Dim p1 As UInteger = UInteger.Parse(mapProps(i))
