@@ -5,8 +5,8 @@ Imports System.IO
 Imports System.Drawing.Imaging
 Imports System.Runtime.InteropServices
 Imports System.Text
-Imports System.Globalization
 Imports System.Text.RegularExpressions
+Imports System.Globalization
 Public Class Ohana
 
 #Region "Declares"
@@ -486,13 +486,17 @@ Public Class Ohana
                 Dim Normal_Offset As Integer = Texture_Names_Offset + Read32(Data, (Texture_Table_Offset + Index * Name_Table_Length) + Name_Table_Base_Pointer + 8)
 
                 'Textura
-                Dim Texture_Name As String = Nothing
-                Do
-                    Dim Value As Integer = Data(Texture_Offset)
-                    Texture_Offset += 1
-                    If Value <> 0 Then Texture_Name &= Chr(Value) Else Exit Do
-                Loop
-                Model_Texture_Index(Index) = Texture_Name
+                For i As Integer = 0 To 1
+                    Dim Texture_Name As String = Nothing
+                    Do
+                        Dim Value As Integer = Data(Texture_Offset)
+                        Texture_Offset += 1
+                        If Value <> 0 Then Texture_Name &= Chr(Value) Else Exit Do
+                    Loop
+                    Model_Texture_Index(Index) = Texture_Name
+                    If Texture_Name <> "projection_dummy" Or Model_Type <> ModelType.Map Then Exit For 'Workaround
+                    Texture_Offset = Texture_Names_Offset + Read32(Data, (Texture_Table_Offset + Index * Name_Table_Length) + Name_Table_Base_Pointer + 4)
+                Next
 
                 If Model_Type = ModelType.Character Then
                     'Mapa de Normals/Bump Map
