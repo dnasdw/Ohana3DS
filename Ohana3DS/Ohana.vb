@@ -158,6 +158,9 @@ Public Class Ohana
             .RenderState.SourceBlend = Blend.SourceAlpha
             .RenderState.DestinationBlend = Blend.InvSourceAlpha
             .RenderState.BlendOperation = BlendOperation.Add
+            .RenderState.AlphaFunction = Compare.GreaterEqual
+            .RenderState.ReferenceAlpha = &H7F
+            .RenderState.AlphaTestEnable = True
 
             .SamplerState(0).MinFilter = TextureFilter.Anisotropic
             .SamplerState(0).MagFilter = TextureFilter.Anisotropic
@@ -181,6 +184,7 @@ Public Class Ohana
         Rendering = False
         Model_Object = Nothing
         Current_Model = Nothing
+        FrmMain.BtnModelMapEditor.Enabled = False
         If Temp_Model_File <> Nothing Then
             File.Delete(Temp_Model_File)
             Temp_Model_File = Nothing
@@ -204,6 +208,7 @@ Public Class Ohana
         ElseIf Magic_2_Bytes = "GR" Then
             BCH_Offset = Read32(Temp, 8)
             Model_Type = ModelType.Map
+            FrmMain.BtnModelMapEditor.Enabled = True
         Else
             Return False
         End If
@@ -388,7 +393,7 @@ Public Class Ohana
 
                             If Vertex_Data_Format = &H24 Then
                                 Select Case Vertex_Flags And &HFFFF
-                                    Case &H8E81, &H8E82, &HAA83, &HAADB, &HAC81, &HAE83
+                                    Case &H8E82, &HAA83, &HAADB, &HAC81, &HAE83
                                         .Color = Read32(Data, Offset + 32)
                                 End Select
                             Else
@@ -2126,5 +2131,15 @@ Public Class Ohana
         File.WriteAllBytes(Temp_Model_File, Data)
     End Sub
 #End Region
+
+    Public Function getProps() As List(Of String)
+        Dim list As New List(Of String)()
+        Dim mapProperties As String = My.Resources.MapProperties
+        Dim num As Integer = 0
+        For Each str As String In mapProperties.Split(New Char() {Environment.NewLine}, DirectCast(num, StringSplitOptions))
+            list.Add(str.Substring(str.IndexOf(",") + 1))
+        Next
+        Return list
+    End Function
 
 End Class

@@ -31,6 +31,7 @@ Partial Class FrmMapProp
         Me.mapCoords = New System.Windows.Forms.Label()
         Me.Title = New Ohana3DS.MyWindowTitle()
         Me.mapPropCom = New System.Windows.Forms.ComboBox()
+        Me.mapPropSet = New System.Windows.Forms.Button()
         CType(Me.mapPicBox, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
@@ -74,9 +75,9 @@ Partial Class FrmMapProp
         Me.mapPropSave.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
         Me.mapPropSave.FlatStyle = System.Windows.Forms.FlatStyle.Flat
         Me.mapPropSave.ForeColor = System.Drawing.Color.White
-        Me.mapPropSave.Location = New System.Drawing.Point(257, 383)
+        Me.mapPropSave.Location = New System.Drawing.Point(276, 385)
         Me.mapPropSave.Name = "mapPropSave"
-        Me.mapPropSave.Size = New System.Drawing.Size(75, 23)
+        Me.mapPropSave.Size = New System.Drawing.Size(56, 23)
         Me.mapPropSave.TabIndex = 25
         Me.mapPropSave.Text = "Save"
         Me.mapPropSave.UseVisualStyleBackColor = False
@@ -86,7 +87,7 @@ Partial Class FrmMapProp
         Me.LblMapProp.AutoSize = True
         Me.LblMapProp.BackColor = System.Drawing.Color.Transparent
         Me.LblMapProp.ForeColor = System.Drawing.Color.White
-        Me.LblMapProp.Location = New System.Drawing.Point(16, 390)
+        Me.LblMapProp.Location = New System.Drawing.Point(9, 390)
         Me.LblMapProp.Name = "LblMapProp"
         Me.LblMapProp.Size = New System.Drawing.Size(57, 13)
         Me.LblMapProp.TabIndex = 26
@@ -116,16 +117,26 @@ Partial Class FrmMapProp
         '
         'mapPropCom
         '
+        Me.mapPropCom.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
         Me.mapPropCom.FormattingEnabled = True
-        Me.mapPropCom.Location = New System.Drawing.Point(79, 382)
+        Me.mapPropCom.Location = New System.Drawing.Point(72, 387)
         Me.mapPropCom.Name = "mapPropCom"
-        Me.mapPropCom.Size = New System.Drawing.Size(172, 21)
+        Me.mapPropCom.Size = New System.Drawing.Size(132, 21)
         Me.mapPropCom.TabIndex = 28
-        Dim lst As New List(Of String)
-        For Each i In My.Resources.MapProperties.Split(New Char() {Environment.NewLine}, StringSplitOptions.None)
-            lst.Add(i.Substring(i.IndexOf(",") + 1))
-        Next
-        Me.mapPropCom.DataSource = lst
+        '
+        'mapPropSet
+        '
+        Me.mapPropSet.BackColor = System.Drawing.Color.Transparent
+        Me.mapPropSet.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
+        Me.mapPropSet.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
+        Me.mapPropSet.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        Me.mapPropSet.ForeColor = System.Drawing.Color.White
+        Me.mapPropSet.Location = New System.Drawing.Point(210, 385)
+        Me.mapPropSet.Name = "mapPropSet"
+        Me.mapPropSet.Size = New System.Drawing.Size(56, 23)
+        Me.mapPropSet.TabIndex = 29
+        Me.mapPropSet.Text = "Set"
+        Me.mapPropSet.UseVisualStyleBackColor = False
         '
         'FrmMapProp
         '
@@ -133,6 +144,7 @@ Partial Class FrmMapProp
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.BackgroundImage = CType(resources.GetObject("$this.BackgroundImage"), System.Drawing.Image)
         Me.ClientSize = New System.Drawing.Size(344, 419)
+        Me.Controls.Add(Me.mapPropSet)
         Me.Controls.Add(Me.mapPropCom)
         Me.Controls.Add(Me.mapCoords)
         Me.Controls.Add(Me.LblMapProp)
@@ -158,4 +170,5 @@ Partial Class FrmMapProp
     Friend WithEvents LblMapProp As System.Windows.Forms.Label
     Friend WithEvents mapCoords As System.Windows.Forms.Label
     Friend WithEvents mapPropCom As System.Windows.Forms.ComboBox
+    Friend WithEvents mapPropSet As System.Windows.Forms.Button
 End Class

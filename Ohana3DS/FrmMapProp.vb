@@ -15,7 +15,18 @@ Public Class FrmMapProp
     End Structure
 
     Dim mapVals(100) As UInteger
-    Dim width, height As UShort
+    Dim mapProps As String()
+
+    Dim mouseX As Integer = 0
+    Dim mouseY As Integer = 0
+
+    Dim mapWidth As Integer = 0
+    Dim mapHeight As Integer = 0
+
+    Private Sub FrmMapProp_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        mapProps = My.Resources.MapProperties.Split(New Char() {Environment.NewLine, ","}, StringSplitOptions.None)
+        mapPropCom.DataSource = MyOhana.getProps()
+    End Sub
 
     Protected Overrides ReadOnly Property CreateParams() As CreateParams 'Cria sombra (sem Aero)
         Get
@@ -24,6 +35,7 @@ Public Class FrmMapProp
             Return Create_Params
         End Get
     End Property
+
     Protected Overrides Sub WndProc(ByRef m As System.Windows.Forms.Message)
         If m.Msg <> &HA3 Then MyBase.WndProc(m)
         Select Case m.Msg
@@ -48,31 +60,39 @@ Public Class FrmMapProp
         Dim proplist As New List(Of UInteger)
         Using dataStream As IO.Stream = New IO.MemoryStream(byteArray)
             Using br As New IO.BinaryReader(dataStream)
-                width = br.ReadUInt16()
-                height = br.ReadUInt16()
-                Dim img As New Bitmap(width * 8, height * 8)
-                Dim c As New Color()
-                For i As Integer = 0 To width * height - 1
-                    Dim col2 As UInteger = br.ReadUInt32()
-                    proplist.Add(col2)
-                    If col2 = &H1000021 Then
-                        c = Color.Black
-                    Else
-                        col2 = LCG(col2, 4)
-                        c = Color.FromArgb(&HFF, &HFF - CByte(col2 And &HFF), &HFF - CByte((col2 >> 8) And &HFF), &HFF - CByte(col2 >> 24 And &HFF))
-                    End If
-                    For x As Integer = 0 To 7
-                        For y As Integer = 0 To 7
-                            img.SetPixel((x + (i * 8) Mod (img.Width)), y + ((i \ width) * 8), c)
-                        Next
-                    Next
+                mapWidth = br.ReadUInt16()
+                mapHeight = br.ReadUInt16()
+                For i As Integer = 0 To mapWidth * mapHeight - 1
+                    proplist.Add(br.ReadInt32())
                 Next
                 br.Close()
-                mapPicBox.Image = img
                 mapVals = proplist.ToArray
+                updateImg()
             End Using
         End Using
     End Sub
+
+    Private Sub updateImg()
+        Dim img As New Bitmap(mapWidth * 8, mapHeight * 8)
+        Dim c As New Color()
+        Dim i As Integer = 0
+        For Each v In mapVals
+            If v = &H1000021 Then
+                c = Color.Black
+            Else
+                v = LCG(v, 4)
+                c = Color.FromArgb(&HFF, &HFF - CByte(v And &HFF), &HFF - CByte((v >> 8) And &HFF), &HFF - CByte(v >> 24 And &HFF))
+            End If
+            For x As Integer = 0 To 7
+                For y As Integer = 0 To 7
+                    img.SetPixel((x + (i * 8) Mod (img.Width)), y + ((i \ mapWidth) * 8), If(x = 7 Or y = 7, Color.Black, c))
+                Next
+            Next
+            i = i + 1
+        Next
+        mapPicBox.Image = img
+    End Sub
+
     Public Function LCG(seed As Long, ctr As Integer) As UInteger
         For i As Integer = 0 To ctr - 1
             seed *= &H41C64E6D
@@ -80,6 +100,32 @@ Public Class FrmMapProp
         Next
         Return seed
     End Function
+
+    Private Sub mapPicBox_Click(sender As Object, e As EventArgs) Handles mapPicBox.Click
+        Dim mouseEventArgs = TryCast(e, MouseEventArgs)
+        If mouseEventArgs IsNot Nothing Then
+            mouseX = Math.Floor(mouseEventArgs.X / 8)
+            mouseY = Math.Floor(mouseEventArgs.Y / 8)
+            mapCoords.Text = "X= " & Convert.ToString(mouseX) & " Y= " & Convert.ToString(mouseY)
+            For i As UInteger = 0 To mapProps.Length - 1 Step 2
+                Dim p1 As UInteger = UInteger.Parse(mapProps(i))
+                Dim p2 As String = mapProps(i + 1)
+                'Clipboard.SetText(mapVals(((mouseY * 40) + mouseX)) & ",0x" & Hex(mapVals(((mouseY * 40) + mouseX))))
+                If p1 = mapVals(((mouseY * 40) + mouseX)) Then
+                    mapPropCom.Text = p2
+                End If
+            Next
+        End If
+    End Sub
+
+    Private Sub mapPropSet_Click(sender As Object, e As EventArgs) Handles mapPropSet.Click
+        mapVals((mouseY * 40) + mouseX) = UInteger.Parse(Array.FindIndex(mapProps, Function(s) s = mapPropCom.Text) - 1)
+        updateImg()
+    End Sub
+
+    Private Sub mapPropSave_Click(sender As Object, e As EventArgs) Handles mapPropSave.Click
+        MessageBox.Show("Not finished.")
+    End Sub
 
 #Region "GUI"
     Private Sub BtnClose_Click(sender As Object, e As EventArgs) Handles BtnClose.Click
@@ -104,27 +150,5 @@ Public Class FrmMapProp
         Lbl.ForeColor = Color.White
     End Sub
 #End Region
-
-    Private Sub mapPicBox_Click(sender As Object, e As EventArgs) Handles mapPicBox.Click
-        Dim mouseEventArgs = TryCast(e, MouseEventArgs)
-        If mouseEventArgs IsNot Nothing Then
-            Dim mapProps As String() = My.Resources.MapProperties.Split(New Char() {Environment.NewLine, ","}, StringSplitOptions.None)
-            Dim X As Integer = Math.Floor(mouseEventArgs.X / 8)
-            Dim Y As Integer = Math.Floor(mouseEventArgs.Y / 8)
-            mapCoords.Text = "X= " & Convert.ToString(X) & " Y= " & Convert.ToString(Y)
-            For i As UInteger = 0 To mapProps.Length - 1 Step 2
-                Dim p1 As UInteger = UInteger.Parse(mapProps(i))
-                Dim p2 As String = mapProps(i + 1)
-                Clipboard.SetText(mapVals(((Y * 40) + X)))
-                If p1 = mapVals(((Y * 40) + X)) Then
-                    mapPropCom.Text = p2
-                End If
-            Next
-        End If
-    End Sub
-
-    Private Sub mapPropSave_Click(sender As Object, e As EventArgs) Handles mapPropSave.Click
-        MessageBox.Show("Not finished.")
-    End Sub
 
 End Class

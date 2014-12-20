@@ -216,6 +216,7 @@ Partial Class FrmMain
         '
         'BtnModelMapEditor
         '
+        Me.BtnModelMapEditor.Enabled = False
         Me.BtnModelMapEditor.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
         Me.BtnModelMapEditor.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
         Me.BtnModelMapEditor.FlatStyle = System.Windows.Forms.FlatStyle.Flat
