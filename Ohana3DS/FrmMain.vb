@@ -4,9 +4,10 @@ Imports System.Drawing.Imaging
 Imports System.Runtime.InteropServices
 Imports System.Text
 Imports System.Text.RegularExpressions
-
 Public Class FrmMain
-    'Classes de Compressão/Extração
+
+#Region "Declares"
+    'Classes de textos, Compressão/Extração
     Dim MyMinko As New Minko
     Dim MyNako As New Nako
 
@@ -32,7 +33,11 @@ Public Class FrmMain
     Dim Search_Thread As Thread
 
     Dim First_Click As Boolean
-    Dim Old_Index As Integer = -1
+#End Region
+
+#Region "GUI"
+
+#Region "General"
     Protected Overrides Sub WndProc(ByRef m As System.Windows.Forms.Message)
         If m.Msg <> &HA3 Then MyBase.WndProc(m)
         Select Case m.Msg
@@ -44,14 +49,16 @@ Public Class FrmMain
     Private Delegate Sub FileDrop(File_Name As String)
     Private MyFileDrop As FileDrop
     Private Sub FrmMain_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        For i As Integer = 0 To 7
+            Power_Of_Two(i) = Convert.ToByte(2 ^ i)
+        Next
+
         Me.AllowDrop = True
         MyFileDrop = New FileDrop(AddressOf File_Dropped)
         MyOhana.Initialize(Screen)
 
         MyOhana.Scale = My.Settings.ModelScale
-        BtnModelScale.Text = "Scale 1:" & My.Settings.ModelScale
-        MyOhana.Model_Mirror_X = My.Settings.ModelMirror
-        If My.Settings.ModelMirror Then BtnModelMirror.Text = "Mirror-X" Else BtnModelMirror.Text = "Normal"
+        BtnModelScale.Text = "Model scale: 1:" & My.Settings.ModelScale
         Select Case My.Settings.TextureFlipMirror
             Case 0
                 BtnTextureMode.Text = "Original"
@@ -67,6 +74,7 @@ Public Class FrmMain
                 Texture_Mode = TextureMode.FlipY_Mirror
         End Select
         MyNako.Fast_Compression = My.Settings.FastCompression
+        If MyNako.Fast_Compression Then BtnGARCCompression.Text = "Fast compression"
 
         Show()
     End Sub
@@ -83,7 +91,7 @@ Public Class FrmMain
                                 Do
                                     Dim CurrFile As String = Input_Files(Index - i).FullName
                                     If IsModel(CurrFile) Then
-                                        If Open_Model(CurrFile, False) Then Exit Sub
+                                        If Open_Model(CurrFile, False, False) Then Exit Sub
                                     End If
                                     i += 1
                                     If Index - i < 1 Then Exit For
@@ -98,7 +106,7 @@ Public Class FrmMain
                                 Do
                                     Dim CurrFile As String = Input_Files(Index + i).FullName
                                     If IsModel(CurrFile) Then
-                                        If Open_Model(CurrFile, False) Then Exit Sub
+                                        If Open_Model(CurrFile, False, False) Then Exit Sub
                                     End If
                                     i += 1
                                     If Index + i > Input_Files.Count - 2 Then Exit Sub
@@ -125,6 +133,32 @@ Public Class FrmMain
         If e.Data.GetDataPresent(DataFormats.FileDrop) Then
             e.Effect = DragDropEffects.Copy
         End If
+    End Sub
+
+    Private Sub Splash_Click(sender As Object, e As EventArgs) Handles Splash.Click
+        MainTabs.Visible = True
+        Splash.Visible = False
+    End Sub
+    Private Sub BtnClose_Click(sender As Object, e As EventArgs) Handles BtnClose.Click
+        End
+    End Sub
+    Private Sub BtnMinimize_Click(sender As Object, e As EventArgs) Handles BtnMinimize.Click
+        Me.WindowState = FormWindowState.Minimized
+    End Sub
+    Private Sub Button_MouseEnter(sender As Object, e As EventArgs) Handles BtnMinimize.MouseEnter
+        Dim Lbl As Label = CType(sender, Label)
+        Lbl.BackColor = Color.FromArgb(15, 82, 186)
+        Lbl.ForeColor = Color.White
+    End Sub
+    Private Sub BtnClose_MouseEnter(sender As Object, e As EventArgs) Handles BtnClose.MouseEnter
+        Dim Lbl As Label = CType(sender, Label)
+        Lbl.BackColor = Color.Crimson
+        Lbl.ForeColor = Color.WhiteSmoke
+    End Sub
+    Private Sub Button_MouseLeave(sender As Object, e As EventArgs) Handles BtnClose.MouseLeave, BtnMinimize.MouseLeave
+        Dim Lbl As Label = CType(sender, Label)
+        Lbl.BackColor = Color.Transparent
+        Lbl.ForeColor = Color.White
     End Sub
 
     Private Sub File_Dropped(File_Name As String)
@@ -163,51 +197,6 @@ Public Class FrmMain
         End If
         Return True
     End Function
-
-    Private Sub BtnModelMapEditor_Click(sender As Object, e As EventArgs) Handles BtnModelMapEditor.Click
-        If MyOhana.Magic.Substring(0, 2) = "GR" Then
-            FrmMapProp.Show()
-            FrmMapProp.makeMapIMG(MapProps())
-        End If
-    End Sub
-
-    Private Function MapProps() As Byte()
-        Dim br As New BinaryReader(System.IO.File.OpenRead(MyOhana.Current_Model))
-        Dim buff As Byte() = br.ReadBytes(&H10)
-        br.BaseStream.Position = &H80
-        buff = br.ReadBytes(Read32(buff, 8) - Read32(buff, 4))
-        br.Close()
-        Return buff
-    End Function
-
-#Region "GUI"
-
-#Region "General"
-    Private Sub Splash_Click(sender As Object, e As EventArgs) Handles Splash.Click
-        MainTabs.Visible = True
-        Splash.Visible = False
-    End Sub
-    Private Sub BtnClose_Click(sender As Object, e As EventArgs) Handles BtnClose.Click
-        End
-    End Sub
-    Private Sub BtnMinimize_Click(sender As Object, e As EventArgs) Handles BtnMinimize.Click
-        Me.WindowState = FormWindowState.Minimized
-    End Sub
-    Private Sub Button_MouseEnter(sender As Object, e As EventArgs) Handles BtnMinimize.MouseEnter
-        Dim Lbl As Label = CType(sender, Label)
-        Lbl.BackColor = Color.FromArgb(15, 82, 186)
-        Lbl.ForeColor = Color.White
-    End Sub
-    Private Sub BtnClose_MouseEnter(sender As Object, e As EventArgs) Handles BtnClose.MouseEnter
-        Dim Lbl As Label = CType(sender, Label)
-        Lbl.BackColor = Color.Crimson
-        Lbl.ForeColor = Color.WhiteSmoke
-    End Sub
-    Private Sub Button_MouseLeave(sender As Object, e As EventArgs) Handles BtnClose.MouseLeave, BtnMinimize.MouseLeave
-        Dim Lbl As Label = CType(sender, Label)
-        Lbl.BackColor = Color.Transparent
-        Lbl.ForeColor = Color.White
-    End Sub
 #End Region
 
 #Region "Common"
@@ -268,15 +257,17 @@ Public Class FrmMain
             If File.Exists(OpenDlg.FileName) Then Open_Model(OpenDlg.FileName)
         End If
     End Sub
-    Private Function Open_Model(File_Name As String, Optional Show_Warning As Boolean = True) As Boolean
+    Private Function Open_Model(File_Name As String, Optional Show_Warning As Boolean = True, Optional Reset_Info As Boolean = True) As Boolean
         Dim Response As Boolean
 
-        LblModelName.Text = Nothing
-        ModelNameTip.SetToolTip(LblModelName, Nothing)
-        LblInfoVertices.Text = "0"
-        LblInfoTriangles.Text = "0"
-        LblInfoBones.Text = "0"
-        LblInfoTextures.Text = "0"
+        If Reset_Info Then
+            LblModelName.Text = Nothing
+            ModelNameTip.SetToolTip(LblModelName, Nothing)
+            LblInfoVertices.Text = "0"
+            LblInfoTriangles.Text = "0"
+            LblInfoBones.Text = "0"
+            LblInfoTextures.Text = "0"
+        End If
 
         Try
             Current_Model = File_Name
@@ -365,7 +356,6 @@ Public Class FrmMain
     End Sub
     Private Sub Model_Exporter(InFolder As String, OutFolder As String)
         Dim Exporter As New Ohana
-        Exporter.Model_Mirror_X = MyOhana.Model_Mirror_X
         Dim Input_Files() As FileInfo = New DirectoryInfo(InFolder).GetFiles()
         Dim Total_Index, Index As Integer
         For Each File As FileInfo In Input_Files
@@ -390,13 +380,13 @@ Public Class FrmMain
     Private Sub BtnModelScale_Click(sender As Object, e As EventArgs) Handles BtnModelScale.Click
         If MyOhana.Scale = 1 Then
             MyOhana.Scale = 32
-            BtnModelScale.Text = "Scale 1:32"
+            BtnModelScale.Text = "Model scale: 1:32"
         ElseIf MyOhana.Scale = 32 Then
             MyOhana.Scale = 64
-            BtnModelScale.Text = "Scale 1:64"
+            BtnModelScale.Text = "Model scale: 1:64"
         ElseIf MyOhana.Scale = 64 Then
             MyOhana.Scale = 1
-            BtnModelScale.Text = "Scale 1:1"
+            BtnModelScale.Text = "Model scale: 1:1"
         End If
         My.Settings.ModelScale = Convert.ToInt32(MyOhana.Scale)
         My.Settings.Save()
@@ -444,17 +434,6 @@ Public Class FrmMain
             FrmTextureInfo.Show()
             FrmTextureInfo.LstModelTextures.Refresh()
         End If
-    End Sub
-    Private Sub BtnModelMirror_Click(sender As Object, e As EventArgs) Handles BtnModelMirror.Click
-        MyOhana.Model_Mirror_X = Not MyOhana.Model_Mirror_X
-        If MyOhana.Model_Mirror_X Then
-            BtnModelMirror.Text = "Mirror-X"
-        Else
-            BtnModelMirror.Text = "Normal"
-        End If
-
-        My.Settings.ModelMirror = MyOhana.Model_Mirror_X
-        My.Settings.Save()
     End Sub
     Private Sub BtnModelVertexEditor_Click(sender As Object, e As EventArgs) Handles BtnModelVertexEditor.Click
         If MyOhana.Model_Object IsNot Nothing Then FrmVertexEditor.Show()
@@ -808,7 +787,7 @@ Public Class FrmMain
             Dim File_Name As String = Path.Combine(Folder, Texture.Name & ".png")
             If File.Exists(File_Name) Then
                 Update_Progress(ProgressTextures, Convert.ToSingle((Index / MyOhana.Model_Texture.Count) * 100), "Inserting " & Texture.Name & "...")
-                MyOhana.Insert_Texture(File_Name, Index)
+                MyOhana.Insert_Texture(File_Name, Index, False)
                 If LstTextures.SelectedIndex = Index Then Set_Image(ImgTexture, MyOhana.Model_Texture(Index).Image)
             Else
                 Not_Found = True
@@ -840,7 +819,7 @@ Public Class FrmMain
 
     Private Function Mirror_Image(Img As Bitmap) As Bitmap
         Dim ImgData As BitmapData = Img.LockBits(New Rectangle(0, 0, Img.Width, Img.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb)
-        Dim Data(ImgData.Height * ImgData.Stride) As Byte
+        Dim Data((ImgData.Height * ImgData.Stride) - 1) As Byte
         Marshal.Copy(ImgData.Scan0, Data, 0, Data.Length)
 
         Dim Out(((Img.Width * 2) * Img.Height * 4) - 1) As Byte
@@ -1022,6 +1001,7 @@ Public Class FrmMain
 
                     BtnGARCOpen.Enabled = True
                     BtnGARCInsert.Enabled = True
+                    BtnGARCExtract.Enabled = True
                     BtnGARCSave.Enabled = True
 
                     Exit Sub
@@ -1036,6 +1016,7 @@ Public Class FrmMain
                 BtnGARCExtractAll.Text = "Cancel"
                 BtnGARCOpen.Enabled = False
                 BtnGARCInsert.Enabled = False
+                BtnGARCExtract.Enabled = False
                 BtnGARCSave.Enabled = False
             End If
         End If
@@ -1053,6 +1034,7 @@ Public Class FrmMain
 
         Set_Enabled(BtnGARCOpen, True)
         Set_Enabled(BtnGARCInsert, True)
+        Set_Enabled(BtnGARCExtract, True)
         Set_Enabled(BtnGARCSave, True)
     End Sub
     Private Sub BtnGARCInsert_Click(sender As Object, e As EventArgs) Handles BtnGARCInsert.Click
@@ -1093,6 +1075,7 @@ Public Class FrmMain
 
                 BtnGARCOpen.Enabled = True
                 BtnGARCInsert.Enabled = True
+                BtnGARCExtract.Enabled = True
                 BtnGARCExtractAll.Enabled = True
 
                 Exit Sub
@@ -1106,6 +1089,7 @@ Public Class FrmMain
             BtnGARCSave.Text = "Cancel"
             BtnGARCOpen.Enabled = False
             BtnGARCInsert.Enabled = False
+            BtnGARCExtract.Enabled = False
             BtnGARCExtractAll.Enabled = False
         End If
     End Sub
@@ -1128,6 +1112,7 @@ Public Class FrmMain
 
         Set_Enabled(BtnGARCOpen, True)
         Set_Enabled(BtnGARCInsert, True)
+        Set_Enabled(BtnGARCExtract, True)
         Set_Enabled(BtnGARCExtractAll, True)
     End Sub
     Private Sub BtnGARCCompression_Click(sender As Object, e As EventArgs) Handles BtnGARCCompression.Click
@@ -1213,4 +1198,18 @@ Public Class FrmMain
 
 #End Region
 
+    Private Sub BtnModelMapEditor_Click(sender As Object, e As EventArgs) Handles BtnModelMapEditor.Click
+        If MyOhana.Magic.Substring(0, 2) = "GR" Then
+            FrmMapProp.Show()
+            FrmMapProp.makeMapIMG(MapProps())
+        End If
+    End Sub
+    Private Function MapProps() As Byte()
+        Dim br As New BinaryReader(System.IO.File.OpenRead(MyOhana.Current_Model))
+        Dim buff As Byte() = br.ReadBytes(&H10)
+        br.BaseStream.Position = &H80
+        buff = br.ReadBytes(Read32(buff, 8) - Read32(buff, 4))
+        br.Close()
+        Return buff
+    End Function
 End Class

@@ -120,8 +120,8 @@ Public Class FrmVertexEditor
 
                 With MyOhana.Model_Object(MyOhana.Selected_Object)
                     For i As Integer = 0 To .Vertice.Length - 1
-                        Out.AppendLine("v " & ((.Vertice(i).X * If(MyOhana.Load_Mirror, -1, 1)) * MyOhana.Load_Scale).ToString("N", Info) & " " & (.Vertice(i).Y * MyOhana.Load_Scale).ToString("N", Info) & " " & (.Vertice(i).Z * MyOhana.Load_Scale).ToString("N", Info))
-                        Out.AppendLine("vn " & ((.Vertice(i).NX * If(MyOhana.Load_Mirror, -1, 1)) * MyOhana.Load_Scale).ToString("N", Info) & " " & (.Vertice(i).NY * MyOhana.Load_Scale).ToString("N", Info) & " " & (.Vertice(i).NZ * MyOhana.Load_Scale).ToString("N", Info))
+                        Out.AppendLine("v " & (.Vertice(i).X * MyOhana.Load_Scale).ToString("N", Info) & " " & (.Vertice(i).Y * MyOhana.Load_Scale).ToString("N", Info) & " " & (.Vertice(i).Z * MyOhana.Load_Scale).ToString("N", Info))
+                        Out.AppendLine("vn " & (.Vertice(i).NX * MyOhana.Load_Scale).ToString("N", Info) & " " & (.Vertice(i).NY * MyOhana.Load_Scale).ToString("N", Info) & " " & (.Vertice(i).NZ * MyOhana.Load_Scale).ToString("N", Info))
                         Out.AppendLine("vt " & .Vertice(i).U.ToString("N", Info) & " " & .Vertice(i).V.ToString("N", Info))
                     Next
 
@@ -156,8 +156,8 @@ Public Class FrmVertexEditor
                     Dim Count As Integer
                     For i As Integer = 0 To .Vertice.Length - 1
                         If Temp.IndexOf(i) > -1 Then 'Verifica se o vértice é de fato usado na face
-                            Out.AppendLine("v " & ((.Vertice(i).X * If(MyOhana.Load_Mirror, -1, 1)) * MyOhana.Load_Scale).ToString("N", Info) & " " & (.Vertice(i).Y * MyOhana.Load_Scale).ToString("N", Info) & " " & (.Vertice(i).Z * MyOhana.Load_Scale).ToString("N", Info))
-                            Out.AppendLine("vn " & ((.Vertice(i).NX * If(MyOhana.Load_Mirror, -1, 1)) * MyOhana.Load_Scale).ToString("N", Info) & " " & (.Vertice(i).NY * MyOhana.Load_Scale).ToString("N", Info) & " " & (.Vertice(i).NZ * MyOhana.Load_Scale).ToString("N", Info))
+                            Out.AppendLine("v " & (.Vertice(i).X * MyOhana.Load_Scale).ToString("N", Info) & " " & (.Vertice(i).Y * MyOhana.Load_Scale).ToString("N", Info) & " " & (.Vertice(i).Z * MyOhana.Load_Scale).ToString("N", Info))
+                            Out.AppendLine("vn " & (.Vertice(i).NX * MyOhana.Load_Scale).ToString("N", Info) & " " & (.Vertice(i).NY * MyOhana.Load_Scale).ToString("N", Info) & " " & (.Vertice(i).NZ * MyOhana.Load_Scale).ToString("N", Info))
                             Out.AppendLine("vt " & .Vertice(i).U.ToString("N", Info) & " " & .Vertice(i).V.ToString("N", Info))
                             Vertex_Remap(i) = Count
                             Count += 1

@@ -170,70 +170,65 @@ Public Class Nako
         File.Copy(Temp_GARC_File, Current_File)
     End Sub
     Public Shared Function LZSS_Decompress(InData() As Byte) As Byte()
-        Dim Power_Of_Two(7) As Byte
-        For i As Integer = 0 To 7
-            Power_Of_Two(i) = Convert.ToByte(2 ^ i)
-        Next
-
         Dim Decompressed_Size As Integer = (Read32(InData, 0) And &HFFFFFF00) >> 8
         Dim Data(Decompressed_Size - 1) As Byte
         Dim Dic(&HFFF) As Byte
 
-        Dim SrcPtr As Integer = 4, DstPtr As Integer
+        Dim Source_Offset As Integer = 4, Destination_Offset As Integer
         Dim BitCount As Integer = 8
-        Dim DicPtr As Integer
+        Dim Dictionary_Offset As Integer
         Dim BitFlags As Integer
-        While DstPtr < Decompressed_Size And SrcPtr < InData.Length
+        While Destination_Offset < Decompressed_Size And Source_Offset < InData.Length
             If BitCount = 8 Then
-                BitFlags = InData(SrcPtr)
-                SrcPtr += 1
+                BitFlags = InData(Source_Offset)
+                Source_Offset += 1
                 BitCount = 0
             End If
 
             If (BitFlags And Power_Of_Two(7 - BitCount)) = 0 Then
-                Dic(DicPtr) = InData(SrcPtr)
-                SrcPtr += 1
-                Data(DstPtr) = Dic(DicPtr)
-                DicPtr = (DicPtr + 1) And &HFFF
-                DstPtr += 1
+                Dic(Dictionary_Offset) = InData(Source_Offset)
+                Source_Offset += 1
+                Data(Destination_Offset) = Dic(Dictionary_Offset)
+                Dictionary_Offset = (Dictionary_Offset + 1) And &HFFF
+                Destination_Offset += 1
             Else
-                Dim Back, Len As Integer
-                Dim Indicator As Integer = (InData(SrcPtr) And &HF0) >> 4
+                Dim Back, Length As Integer
+                Dim Indicator As Integer = (InData(Source_Offset) And &HF0) >> 4
                 Select Case Indicator
                     Case 0
-                        Dim Byte_1 As Integer = InData(SrcPtr)
-                        Dim Byte_2 As Integer = InData(SrcPtr + 1)
-                        Dim Byte_3 As Integer = InData(SrcPtr + 2)
+                        Dim Byte_1 As Integer = InData(Source_Offset)
+                        Dim Byte_2 As Integer = InData(Source_Offset + 1)
+                        Dim Byte_3 As Integer = InData(Source_Offset + 2)
 
                         Back = ((Byte_2 And &HF) << 8) Or Byte_3
-                        Len = (((Byte_1 And &HF) << 4) Or (Byte_2 >> 4)) + &H11
-                        SrcPtr += 3
+                        Length = (((Byte_1 And &HF) << 4) Or (Byte_2 >> 4)) + &H11
+                        Source_Offset += 3
                     Case 1
-                        Dim Byte_1 As Integer = InData(SrcPtr)
-                        Dim Byte_2 As Integer = InData(SrcPtr + 1)
-                        Dim Byte_3 As Integer = InData(SrcPtr + 2)
-                        Dim Byte_4 As Integer = InData(SrcPtr + 3)
+                        Dim Byte_1 As Integer = InData(Source_Offset)
+                        Dim Byte_2 As Integer = InData(Source_Offset + 1)
+                        Dim Byte_3 As Integer = InData(Source_Offset + 2)
+                        Dim Byte_4 As Integer = InData(Source_Offset + 3)
 
                         Back = ((Byte_3 And &HF) << 8) Or Byte_4
-                        Len = (((Byte_1 And &HF) << 12) Or (Byte_2 << 4) Or (Byte_3 >> 4)) + &H111
-                        SrcPtr += 4
+                        Length = (((Byte_1 And &HF) << 12) Or (Byte_2 << 4) Or (Byte_3 >> 4)) + &H111
+                        Source_Offset += 4
                     Case Else
-                        Dim Byte_1 As Integer = InData(SrcPtr)
-                        Dim Byte_2 As Integer = InData(SrcPtr + 1)
+                        Dim Byte_1 As Integer = InData(Source_Offset)
+                        Dim Byte_2 As Integer = InData(Source_Offset + 1)
 
                         Back = ((Byte_1 And &HF) << 8) Or Byte_2
-                        Len = Indicator + 1
-                        SrcPtr += 2
+                        Length = Indicator + 1
+                        Source_Offset += 2
                 End Select
                 Back += 1
 
-                If DstPtr + Len > Decompressed_Size Then Len = Decompressed_Size - DstPtr
-                Dim OldPtr As Integer = DicPtr
-                For i As Integer = 0 To Len - 1
-                    Dic(DicPtr) = Dic((OldPtr - Back + i) And &HFFF)
-                    Data(DstPtr) = Dic(DicPtr)
-                    DstPtr += 1
-                    DicPtr = (DicPtr + 1) And &HFFF
+                If Destination_Offset + Length > Decompressed_Size Then Length = Decompressed_Size - Destination_Offset
+                Dim Old_Offset As Integer = Dictionary_Offset
+                For i As Integer = 0 To Length - 1
+                    Dic(Dictionary_Offset) = Dic((Old_Offset - Back + i) And &HFFF)
+                    Data(Destination_Offset) = Dic(Dictionary_Offset)
+                    Destination_Offset += 1
+                    Dictionary_Offset = (Dictionary_Offset + 1) And &HFFF
                 Next
             End If
             BitCount += 1
@@ -243,41 +238,41 @@ Public Class Nako
     End Function
     Private Function LZSS_Compress(InData() As Byte) As Byte()
         Dim Dic(&HFFF) As Byte
-        Dim DicPtr As Integer
+        Dim Dictionary_Offset As Integer
 
         Dim Data(Convert.ToInt32(InData.Length + ((InData.Length) / 8) + 3)) As Byte
-        Dim SrcPtr, DstPtr, BitCount As Integer
+        Dim Source_Offset, Destination_Offset, BitCount As Integer
         Data(0) = &H11
         Data(1) = Convert.ToByte(InData.Length And &HFF)
         Data(2) = Convert.ToByte((InData.Length And &HFF00) >> 8)
         Data(3) = Convert.ToByte((InData.Length And &HFF0000) >> 16)
-        DstPtr = 4
+        Destination_Offset = 4
         Dim BitsPtr As Integer
 
-        While SrcPtr < InData.Length
+        While Source_Offset < InData.Length
             If BitCount = 0 Then
-                BitsPtr = DstPtr
-                DstPtr += 1
+                BitsPtr = Destination_Offset
+                Destination_Offset += 1
                 BitCount = 8
             End If
 
             Dim DicPos As Integer = 0
             Dim Found_Data As Integer = 0
             Dim Compressed_Data As Boolean = False
-            Dim Index As Integer = Array.IndexOf(Dic, InData(SrcPtr))
+            Dim Index As Integer = Array.IndexOf(Dic, InData(Source_Offset))
             If Index <> -1 Then
                 Do
                     Dim DataSize As Integer = 0
                     For j As Integer = 0 To 15
-                        If SrcPtr + j >= InData.Length Then Exit For
-                        If Dic((Index + j) And &HFFF) = InData(SrcPtr + j) Then
+                        If Source_Offset + j >= InData.Length Then Exit For
+                        If Dic((Index + j) And &HFFF) = InData(Source_Offset + j) Then
                             DataSize += 1
                         Else
                             Exit For
                         End If
                     Next
                     If DataSize >= 3 Then
-                        If Index + DataSize < DicPtr Or Index > DicPtr + DataSize Then
+                        If Index + DataSize < Dictionary_Offset Or Index > Dictionary_Offset + DataSize Then
                             If DataSize > Found_Data Then
                                 Compressed_Data = True
                                 Found_Data = DataSize
@@ -286,36 +281,36 @@ Public Class Nako
                         End If
                     End If
                     If Fast_Compression Then Exit Do
-                    Index = Array.IndexOf(Dic, InData(SrcPtr), Index + 1)
+                    Index = Array.IndexOf(Dic, InData(Source_Offset), Index + 1)
                     If Index = -1 Then Exit Do
                 Loop
             End If
 
-            If Compressed_Data And ((DicPos < SrcPtr) Or (SrcPtr > &HFFF)) Then
-                Dim Back As Integer = DicPtr - DicPos - 1
+            If Compressed_Data And ((DicPos < Source_Offset) Or (Source_Offset > &HFFF)) Then
+                Dim Back As Integer = Dictionary_Offset - DicPos - 1
                 Data(BitsPtr) = Data(BitsPtr) Or Convert.ToByte((2 ^ (BitCount - 1))) 'Comprimido, define bit
-                Data(DstPtr) = Convert.ToByte((((Found_Data - 1) And &HF) * &H10) + ((Back And &HF00) / &H100))
-                Data(DstPtr + 1) = Convert.ToByte(Back And &HFF)
-                DstPtr += 2
+                Data(Destination_Offset) = Convert.ToByte((((Found_Data - 1) And &HF) * &H10) + ((Back And &HF00) / &H100))
+                Data(Destination_Offset + 1) = Convert.ToByte(Back And &HFF)
+                Destination_Offset += 2
                 For j As Integer = 0 To Found_Data - 1
-                    Dic(DicPtr) = InData(SrcPtr)
-                    DicPtr = (DicPtr + 1) And &HFFF
-                    SrcPtr += 1
+                    Dic(Dictionary_Offset) = InData(Source_Offset)
+                    Dictionary_Offset = (Dictionary_Offset + 1) And &HFFF
+                    Source_Offset += 1
                 Next
             Else
-                Data(DstPtr) = InData(SrcPtr)
-                Dic(DicPtr) = Data(DstPtr)
-                DicPtr = (DicPtr + 1) And &HFFF
-                DstPtr += 1
-                SrcPtr += 1
+                Data(Destination_Offset) = InData(Source_Offset)
+                Dic(Dictionary_Offset) = Data(Destination_Offset)
+                Dictionary_Offset = (Dictionary_Offset + 1) And &HFFF
+                Destination_Offset += 1
+                Source_Offset += 1
             End If
 
-            Compression_Percentage = Convert.ToSingle((SrcPtr / InData.Length) * 100)
+            Compression_Percentage = Convert.ToSingle((Source_Offset / InData.Length) * 100)
 
             BitCount -= 1
         End While
 
-        ReDim Preserve Data(DstPtr - 1)
+        ReDim Preserve Data(Destination_Offset - 1)
 
         Return Data
     End Function

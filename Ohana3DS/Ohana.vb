@@ -75,10 +75,8 @@ Public Class Ohana
     Public Model_Type As ModelType
 
     Public Scale As Single = 32.0F
-    Public Model_Mirror_X As Boolean = True
     Public Lighting As Boolean = True
     Public Load_Scale As Single
-    Public Load_Mirror As Boolean
 
     Public Structure OhanaInfo
         Dim Vertex_Count As Integer
@@ -211,8 +209,6 @@ Public Class Ohana
         End If
 
         Load_Scale = Scale
-        Load_Mirror = Model_Mirror_X
-
         Current_Model = File_Name
         Temp_Model_File = Path.GetTempFileName
         File.WriteAllBytes(Temp_Model_File, Temp)
@@ -358,7 +354,7 @@ Public Class Ohana
             Dim Offset As Integer = Vertex_Data_Offset
             For Index As Integer = 0 To Count - 1
                 With Model_Object(Entry).Vertice(Index)
-                    .X = (BitConverter.ToSingle(Data, Offset) / Scale) * If(Model_Mirror_X, -1, 1)
+                    .X = BitConverter.ToSingle(Data, Offset) / Scale
                     .Y = BitConverter.ToSingle(Data, Offset + 4) / Scale
                     .Z = BitConverter.ToSingle(Data, Offset + 8) / Scale
 
@@ -413,8 +409,6 @@ Public Class Ohana
 
                             Has_Normals = True
                     End Select
-
-                    If Model_Mirror_X Then .NX *= -1
 
                     If .Y > Max_Y_Pos Then Max_Y_Pos = .Y
                     If .Y < Max_Y_Neg Then Max_Y_Neg = .Y
@@ -1034,13 +1028,13 @@ Public Class Ohana
 #End Region
 
 #Region "Texture inserter/ETC1 Compressor"
-    Public Sub Insert_Texture(File_Name As String, LstIndex As Integer)
+    Public Sub Insert_Texture(File_Name As String, LstIndex As Integer, Optional Show_Warning As Boolean = True)
         Dim Offset As Integer = Model_Texture(LstIndex).Offset
         Dim Format As Integer = Model_Texture(LstIndex).Format
 
         Dim Img As New Bitmap(File_Name)
         If (Img.Width <> Model_Texture(LstIndex).Image.Width) Or (Img.Height <> Model_Texture(LstIndex).Image.Height) Then
-            MessageBox.Show("Images need to have the same resolution!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            If Show_Warning Then MessageBox.Show("Images need to have the same resolution!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
             Exit Sub
         End If
 
@@ -1792,7 +1786,7 @@ Public Class Ohana
 
                 Dim Rotation_Matrix As Matrix = Matrix.RotationYawPitchRoll(Rotation.X / 200.0F, -Rotation.Y / 200.0F, 0)
                 Dim Translation_Matrix As Matrix = Matrix.Translation(New Vector3(Translation.X / 50.0F, (Translation.Y / 50.0F) - Pos_Y, Zoom))
-                Device.Transform.World = Rotation_Matrix * Translation_Matrix
+                Device.Transform.World = Rotation_Matrix * Translation_Matrix * Matrix.Scaling(-1, 1, 1) 'Mirror X
 
                 If Edit_Mode Then
                     With Model_Object(Selected_Object)
@@ -1936,7 +1930,6 @@ Public Class Ohana
                     .X = Single.Parse(Vertex.Groups(1).Value, CultureInfo.InvariantCulture) / Load_Scale
                     .Y = Single.Parse(Vertex.Groups(3).Value, CultureInfo.InvariantCulture) / Load_Scale
                     .Z = Single.Parse(Vertex.Groups(5).Value, CultureInfo.InvariantCulture) / Load_Scale
-                    If Load_Mirror Then .X *= -1
                 End With
 
                 Vertice_Index += 1
@@ -1993,7 +1986,6 @@ Public Class Ohana
                         .NX = Single.Parse(Normal.Groups(1).Value, CultureInfo.InvariantCulture) / Load_Scale
                         .NY = Single.Parse(Normal.Groups(3).Value, CultureInfo.InvariantCulture) / Load_Scale
                         .NZ = Single.Parse(Normal.Groups(5).Value, CultureInfo.InvariantCulture) / Load_Scale
-                        If Load_Mirror Then .NX *= -1
                     End With
 
                     Vertice_Index += 1

@@ -1,6 +1,8 @@
 ﻿Imports System.IO
 Module Common
     Public MyOhana As New Ohana
+
+    Public Power_Of_Two(7) As Byte
     Public Function Read32(Data As FileStream, Address As Integer) As Integer
         Data.Seek(Address, SeekOrigin.Begin)
         Return (Data.ReadByte And &HFF) + _
@@ -19,6 +21,7 @@ Module Common
         Return (Data.ReadByte And &HFF) + _
             ((Data.ReadByte And &HFF) << 8)
     End Function
+
     Public Function Read32(Data() As Byte, Address As Integer) As Integer
         Return (Data(Address) And &HFF) + _
             ((Data(Address + 1) And &HFF) << 8) + _

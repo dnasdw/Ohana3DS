@@ -34,7 +34,6 @@ Partial Class FrmMain
         Me.BtnModelMapEditor = New System.Windows.Forms.Button()
         Me.BtnModelSave = New System.Windows.Forms.Button()
         Me.BtnModelVertexEditor = New System.Windows.Forms.Button()
-        Me.BtnModelMirror = New System.Windows.Forms.Button()
         Me.BtnModelScale = New System.Windows.Forms.Button()
         Me.ProgressModels = New Ohana3DS.MyProgressbar()
         Me.BtnModelExportAllFF = New System.Windows.Forms.Button()
@@ -135,7 +134,7 @@ Partial Class FrmMain
         Me.BtnClose.Location = New System.Drawing.Point(756, 4)
         Me.BtnClose.Name = "BtnClose"
         Me.BtnClose.Size = New System.Drawing.Size(32, 24)
-        Me.BtnClose.TabIndex = 14
+        Me.BtnClose.TabIndex = 0
         Me.BtnClose.Text = "X"
         Me.BtnClose.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
         '
@@ -202,7 +201,6 @@ Partial Class FrmMain
         Me.GrpOptions.Controls.Add(Me.BtnModelMapEditor)
         Me.GrpOptions.Controls.Add(Me.BtnModelSave)
         Me.GrpOptions.Controls.Add(Me.BtnModelVertexEditor)
-        Me.GrpOptions.Controls.Add(Me.BtnModelMirror)
         Me.GrpOptions.Controls.Add(Me.BtnModelScale)
         Me.GrpOptions.Controls.Add(Me.ProgressModels)
         Me.GrpOptions.Controls.Add(Me.BtnModelExportAllFF)
@@ -236,7 +234,7 @@ Partial Class FrmMain
         Me.BtnModelSave.Location = New System.Drawing.Point(0, 48)
         Me.BtnModelSave.Name = "BtnModelSave"
         Me.BtnModelSave.Size = New System.Drawing.Size(72, 24)
-        Me.BtnModelSave.TabIndex = 7
+        Me.BtnModelSave.TabIndex = 6
         Me.BtnModelSave.Text = "Save"
         Me.BtnModelSave.UseVisualStyleBackColor = True
         '
@@ -248,32 +246,20 @@ Partial Class FrmMain
         Me.BtnModelVertexEditor.Location = New System.Drawing.Point(84, 48)
         Me.BtnModelVertexEditor.Name = "BtnModelVertexEditor"
         Me.BtnModelVertexEditor.Size = New System.Drawing.Size(72, 24)
-        Me.BtnModelVertexEditor.TabIndex = 6
+        Me.BtnModelVertexEditor.TabIndex = 7
         Me.BtnModelVertexEditor.Text = "Edit..."
         Me.BtnModelVertexEditor.UseVisualStyleBackColor = True
-        '
-        'BtnModelMirror
-        '
-        Me.BtnModelMirror.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
-        Me.BtnModelMirror.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
-        Me.BtnModelMirror.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        Me.BtnModelMirror.Location = New System.Drawing.Point(412, 18)
-        Me.BtnModelMirror.Name = "BtnModelMirror"
-        Me.BtnModelMirror.Size = New System.Drawing.Size(72, 24)
-        Me.BtnModelMirror.TabIndex = 5
-        Me.BtnModelMirror.Text = "Mirror-X"
-        Me.BtnModelMirror.UseVisualStyleBackColor = True
         '
         'BtnModelScale
         '
         Me.BtnModelScale.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
         Me.BtnModelScale.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
         Me.BtnModelScale.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        Me.BtnModelScale.Location = New System.Drawing.Point(490, 18)
+        Me.BtnModelScale.Location = New System.Drawing.Point(412, 18)
         Me.BtnModelScale.Name = "BtnModelScale"
-        Me.BtnModelScale.Size = New System.Drawing.Size(72, 24)
-        Me.BtnModelScale.TabIndex = 4
-        Me.BtnModelScale.Text = "Scale 1:32"
+        Me.BtnModelScale.Size = New System.Drawing.Size(150, 24)
+        Me.BtnModelScale.TabIndex = 5
+        Me.BtnModelScale.Text = "Model scale: 1:32"
         Me.BtnModelScale.UseVisualStyleBackColor = True
         '
         'ProgressModels
@@ -356,7 +342,7 @@ Partial Class FrmMain
         Me.BtnModelTexturesMore.Location = New System.Drawing.Point(112, 48)
         Me.BtnModelTexturesMore.Name = "BtnModelTexturesMore"
         Me.BtnModelTexturesMore.Size = New System.Drawing.Size(88, 24)
-        Me.BtnModelTexturesMore.TabIndex = 6
+        Me.BtnModelTexturesMore.TabIndex = 9
         Me.BtnModelTexturesMore.Text = "Texture info..."
         Me.BtnModelTexturesMore.UseVisualStyleBackColor = True
         '
@@ -492,7 +478,7 @@ Partial Class FrmMain
         Me.BtnTextureInsertAll.Location = New System.Drawing.Point(162, 48)
         Me.BtnTextureInsertAll.Name = "BtnTextureInsertAll"
         Me.BtnTextureInsertAll.Size = New System.Drawing.Size(72, 24)
-        Me.BtnTextureInsertAll.TabIndex = 10
+        Me.BtnTextureInsertAll.TabIndex = 8
         Me.BtnTextureInsertAll.Text = "Import all"
         Me.BtnTextureInsertAll.UseVisualStyleBackColor = True
         '
@@ -504,7 +490,7 @@ Partial Class FrmMain
         Me.BtnTextureSave.Location = New System.Drawing.Point(0, 48)
         Me.BtnTextureSave.Name = "BtnTextureSave"
         Me.BtnTextureSave.Size = New System.Drawing.Size(72, 24)
-        Me.BtnTextureSave.TabIndex = 9
+        Me.BtnTextureSave.TabIndex = 6
         Me.BtnTextureSave.Text = "Save"
         Me.BtnTextureSave.UseVisualStyleBackColor = True
         '
@@ -516,7 +502,7 @@ Partial Class FrmMain
         Me.BtnTextureInsert.Location = New System.Drawing.Point(84, 48)
         Me.BtnTextureInsert.Name = "BtnTextureInsert"
         Me.BtnTextureInsert.Size = New System.Drawing.Size(72, 24)
-        Me.BtnTextureInsert.TabIndex = 8
+        Me.BtnTextureInsert.TabIndex = 7
         Me.BtnTextureInsert.Text = "Import"
         Me.BtnTextureInsert.UseVisualStyleBackColor = True
         '
@@ -724,7 +710,7 @@ Partial Class FrmMain
         Me.LstTextures.Name = "LstTextures"
         Me.LstTextures.SelectedIndex = -1
         Me.LstTextures.Size = New System.Drawing.Size(200, 460)
-        Me.LstTextures.TabIndex = 1
+        Me.LstTextures.TabIndex = 9
         Me.LstTextures.TileHeight = 16
         '
         'TextPage
@@ -762,7 +748,7 @@ Partial Class FrmMain
         Me.BtnTextSave.Location = New System.Drawing.Point(0, 48)
         Me.BtnTextSave.Name = "BtnTextSave"
         Me.BtnTextSave.Size = New System.Drawing.Size(72, 24)
-        Me.BtnTextSave.TabIndex = 4
+        Me.BtnTextSave.TabIndex = 3
         Me.BtnTextSave.Text = "Save"
         Me.BtnTextSave.UseVisualStyleBackColor = True
         '
@@ -774,7 +760,7 @@ Partial Class FrmMain
         Me.BtnTextImport.Location = New System.Drawing.Point(84, 48)
         Me.BtnTextImport.Name = "BtnTextImport"
         Me.BtnTextImport.Size = New System.Drawing.Size(72, 24)
-        Me.BtnTextImport.TabIndex = 3
+        Me.BtnTextImport.TabIndex = 4
         Me.BtnTextImport.Text = "Import"
         Me.BtnTextImport.UseVisualStyleBackColor = True
         '
@@ -819,7 +805,7 @@ Partial Class FrmMain
         Me.LstStrings.Name = "LstStrings"
         Me.LstStrings.SelectedIndex = -1
         Me.LstStrings.Size = New System.Drawing.Size(768, 460)
-        Me.LstStrings.TabIndex = 0
+        Me.LstStrings.TabIndex = 5
         Me.LstStrings.Text = "MyListview1"
         Me.LstStrings.TileHeight = 16
         '
@@ -861,7 +847,7 @@ Partial Class FrmMain
         Me.BtnGARCCompression.Location = New System.Drawing.Point(615, 18)
         Me.BtnGARCCompression.Name = "BtnGARCCompression"
         Me.BtnGARCCompression.Size = New System.Drawing.Size(150, 24)
-        Me.BtnGARCCompression.TabIndex = 7
+        Me.BtnGARCCompression.TabIndex = 4
         Me.BtnGARCCompression.Text = "Optimal compression"
         Me.BtnGARCCompression.UseVisualStyleBackColor = True
         '
@@ -885,7 +871,7 @@ Partial Class FrmMain
         Me.BtnGARCInsert.Location = New System.Drawing.Point(84, 48)
         Me.BtnGARCInsert.Name = "BtnGARCInsert"
         Me.BtnGARCInsert.Size = New System.Drawing.Size(72, 24)
-        Me.BtnGARCInsert.TabIndex = 4
+        Me.BtnGARCInsert.TabIndex = 6
         Me.BtnGARCInsert.Text = "Insert"
         Me.BtnGARCInsert.UseVisualStyleBackColor = True
         '
@@ -950,7 +936,7 @@ Partial Class FrmMain
         Me.LstFiles.Name = "LstFiles"
         Me.LstFiles.SelectedIndex = -1
         Me.LstFiles.Size = New System.Drawing.Size(768, 460)
-        Me.LstFiles.TabIndex = 1
+        Me.LstFiles.TabIndex = 7
         Me.LstFiles.TileHeight = 16
         '
         'SearchPage
@@ -1008,7 +994,7 @@ Partial Class FrmMain
         Me.TxtSearch.Location = New System.Drawing.Point(0, 18)
         Me.TxtSearch.Name = "TxtSearch"
         Me.TxtSearch.Size = New System.Drawing.Size(150, 24)
-        Me.TxtSearch.TabIndex = 0
+        Me.TxtSearch.TabIndex = 1
         '
         'ProgressSearch
         '
@@ -1026,7 +1012,7 @@ Partial Class FrmMain
         Me.BtnSearch.Location = New System.Drawing.Point(156, 18)
         Me.BtnSearch.Name = "BtnSearch"
         Me.BtnSearch.Size = New System.Drawing.Size(72, 24)
-        Me.BtnSearch.TabIndex = 1
+        Me.BtnSearch.TabIndex = 2
         Me.BtnSearch.Text = "Search"
         Me.BtnSearch.UseVisualStyleBackColor = True
         '
@@ -1156,7 +1142,6 @@ Partial Class FrmMain
     Friend WithEvents ProgressSearch As Ohana3DS.MyProgressbar
     Friend WithEvents BtnSearch As System.Windows.Forms.Button
     Friend WithEvents Splash As System.Windows.Forms.PictureBox
-    Friend WithEvents BtnModelMirror As System.Windows.Forms.Button
     Friend WithEvents BtnTextureInsert As System.Windows.Forms.Button
     Friend WithEvents BtnTextureSave As System.Windows.Forms.Button
     Friend WithEvents GrpTextOptions As Ohana3DS.MyGroupbox

@@ -166,15 +166,20 @@ Public Class MyListview
         MyBase.OnMouseEnter(e)
     End Sub
     Protected Overrides Sub OnMouseDown(e As MouseEventArgs)
-        If e.Button = Windows.Forms.MouseButtons.Left Then
+        If e.Button = MouseButtons.Left Then
             Dim Scroll_Rect As New Rectangle(Me.Width - 10, Scroll_Bar_Y, 10, Scroll_Bar_Height)
             If Scroll_Rect.IntersectsWith(New Rectangle(e.X, e.Y, 1, 1)) Then
                 Scroll_Mouse_Y = e.Y - Scroll_Bar_Y
                 Mouse_Drag = True
             Else
-                Clicked = True
-                Mouse_Position = e.Location
-                Me.Refresh()
+                Dim Index As Integer = e.Y \ Tile_Height
+                If Index > -1 And Index < LstItems.Count Then
+                    If Not LstItems(Index).Header Then
+                        Clicked = True
+                        Mouse_Position = e.Location
+                        Me.Refresh()
+                    End If
+                End If
             End If
         End If
 
@@ -200,7 +205,7 @@ Public Class MyListview
             End If
         End If
 
-        If e.Button = Windows.Forms.MouseButtons.Left And Mouse_Drag Then
+        If e.Button = MouseButtons.Left And Mouse_Drag Then
             Dim Y As Integer = e.Y - Scroll_Mouse_Y
             If Y < 0 Then
                 Y = 0
