@@ -1784,8 +1784,8 @@ Public Class Ohana
                 MyMaterial.Ambient = Color.White
                 Device.Material = MyMaterial
 
-                Dim Rotation_Matrix As Matrix = Matrix.RotationYawPitchRoll(Rotation.X / 200.0F, -Rotation.Y / 200.0F, 0)
-                Dim Translation_Matrix As Matrix = Matrix.Translation(New Vector3(Translation.X / 50.0F, (Translation.Y / 50.0F) - Pos_Y, Zoom))
+                Dim Rotation_Matrix As Matrix = Matrix.RotationYawPitchRoll(-Rotation.X / 200.0F, -Rotation.Y / 200.0F, 0)
+                Dim Translation_Matrix As Matrix = Matrix.Translation(New Vector3(-Translation.X / 50.0F, (Translation.Y / 50.0F) - Pos_Y, Zoom))
                 Device.Transform.World = Rotation_Matrix * Translation_Matrix * Matrix.Scaling(-1, 1, 1) 'Mirror X
 
                 If Edit_Mode Then
