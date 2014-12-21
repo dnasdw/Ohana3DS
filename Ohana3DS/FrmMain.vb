@@ -32,6 +32,7 @@ Public Class FrmMain
     Dim GARC_Thread As Thread
     Dim Search_Thread As Thread
 
+    Dim Lighting As Boolean = True
     Dim First_Click As Boolean
 #End Region
 
@@ -55,7 +56,6 @@ Public Class FrmMain
 
         Me.AllowDrop = True
         MyFileDrop = New FileDrop(AddressOf File_Dropped)
-        MyOhana.Initialize(Screen)
 
         MyOhana.Scale = My.Settings.ModelScale
         BtnModelScale.Text = "Model scale: 1:" & My.Settings.ModelScale
@@ -76,7 +76,9 @@ Public Class FrmMain
         MyNako.Fast_Compression = My.Settings.FastCompression
         If MyNako.Fast_Compression Then BtnGARCCompression.Text = "Fast compression"
 
+        MyOhana.Initialize(Screen)
         Show()
+        MyOhana.Render()
     End Sub
     Private Sub FrmMain_KeyDown(sender As Object, e As KeyEventArgs) Handles MyBase.KeyDown
         If File.Exists(Current_Model) Then
@@ -271,8 +273,10 @@ Public Class FrmMain
 
         Try
             Current_Model = File_Name
+            MyOhana.Rendering = False
             Response = MyOhana.Load_Model(File_Name)
             If Response Then
+                MyOhana.Rendering = True
                 LblModelName.Text = Path.GetFileName(File_Name)
                 ModelNameTip.SetToolTip(LblModelName, LblModelName.Text)
 
@@ -315,7 +319,6 @@ Public Class FrmMain
         Application.DoEvents() 'Processa o click que foi para o PictureBox, porém será ignorado devido ao First_Click
         First_Click = False
         Screen.Refresh()
-        If Response Then MyOhana.Render()
 
         Return Response
     End Function
@@ -635,7 +638,7 @@ Public Class FrmMain
             Try
                 Exporter.Load_Textures(File.FullName, False)
                 If Exporter.Model_Texture.Count > 0 Then
-                    Dim Output_Folder As String = Path.Combine(OutFolder, "group_" & Index)
+                    Dim Output_Folder As String = Path.Combine(OutFolder, Path.GetFileNameWithoutExtension(File.Name))
                     Directory.CreateDirectory(Output_Folder)
                     For Each Texture As Ohana.OhanaTexture In Exporter.Model_Texture
                         Dim File_Name As String = Path.Combine(Output_Folder, Texture.Name & ".png")

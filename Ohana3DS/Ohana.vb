@@ -74,8 +74,8 @@ Public Class Ohana
     Public Magic As String
     Public Model_Type As ModelType
 
-    Public Scale As Single = 32.0F
     Public Lighting As Boolean = True
+    Public Scale As Single = 32.0F
     Public Load_Scale As Single
 
     Public Structure OhanaInfo
@@ -94,7 +94,6 @@ Public Class Ohana
     Public Translation As Vector2
 
     Public Max_Y_Neg, Max_Y_Pos As Single
-    Private Has_Normals As Boolean
 
     Public Rendering As Boolean
     Public Current_Model As String
@@ -162,6 +161,8 @@ Public Class Ohana
             .RenderState.ReferenceAlpha = &H7F
             .RenderState.AlphaTestEnable = True
 
+            .SamplerState(0).MaxMipLevel = 1
+            .SamplerState(0).MipFilter = TextureFilter.Anisotropic
             .SamplerState(0).MinFilter = TextureFilter.Anisotropic
             .SamplerState(0).MagFilter = TextureFilter.Anisotropic
             .SamplerState(0).MaxAnisotropy = 16
@@ -170,7 +171,7 @@ Public Class Ohana
 #End Region
 
 #Region "Model"
-    Public Function Load_Model(File_Name As String, Optional Create_DX_Texture As Boolean = True) As Boolean
+    Public Function Load_Model(File_Name As String, Optional DX As Boolean = True) As Boolean
         Dim Temp() As Byte = File.ReadAllBytes(File_Name)
         Magic = ReadMagic(Temp, 0, 3)
         Dim BCH_Offset As Integer
@@ -180,8 +181,6 @@ Public Class Ohana
         Total_Vertex = 0
         Max_Y_Neg = 0
         Max_Y_Pos = 0
-        Has_Normals = False
-        Rendering = False
         Model_Object = Nothing
         Current_Model = Nothing
         FrmMain.BtnModelMapEditor.Enabled = False
@@ -373,12 +372,11 @@ Public Class Ohana
                                 .V = BitConverter.ToSingle(Data, Offset + 16)
                             End If
                         Case &H20, &H30, &H38
-                            If (Vertex_Flags And &HFFFF) <> &HA680 Then
+                            Dim Flags As Integer = Vertex_Flags And &HFFFF
+                            If Flags <> &HA680 And Flags <> &HEC81 Then
                                 .NX = BitConverter.ToSingle(Data, Offset + 12) / Scale
                                 .NY = BitConverter.ToSingle(Data, Offset + 16) / Scale
                                 .NZ = BitConverter.ToSingle(Data, Offset + 20) / Scale
-
-                                Has_Normals = True
                             End If
 
                             .U = BitConverter.ToSingle(Data, Offset + 24)
@@ -402,8 +400,6 @@ Public Class Ohana
                                         .Color = Read32(Data, Offset + 32)
                                 End Select
                             End If
-
-                            Has_Normals = True
                         Case &H34
                             .NX = BitConverter.ToSingle(Data, Offset + 12) / Scale
                             .NY = BitConverter.ToSingle(Data, Offset + 16) / Scale
@@ -411,8 +407,6 @@ Public Class Ohana
 
                             .U = BitConverter.ToSingle(Data, Offset + 24)
                             .V = BitConverter.ToSingle(Data, Offset + 28)
-
-                            Has_Normals = True
                     End Select
 
                     If .Y > Max_Y_Pos Then Max_Y_Pos = .Y
@@ -579,6 +573,8 @@ Public Class Ohana
             .Bones_Count = Bone_Entries
             .Textures_Count = Texture_ID_List.Count - (Texture_Entries - TempLst.Count)
         End With
+
+        If DX Then Switch_Lighting(Lighting)
 
         Return True
     End Function
@@ -1776,14 +1772,8 @@ Public Class Ohana
         Device.Transform.Projection = Matrix.PerspectiveFovLH(Math.PI / 4, CSng(SWidth / SHeight), 0.1F, 500.0F)
         Device.Transform.View = Matrix.LookAtLH(New Vector3(0.0F, 0.0F, 20.0F), New Vector3(0.0F, 0.0F, 0.0F), New Vector3(0.0F, 1.0F, 0.0F))
 
-        'Configura iluminação
-        Switch_Lighting(Lighting)
-
-        Dim Pos_Y As Single = (Max_Y_Pos / 2) + (Max_Y_Neg / 2)
-        If Pos_Y > 10.0F Then Pos_Y = 0
-        Rendering = True
-        While Rendering
-            If Model_Object IsNot Nothing Then
+        Do
+            If Model_Object IsNot Nothing And Rendering Then
                 Device.Clear(ClearFlags.Target, Color.Black, 1.0F, 0)
                 Device.Clear(ClearFlags.ZBuffer, Color.Black, 1.0F, 0)
                 Device.BeginScene()
@@ -1793,6 +1783,8 @@ Public Class Ohana
                 MyMaterial.Ambient = Color.White
                 Device.Material = MyMaterial
 
+                Dim Pos_Y As Single = (Max_Y_Pos / 2) + (Max_Y_Neg / 2)
+                If Pos_Y > 10.0F Then Pos_Y = 0
                 Dim Rotation_Matrix As Matrix = Matrix.RotationYawPitchRoll(-Rotation.X / 200.0F, -Rotation.Y / 200.0F, 0)
                 Dim Translation_Matrix As Matrix = Matrix.Translation(New Vector3(-Translation.X / 50.0F, (Translation.Y / 50.0F) - Pos_Y, Zoom))
                 Device.Transform.World = Rotation_Matrix * Translation_Matrix * Matrix.Scaling(-1, 1, 1) 'Mirror X
@@ -1883,19 +1875,19 @@ Public Class Ohana
             End If
 
             Application.DoEvents()
-        End While
+        Loop
     End Sub
 
     Public Sub Switch_Lighting(Enabled As Boolean)
         With Device
-            If Enabled And Has_Normals Then
+            If Enabled Then
                 .RenderState.Lighting = True
                 .RenderState.Ambient = Color.FromArgb(64, 64, 64)
                 .Lights(0).Type = LightType.Point
                 .Lights(0).Diffuse = Color.White
                 .Lights(0).Position = New Vector3(0.0F, 10.0F, 30.0F)
                 .Lights(0).Range = 520.0F
-                .Lights(0).Attenuation0 = 2.0F / Scale
+                .Lights(0).Attenuation0 = 2.0F / Load_Scale
                 .Lights(0).Enabled = True
             Else
                 .RenderState.Lighting = False
