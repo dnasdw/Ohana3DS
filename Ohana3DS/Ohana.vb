@@ -220,7 +220,11 @@ Public Class Ohana
             Return False
         End If
 
-        If Not Current_Model = Nothing Then
+        If Magic_2_Bytes = "MM" Or _
+            Magic_2_Bytes = "TM" Or _
+            Magic_2_Bytes = "PC" Or _
+            Magic_2_Bytes = "GR" Or _
+            Magic = "BCH" Then
             FrmMain.BtnModelExport.Enabled = True
             FrmMain.BtnModelSave.Enabled = True
             FrmMain.BtnModelVertexEditor.Enabled = True
