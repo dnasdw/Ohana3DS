@@ -34,6 +34,38 @@ Public Class FrmMain
 
     Dim Lighting As Boolean = True
     Dim First_Click As Boolean
+
+    Private Structure NCCH
+        Dim Offset As Integer
+        Dim Length As Integer
+        Dim Product_Code As String
+        Dim Partition_ID() As Byte
+        Dim ExHeader_Size As Long
+        Dim ExeFS_Offset, ExeFS_Size As Long
+        Dim RomFS_Offset, RomFS_Size As Long
+    End Structure
+    Dim NCCH_Container(7) As NCCH
+    Private Structure Info_Header
+        Dim Offset As Integer
+        Dim Length As Integer
+    End Structure
+    Private Structure Rom_Directory
+        Dim Parent_Offset As Integer
+        Dim Sibling_Offset As Integer
+        Dim Children_Offset As Integer
+        Dim File_Offset As Integer
+        Dim Unknow As Integer
+        Dim Name As String
+    End Structure
+    Private Structure Rom_File
+        Dim Parent_Offset As Integer
+        Dim Sibling_Offset As Integer
+        Dim Data_Offset As UInt64
+        Dim Data_Length As UInt64
+        Dim Unknow As Integer
+        Dim Name As String
+    End Structure
+    Dim Current_ROM, Current_XORPad As String
 #End Region
 
 #Region "GUI"
@@ -203,7 +235,7 @@ Public Class FrmMain
 
 #Region "Common"
     Private Delegate Sub Up_Progress(ProgressBar As MyProgressbar, Percentage As Single, Msg As String)
-    Private Delegate Sub Add_Item(List As MyListview, Item As MyListview.ListItem)
+    Private Delegate Sub Add_Item(List As MyListview, Item As MyListview.ListItem, Scroll_To_End As Boolean)
     Private Delegate Sub Update_Button(Button As Button, Text As String)
     Private Delegate Sub Change_Picture(Ctrl As MyPicturebox, Img As Image)
     Private Delegate Sub Change_Enabled(Ctrl As Control, Enabled As Boolean)
@@ -216,12 +248,15 @@ Public Class FrmMain
             ProgressBar.Refresh()
         End If
     End Sub
-    Private Sub Add_List_Item(List As MyListview, Item As MyListview.ListItem)
+    Private Sub Add_List_Item(List As MyListview, Item As MyListview.ListItem, Scroll_To_End As Boolean)
         If List.InvokeRequired Then
-            Me.Invoke(New Add_Item(AddressOf Add_List_Item), List, Item)
+            Me.Invoke(New Add_Item(AddressOf Add_List_Item), List, Item, Scroll_To_End)
         Else
             List.AddItem(Item)
-            List.Refresh()
+            If Scroll_To_End Then
+                List.Scroll_To_End()
+                List.Refresh()
+            End If
         End If
     End Sub
     Private Sub Update_Button_Text(Button As Button, Text As String)
@@ -247,6 +282,18 @@ Public Class FrmMain
             Ctrl.Enabled = Enabled
         End If
     End Sub
+
+    Private Function Format_Size(Bytes As Integer) As String
+        If Bytes >= 1073741824 Then
+            Return Format(Bytes / 1024 / 1024 / 1024, "#0.00") & " GB"
+        ElseIf Bytes >= 1048576 Then
+            Return Format(Bytes / 1024 / 1024, "#0.00") & " MB"
+        ElseIf Bytes >= 1024 Then
+            Return Format(Bytes / 1024, "#0.00") & " KB"
+        Else
+            Return Bytes.ToString & " B"
+        End If
+    End Function
 #End Region
 
 #Region "Model"
@@ -254,8 +301,8 @@ Public Class FrmMain
         Dim OpenDlg As New OpenFileDialog
         OpenDlg.Title = "Open Pokémon BCH model"
         OpenDlg.Filter = "BCH Model|*.*"
-        First_Click = True
         If OpenDlg.ShowDialog = Windows.Forms.DialogResult.OK Then
+            First_Click = True
             If File.Exists(OpenDlg.FileName) Then Open_Model(OpenDlg.FileName)
         End If
     End Sub
@@ -967,17 +1014,6 @@ Public Class FrmMain
         Next
         LstFiles.Refresh()
     End Sub
-    Private Function Format_Size(Bytes As Integer) As String
-        If Bytes >= 1073741824 Then
-            Return Format(Bytes / 1024 / 1024 / 1024, "#0.00") & " GB"
-        ElseIf Bytes >= 1048576 Then
-            Return Format(Bytes / 1024 / 1024, "#0.00") & " MB"
-        ElseIf Bytes >= 1024 Then
-            Return Format(Bytes / 1024, "#0.00") & " KB"
-        Else
-            Return Bytes.ToString & " B"
-        End If
-    End Function
     Private Sub BtnGARCExtract_Click(sender As Object, e As EventArgs) Handles BtnGARCExtract.Click
         If MyNako.Files IsNot Nothing Then
             If LstFiles.SelectedIndex > -1 Then
@@ -1185,7 +1221,7 @@ Public Class FrmMain
                         Item.Text(0).Text = CurrFile.Name
                         Item.Text(1).Left = 400
                         Item.Text(1).Text = "0x" & Hex(Offset)
-                        Add_List_Item(LstMatches, Item)
+                        Add_List_Item(LstMatches, Item, True)
                         Found = True
                         Exit For
                     End If
@@ -1207,6 +1243,7 @@ Public Class FrmMain
             FrmMapProp.makeMapIMG(MapProps())
         End If
     End Sub
+
     Private Function MapProps() As Byte()
         Dim br As New BinaryReader(System.IO.File.OpenRead(MyOhana.Current_Model))
         Dim buff As Byte() = br.ReadBytes(&H10)
@@ -1215,4 +1252,279 @@ Public Class FrmMain
         br.Close()
         Return buff
     End Function
+
+    Public Sub saveMapProps(ByVal w As Short, ByVal h As Short, ByVal mapVals As UInteger())
+        Using dataStream As FileStream = New FileStream(MyOhana.Current_Model, FileMode.Open)
+            Using bw As New BinaryWriter(dataStream)
+                Try
+                    bw.BaseStream.Position = &H80
+                    bw.Write(w)
+                    bw.Write(h)
+                    For i As Integer = 0 To mapVals.Length - 1
+                        bw.Write(mapVals(i))
+                    Next
+                    bw.Close()
+                Catch ex As Exception
+                    Console.WriteLine(ex.StackTrace)
+                End Try
+            End Using
+            MessageBox.Show("Saved map!")
+        End Using
+    End Sub
+
+    Private Sub BtnROMOpen_Click(sender As Object, e As EventArgs) Handles BtnROMOpen.Click
+        Dim OpenDlg As New OpenFileDialog
+        OpenDlg.Title = "Open ROM"
+        OpenDlg.Filter = "3DS Roms|*.3ds;*.3dz"
+        If OpenDlg.ShowDialog = DialogResult.OK Then
+            If File.Exists(OpenDlg.FileName) Then
+                Current_ROM = OpenDlg.FileName
+                Dim ROM As New FileStream(OpenDlg.FileName, FileMode.Open)
+                Parse_Header(ROM)
+                ROM.Close()
+            End If
+        End If
+    End Sub
+    Private Sub BtnROMOpenXorPad_Click(sender As Object, e As EventArgs) Handles BtnROMOpenXorPad.Click
+        Dim OpenDlg As New OpenFileDialog
+        OpenDlg.Title = "Open XORPad"
+        OpenDlg.Filter = "XORPad|*.xorpad"
+        If OpenDlg.ShowDialog = DialogResult.OK Then
+            If File.Exists(OpenDlg.FileName) Then
+                Current_XORPad = OpenDlg.FileName
+            End If
+        End If
+    End Sub
+    Private Sub BtnROMDecrypt_Click(sender As Object, e As EventArgs) Handles BtnROMDecrypt.Click
+        If Current_ROM IsNot Nothing And Current_XORPad IsNot Nothing Then
+            Dim FolderDlg As New FolderBrowserDialog
+            If FolderDlg.ShowDialog = DialogResult.OK Then
+                Dim Trd As New Thread(Sub() Decrypt_Data(Current_ROM, Current_XORPad, FolderDlg.SelectedPath, Convert.ToInt32(NCCH_Container(0).RomFS_Offset), Convert.ToInt32(NCCH_Container(0).RomFS_Size)))
+                Trd.Start()
+            End If
+        End If
+    End Sub
+
+    Private Sub Parse_Header(InData As FileStream)
+        LstROMLog.Clear()
+
+        Dim Magic As String = Get_Data(InData, &H100, 4, False)
+        If Magic <> "NCSD" Then
+            Add_Log("[!] NCSD container not found!", Color.Red)
+            Exit Sub
+        End If
+        Add_Log("Parsing NCSD header...", Color.White)
+
+        Dim Offset As Integer = &H120
+        For Container As Integer = 0 To 7
+            With NCCH_Container(Container)
+                .Offset = Read32(InData, Offset) * &H200
+                .Length = Read32(InData, Offset + 4) * &H200
+
+                If .Length > 0 Then
+                    Dim Base_Offset As Integer = .Offset + &H100
+
+                    If Get_Data(InData, Base_Offset, 4, False) <> "NCCH" Then
+                        Add_Log("[!] Invalid NCCH header! The ROM is corrupted!", Color.Red)
+                        Exit Sub
+                    End If
+                    Add_Log("NCCH #" & Container & " (" & Get_Data(InData, Base_Offset + &H50, &H10, False) & ")", Color.Cyan)
+
+                    Add_Log("-- Signature (256 bytes in Hexadecimal/SHA-256):", Color.Gainsboro)
+                    For i As Integer = 0 To 7
+                        Add_Log(Get_Data(InData, .Offset + i * 32, 32), Color.Gainsboro)
+                    Next
+
+                    Add_Log("-- Content Size: " & Format_Size(Read32(InData, Base_Offset + &H4) * &H200), Color.White)
+                    InData.Seek(Base_Offset + &H8, SeekOrigin.Begin)
+                    ReDim .Partition_ID(7)
+                    InData.Read(.Partition_ID, 0, 8)
+                    Add_Log("-- Partition ID: " & "0x" & Get_Data(InData, Base_Offset + &H8, 8), Color.White)
+                    Add_Log("-- Maker Code: " & "0x" & Get_Data(InData, Base_Offset + &H10, 2), Color.White)
+                    Add_Log("-- Version: " & "0x" & Get_Data(InData, Base_Offset + &H12, 2), Color.White)
+                    Add_Log("-- Program ID: " & "0x" & Get_Data(InData, Base_Offset + &H18, 8), Color.White)
+                    .Product_Code = Get_Data(InData, Base_Offset + &H50, &H10, False)
+                    Add_Log("-- ExHeader Hash (32 bytes in Hexadecimal/SHA-256):", Color.Gainsboro)
+                    Add_Log(Get_Data(InData, Base_Offset + &H60, &H20), Color.Gainsboro)
+                    .ExHeader_Size = Read32(InData, Base_Offset + &H80) * &H200
+                    Add_Log("-- ExHeader Size: " & Format_Size(Convert.ToInt32(.ExHeader_Size)), Color.White)
+
+                    Dim Content_Type As String = Nothing
+                    InData.Seek(Base_Offset + &H88 + &H5, SeekOrigin.Begin)
+                    Dim Temp As Byte = InData.ReadByte
+                    If (Temp And &H1) > &H1 Then Content_Type &= "Data"
+                    If (Temp And &H2) = &H2 Then If Content_Type <> Nothing Then Content_Type &= "/Executable" Else Content_Type &= "Executable"
+                    If (Temp And &H4) = &H4 Then If Content_Type <> Nothing Then Content_Type &= "/System Update" Else Content_Type &= "System Update"
+                    If (Temp And &H8) = &H8 Then If Content_Type <> Nothing Then Content_Type &= "/Manual" Else Content_Type &= "Manual"
+                    If (Temp And &H10) = &H10 Then If Content_Type <> Nothing Then Content_Type &= "/Trial" Else Content_Type &= "Trial"
+                    Add_Log("-- Flags: " & "0x" & Get_Data(InData, Base_Offset + &H88, 8) & If(Content_Type <> Nothing, " (" & Content_Type & ")", Nothing), Color.White)
+
+                    Dim Plain_Region_Offset As Long = Read32(InData, Base_Offset + &H90) * &H200
+                    If Plain_Region_Offset > 0 Then Plain_Region_Offset += .Offset
+                    Add_Log("-- Plain Region Offset: " & "0x" & Hex(Plain_Region_Offset).PadLeft(8, "0"c), Color.White)
+                    Add_Log("-- Plain Region Size: " & Format_Size(Read32(InData, Base_Offset + &H94) * &H200), Color.White)
+                    Dim Logo_Region_Offset As Long = Read32(InData, Base_Offset + &H98) * &H200
+                    If Logo_Region_Offset > 0 Then Logo_Region_Offset += .Offset
+                    Add_Log("-- Logo Region Offset: " & "0x" & Hex(Logo_Region_Offset).PadLeft(8, "0"c), Color.White)
+                    Add_Log("-- Logo Region Size: " & Format_Size(Read32(InData, Base_Offset + &H9C) * &H200), Color.White)
+
+                    .ExeFS_Offset = Read32(InData, Base_Offset + &HA0) * &H200
+                    If .ExeFS_Offset > 0 Then .ExeFS_Offset += .Offset
+                    .ExeFS_Size = Read32(InData, Base_Offset + &HA4) * &H200
+                    .RomFS_Offset = Read32(InData, Base_Offset + &HB0) * &H200
+                    If .RomFS_Offset > 0 Then .RomFS_Offset += .Offset
+                    .RomFS_Size = Read32(InData, Base_Offset + &HB4) * &H200
+
+                    Add_Log("-- Executable File System Offset: " & "0x" & Hex(.ExeFS_Offset).PadLeft(8, "0"c), Color.White)
+                    Add_Log("-- Executable File System Size: " & Format_Size(Convert.ToInt32(.ExeFS_Size)), Color.White)
+                    Add_Log("-- Executable File System Hash Region Size: " & Format_Size(Read32(InData, Base_Offset + &HA8) * &H200), Color.White)
+                    Add_Log("-- ROM File System Offset: " & "0x" & Hex(.RomFS_Offset).PadLeft(8, "0"c), Color.White)
+                    Add_Log("-- ROM File System Size: " & Format_Size(Convert.ToInt32(.RomFS_Size)), Color.White)
+                    Add_Log("-- ROM File System Hash Region Size: " & Format_Size(Read32(InData, Base_Offset + &HB8) * &H200), Color.White)
+
+                    Add_Log("-- Executable File System Hash (32 bytes in Hexadecimal/SHA-256):", Color.Gainsboro)
+                    Add_Log(Get_Data(InData, Base_Offset + &HC0, &H20), Color.Gainsboro)
+                    Add_Log("-- ROM File System Hash (32 bytes in Hexadecimal/SHA-256):", Color.Gainsboro)
+                    Add_Log(Get_Data(InData, Base_Offset + &HE0, &H20), Color.Gainsboro)
+                End If
+            End With
+
+            Offset += 8
+        Next
+
+        Add_Log("Done! The ROM is ready to be decrypted!", Color.Green, True)
+    End Sub
+    Private Sub Add_Log(Text As String, Color As Color, Optional Refresh As Boolean = False)
+        Dim Item As MyListview.ListItem
+        ReDim Item.Text(0)
+        Item.Text(0).Text = Text
+        Item.Text(0).ForeColor = Color
+        Add_List_Item(LstROMLog, Item, Refresh)
+    End Sub
+    Public Function Get_Data(InData As FileStream, Start_Offset As Integer, Count As Integer, Optional HexFmt As Boolean = True) As String
+        Dim Data(Count - 1) As Byte
+        InData.Position = Start_Offset
+        InData.Read(Data, 0, Count)
+        Dim Out As String = Nothing
+        For i As Integer = 0 To Count - 1
+            If HexFmt Then
+                Out &= Hex(Data(i)).PadLeft(2, "0"c)
+            Else
+                If Data(i) > 0 Then Out &= Chr(Data(i))
+            End If
+        Next
+        Return Out
+    End Function
+
+    Private Sub Decrypt_Data(In_File As String, In_XOR As String, Out_Path As String, InOffset As Integer, InSize As Integer)
+        Add_Log("Decrypting Rom File System (it may take some time)...", Color.White, True)
+
+        Dim InFile As New FileStream(In_File, FileMode.Open)
+        Dim InXOR As New FileStream(In_XOR, FileMode.Open)
+        Dim Output_File As String = Path.Combine(Path.GetDirectoryName(In_File), Path.GetFileNameWithoutExtension(In_File) & ".dec")
+        Dim OutFile As New FileStream(Output_File, FileMode.Create)
+        InFile.Seek(InOffset, SeekOrigin.Begin)
+        For Offset As Integer = 0 To InSize - 1 Step 16384
+            Dim BuffLen As Integer = Convert.ToInt32(If(InSize - Offset >= 16384, 16384, InSize - Offset))
+            Dim Buffer(BuffLen - 1) As Byte
+            Dim XorBuff(BuffLen - 1) As Byte
+            InFile.Read(Buffer, 0, BuffLen)
+            InXOR.Read(XorBuff, 0, BuffLen)
+            For i As Integer = 0 To Buffer.Length - 1
+                Buffer(i) = Buffer(i) Xor XorBuff(i)
+            Next
+            OutFile.Write(Buffer, 0, BuffLen)
+        Next
+        OutFile.Close()
+        InFile.Close()
+        InXOR.Close()
+
+        Extract_RomFS(Output_File, Out_Path)
+    End Sub
+
+    Private Sub Extract_RomFS(InFile As String, OutFolder As String)
+        Dim RomFS As New FileStream(InFile, FileMode.Open)
+        Dim Reader As New BinaryReader(RomFS)
+        Dim Info_Offset As Integer = &H1000
+        RomFS.Seek(&H1000, SeekOrigin.Begin)
+        Dim Header_Size As Integer = Reader.ReadInt32
+        Dim Sections(3) As Info_Header
+        For Section As Integer = 0 To 3
+            Sections(Section).Offset = Reader.ReadInt32
+            Sections(Section).Length = Reader.ReadInt32
+        Next
+        Dim Data_Offset As Integer = &H1000 + Reader.ReadInt32
+
+        Dim Directory_Info_Offset As Integer = &H1000 + Sections(1).Offset
+        Dim Directory_Info_Length As Integer = Sections(1).Length
+        Dim File_Info_Offset As Integer = &H1000 + Sections(3).Offset
+        Dim File_Info_Length As Integer = Sections(3).Length
+
+        Dim Directories As New List(Of Rom_Directory)
+        Parse_Directory(RomFS, Directory_Info_Offset, Directory_Info_Offset, File_Info_Offset, Data_Offset, Nothing, OutFolder)
+        RomFS.Close()
+    End Sub
+    Private Sub Parse_Directory(RomFS As FileStream, Offset As Integer, Directory_Info_Offset As Integer, File_Info_Offset As Integer, Data_Offset As Integer, Path As String, Out_Path As String)
+        Dim Dir As Rom_Directory
+
+        With Dir
+            .Parent_Offset = Read32(RomFS, Offset)
+            .Sibling_Offset = Read32(RomFS, Offset + 4)
+            .Children_Offset = Read32(RomFS, Offset + 8)
+            .File_Offset = Read32(RomFS, Offset + 12)
+            .Unknow = Read32(RomFS, Offset + 16)
+            .Name = Nothing
+            Dim Temp As Integer = Offset + 24
+            Dim Name_Length As Integer = Read32(RomFS, Offset + 20)
+            For Name_Offset As Integer = Temp To Temp + Name_Length - 1 Step 2
+                .Name &= ChrW(Read16(RomFS, Name_Offset))
+            Next
+            Dim Current_Path As String = Path & If(Path <> Nothing, "\", Nothing) & .Name
+
+            If .File_Offset <> &HFFFFFFFF Then
+                Parse_File(RomFS, File_Info_Offset + .File_Offset, File_Info_Offset, Data_Offset, Current_Path, Out_Path)
+            End If
+            If .Children_Offset <> &HFFFFFFFF Then
+                Parse_Directory(RomFS, Directory_Info_Offset + .Children_Offset, Directory_Info_Offset, File_Info_Offset, Data_Offset, Current_Path, Out_Path)
+            End If
+            If .Sibling_Offset <> &HFFFFFFFF Then
+                Parse_Directory(RomFS, Directory_Info_Offset + .Sibling_Offset, Directory_Info_Offset, File_Info_Offset, Data_Offset, Path, Out_Path)
+            End If
+        End With
+    End Sub
+    Private Sub Parse_File(RomFS As FileStream, Offset As Integer, File_Info_Offset As Integer, Data_Offset As Integer, Path As String, Out_Path As String)
+        Dim File As Rom_File
+
+        With File
+            .Parent_Offset = Read32(RomFS, Offset)
+            .Sibling_Offset = Read32(RomFS, Offset + 4)
+            .Data_Offset = Read64(RomFS, Offset + 8)
+            .Data_Length = Read64(RomFS, Offset + 16)
+            .Unknow = Read32(RomFS, Offset + 24)
+            .Name = Nothing
+            Dim Temp As Integer = Offset + 32
+            Dim Name_Length As Integer = Read32(RomFS, Offset + 28)
+            For Name_Offset As Integer = Temp To Temp + Name_Length - 1 Step 2
+                .Name &= ChrW(Read16(RomFS, Name_Offset))
+            Next
+            Dim File_Name As String = Path & "\" & .Name
+            Add_Log("Extracting " & Path & "\" & .Name & "...", Color.White, True)
+
+            If Not Directory.Exists(Out_Path & "\" & Path) Then Directory.CreateDirectory(Out_Path & "\" & Path)
+            Dim Out_File As New FileStream(Out_Path & "\" & File_Name, FileMode.Create)
+            Dim File_Offset As Integer = Convert.ToInt32(Data_Offset + .Data_Offset)
+            RomFS.Seek(File_Offset, SeekOrigin.Begin)
+            For Write_Offset As Integer = File_Offset To Convert.ToInt32(File_Offset + .Data_Length - 1) Step 16
+                Dim BuffLen As Integer = Convert.ToInt32(If(.Data_Length - (Write_Offset - File_Offset) >= 16, 16, .Data_Length - (Write_Offset - File_Offset)))
+                Dim Buffer(BuffLen - 1) As Byte
+                RomFS.Read(Buffer, 0, BuffLen)
+                Out_File.Write(Buffer, 0, BuffLen)
+            Next
+            Out_File.Close()
+
+            If .Sibling_Offset <> &HFFFFFFFF Then
+                Parse_File(RomFS, File_Info_Offset + .Sibling_Offset, File_Info_Offset, Data_Offset, Path, Out_Path)
+            End If
+        End With
+    End Sub
 End Class

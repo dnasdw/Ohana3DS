@@ -89,6 +89,19 @@ Public Class MyListview
         Scroll_Bar_Y = 0
         Me.Refresh()
     End Sub
+    Public Sub Scroll_To_End()
+        If LstItems IsNot Nothing Then
+            If LstItems.Count = 0 Then Exit Sub
+            Dim Total_Size As Integer = LstItems.Count * Tile_Height
+            While ((LstItems.Count - 1) * Tile_Height) - Scroll_Y > (Me.Height - Tile_Height)
+                Dim Y As Integer = Scroll_Bar_Y + 1
+                If Y > Me.Height - Scroll_Bar_Height Then Y = Me.Height - Scroll_Bar_Height
+                Scroll_Bar_Y = Y
+                Scroll_Y = Convert.ToInt32((Y / (Me.Height - Scroll_Bar_Height)) * (Total_Size - Me.Height))
+                If Y = Me.Height - Scroll_Bar_Height Then Exit While
+            End While
+        End If
+    End Sub
     Protected Overrides Sub OnPaint(e As PaintEventArgs)
         If LstItems.Count = 0 Then Exit Sub
         e.Graphics.FillRectangle(New SolidBrush(Me.BackColor), e.ClipRectangle)

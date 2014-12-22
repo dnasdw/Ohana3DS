@@ -102,6 +102,12 @@ Partial Class FrmMain
         Me.ProgressSearch = New Ohana3DS.MyProgressbar()
         Me.BtnSearch = New System.Windows.Forms.Button()
         Me.ROMPage = New System.Windows.Forms.TabPage()
+        Me.GrpROMLog = New Ohana3DS.MyGroupbox()
+        Me.LstROMLog = New Ohana3DS.MyListview()
+        Me.GrpROMOptions = New Ohana3DS.MyGroupbox()
+        Me.BtnROMDecrypt = New System.Windows.Forms.Button()
+        Me.BtnROMOpenXorPad = New System.Windows.Forms.Button()
+        Me.BtnROMOpen = New System.Windows.Forms.Button()
         Me.Title = New Ohana3DS.MyWindowTitle()
         CType(Me.Splash, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.MainTabs.SuspendLayout()
@@ -124,6 +130,9 @@ Partial Class FrmMain
         Me.SearchPage.SuspendLayout()
         Me.GrpMatches.SuspendLayout()
         Me.GrpSearchOptions.SuspendLayout()
+        Me.ROMPage.SuspendLayout()
+        Me.GrpROMLog.SuspendLayout()
+        Me.GrpROMOptions.SuspendLayout()
         Me.SuspendLayout()
         '
         'BtnClose
@@ -229,6 +238,7 @@ Partial Class FrmMain
         '
         'BtnModelSave
         '
+        Me.BtnModelSave.Enabled = False
         Me.BtnModelSave.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
         Me.BtnModelSave.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
         Me.BtnModelSave.FlatStyle = System.Windows.Forms.FlatStyle.Flat
@@ -241,6 +251,7 @@ Partial Class FrmMain
         '
         'BtnModelVertexEditor
         '
+        Me.BtnModelVertexEditor.Enabled = False
         Me.BtnModelVertexEditor.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
         Me.BtnModelVertexEditor.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
         Me.BtnModelVertexEditor.FlatStyle = System.Windows.Forms.FlatStyle.Flat
@@ -285,6 +296,7 @@ Partial Class FrmMain
         '
         'BtnModelExport
         '
+        Me.BtnModelExport.Enabled = False
         Me.BtnModelExport.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
         Me.BtnModelExport.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
         Me.BtnModelExport.FlatStyle = System.Windows.Forms.FlatStyle.Flat
@@ -337,6 +349,7 @@ Partial Class FrmMain
         '
         'BtnModelTexturesMore
         '
+        Me.BtnModelTexturesMore.Enabled = False
         Me.BtnModelTexturesMore.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
         Me.BtnModelTexturesMore.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
         Me.BtnModelTexturesMore.FlatStyle = System.Windows.Forms.FlatStyle.Flat
@@ -1020,12 +1033,85 @@ Partial Class FrmMain
         'ROMPage
         '
         Me.ROMPage.BackColor = System.Drawing.Color.Transparent
+        Me.ROMPage.Controls.Add(Me.GrpROMLog)
+        Me.ROMPage.Controls.Add(Me.GrpROMOptions)
         Me.ROMPage.ForeColor = System.Drawing.Color.White
         Me.ROMPage.Location = New System.Drawing.Point(28, 4)
         Me.ROMPage.Name = "ROMPage"
         Me.ROMPage.Size = New System.Drawing.Size(768, 560)
         Me.ROMPage.TabIndex = 5
         Me.ROMPage.Text = "ROM"
+        '
+        'GrpROMLog
+        '
+        Me.GrpROMLog.Controls.Add(Me.LstROMLog)
+        Me.GrpROMLog.ForeColor = System.Drawing.Color.White
+        Me.GrpROMLog.Location = New System.Drawing.Point(0, 0)
+        Me.GrpROMLog.Name = "GrpROMLog"
+        Me.GrpROMLog.Size = New System.Drawing.Size(768, 480)
+        Me.GrpROMLog.TabIndex = 30
+        Me.GrpROMLog.TabStop = False
+        Me.GrpROMLog.Text = "Log"
+        '
+        'LstROMLog
+        '
+        Me.LstROMLog.Font = New System.Drawing.Font("Lucida Console", 8.25!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+        Me.LstROMLog.Location = New System.Drawing.Point(0, 18)
+        Me.LstROMLog.Name = "LstROMLog"
+        Me.LstROMLog.SelectedIndex = -1
+        Me.LstROMLog.Size = New System.Drawing.Size(768, 460)
+        Me.LstROMLog.TabIndex = 3
+        Me.LstROMLog.TileHeight = 16
+        '
+        'GrpROMOptions
+        '
+        Me.GrpROMOptions.BackColor = System.Drawing.Color.Transparent
+        Me.GrpROMOptions.Controls.Add(Me.BtnROMDecrypt)
+        Me.GrpROMOptions.Controls.Add(Me.BtnROMOpenXorPad)
+        Me.GrpROMOptions.Controls.Add(Me.BtnROMOpen)
+        Me.GrpROMOptions.ForeColor = System.Drawing.Color.White
+        Me.GrpROMOptions.Location = New System.Drawing.Point(0, 480)
+        Me.GrpROMOptions.Name = "GrpROMOptions"
+        Me.GrpROMOptions.Size = New System.Drawing.Size(768, 80)
+        Me.GrpROMOptions.TabIndex = 31
+        Me.GrpROMOptions.TabStop = False
+        Me.GrpROMOptions.Text = "Options"
+        '
+        'BtnROMDecrypt
+        '
+        Me.BtnROMDecrypt.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
+        Me.BtnROMDecrypt.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
+        Me.BtnROMDecrypt.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        Me.BtnROMDecrypt.Location = New System.Drawing.Point(156, 18)
+        Me.BtnROMDecrypt.Name = "BtnROMDecrypt"
+        Me.BtnROMDecrypt.Size = New System.Drawing.Size(72, 24)
+        Me.BtnROMDecrypt.TabIndex = 4
+        Me.BtnROMDecrypt.Text = "Decrypt"
+        Me.BtnROMDecrypt.UseVisualStyleBackColor = True
+        '
+        'BtnROMOpenXorPad
+        '
+        Me.BtnROMOpenXorPad.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
+        Me.BtnROMOpenXorPad.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
+        Me.BtnROMOpenXorPad.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        Me.BtnROMOpenXorPad.Location = New System.Drawing.Point(78, 18)
+        Me.BtnROMOpenXorPad.Name = "BtnROMOpenXorPad"
+        Me.BtnROMOpenXorPad.Size = New System.Drawing.Size(72, 24)
+        Me.BtnROMOpenXorPad.TabIndex = 3
+        Me.BtnROMOpenXorPad.Text = "Open XOR"
+        Me.BtnROMOpenXorPad.UseVisualStyleBackColor = True
+        '
+        'BtnROMOpen
+        '
+        Me.BtnROMOpen.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
+        Me.BtnROMOpen.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
+        Me.BtnROMOpen.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        Me.BtnROMOpen.Location = New System.Drawing.Point(0, 18)
+        Me.BtnROMOpen.Name = "BtnROMOpen"
+        Me.BtnROMOpen.Size = New System.Drawing.Size(72, 24)
+        Me.BtnROMOpen.TabIndex = 2
+        Me.BtnROMOpen.Text = "Open"
+        Me.BtnROMOpen.UseVisualStyleBackColor = True
         '
         'Title
         '
@@ -1082,6 +1168,9 @@ Partial Class FrmMain
         Me.GrpMatches.ResumeLayout(False)
         Me.GrpSearchOptions.ResumeLayout(False)
         Me.GrpSearchOptions.PerformLayout()
+        Me.ROMPage.ResumeLayout(False)
+        Me.GrpROMLog.ResumeLayout(False)
+        Me.GrpROMOptions.ResumeLayout(False)
         Me.ResumeLayout(False)
         Me.PerformLayout()
 
@@ -1165,5 +1254,11 @@ Partial Class FrmMain
     Friend WithEvents BtnTextureInsertAll As System.Windows.Forms.Button
     Friend WithEvents LblModelName As System.Windows.Forms.Label
     Friend WithEvents ModelNameTip As System.Windows.Forms.ToolTip
+    Friend WithEvents GrpROMLog As Ohana3DS.MyGroupbox
+    Friend WithEvents LstROMLog As Ohana3DS.MyListview
+    Friend WithEvents GrpROMOptions As Ohana3DS.MyGroupbox
+    Friend WithEvents BtnROMDecrypt As System.Windows.Forms.Button
+    Friend WithEvents BtnROMOpenXorPad As System.Windows.Forms.Button
+    Friend WithEvents BtnROMOpen As System.Windows.Forms.Button
 
 End Class

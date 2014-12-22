@@ -3,6 +3,17 @@ Module Common
     Public MyOhana As New Ohana
 
     Public Power_Of_Two(7) As Byte
+    Public Function Read64(Data As FileStream, Address As Integer) As UInt64
+        Data.Seek(Address, SeekOrigin.Begin)
+        Return Convert.ToUInt64((Data.ReadByte And &HFF) + _
+            ((Data.ReadByte And &HFF) << 8) + _
+            ((Data.ReadByte And &HFF) << 16) + _
+            ((Data.ReadByte And &HFF) << 24) + _
+            ((Data.ReadByte And &HFF) << 32) + _
+            ((Data.ReadByte And &HFF) << 40) + _
+            ((Data.ReadByte And &HFF) << 48) + _
+            ((Data.ReadByte And &HFF) << 56))
+    End Function
     Public Function Read32(Data As FileStream, Address As Integer) As Integer
         Data.Seek(Address, SeekOrigin.Begin)
         Return (Data.ReadByte And &HFF) + _

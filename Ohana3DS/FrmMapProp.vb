@@ -1,4 +1,5 @@
 ﻿Imports System.Runtime.InteropServices
+Imports System.IO
 
 Public Class FrmMapProp
     <DllImport("dwmapi")> _
@@ -14,14 +15,16 @@ Public Class FrmMapProp
         Dim RightWidth As Integer
     End Structure
 
-    Dim mapVals(100) As UInteger
+    Dim mapVals As UInteger()
     Dim mapProps As String()
 
     Dim mouseX As Integer = 0
     Dim mouseY As Integer = 0
 
-    Dim mapWidth As Integer = 0
-    Dim mapHeight As Integer = 0
+    Dim mapWidth As Short = 0
+    Dim mapHeight As Short = 0
+
+    Dim mode As Boolean = False
 
     Private Sub FrmMapProp_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         mapProps = My.Resources.MapProperties.Split(New Char() {Environment.NewLine, ","}, StringSplitOptions.None)
@@ -60,11 +63,15 @@ Public Class FrmMapProp
         Dim proplist As New List(Of UInteger)
         Using dataStream As IO.Stream = New IO.MemoryStream(byteArray)
             Using br As New IO.BinaryReader(dataStream)
-                mapWidth = br.ReadUInt16()
-                mapHeight = br.ReadUInt16()
-                For i As Integer = 0 To mapWidth * mapHeight - 1
-                    proplist.Add(br.ReadInt32())
-                Next
+                Try
+                    mapWidth = br.ReadUInt16()
+                    mapHeight = br.ReadUInt16()
+                    For i As Integer = 0 To mapWidth * mapHeight - 1
+                        proplist.Add(br.ReadUInt32())
+                    Next
+                Catch ex As Exception
+                    Console.WriteLine(ex.StackTrace)
+                End Try
                 br.Close()
                 mapVals = proplist.ToArray
                 updateImg()
@@ -76,12 +83,14 @@ Public Class FrmMapProp
         Dim img As New Bitmap(mapWidth * 8, mapHeight * 8)
         Dim c As New Color()
         Dim i As Integer = 0
-        For Each v In mapVals
-            If v = &H1000021 Then
+        Dim col As UInteger = 0
+        For v As Integer = 0 To mapVals.Length - 1
+            col = mapVals(v)
+            If col = &H1000021 Then
                 c = Color.Black
             Else
-                v = LCG(v, 4)
-                c = Color.FromArgb(&HFF, &HFF - CByte(v And &HFF), &HFF - CByte((v >> 8) And &HFF), &HFF - CByte(v >> 24 And &HFF))
+                col = LCG(col, 4)
+                c = Color.FromArgb(&HFF, &HFF - CByte(col And &HFF), &HFF - CByte((col >> 8) And &HFF), &HFF - CByte(col >> 24 And &HFF))
             End If
             For x As Integer = 0 To 7
                 For y As Integer = 0 To 7
@@ -107,24 +116,37 @@ Public Class FrmMapProp
             mouseX = Math.Floor(mouseEventArgs.X / 8)
             mouseY = Math.Floor(mouseEventArgs.Y / 8)
             mapCoords.Text = "X= " & Convert.ToString(mouseX) & " Y= " & Convert.ToString(mouseY)
-            For i As UInteger = 0 To mapProps.Length - 1 Step 2
-                Dim p1 As UInteger = UInteger.Parse(mapProps(i))
-                Dim p2 As String = mapProps(i + 1)
-                'Clipboard.SetText(mapVals(((mouseY * 40) + mouseX)) & ",0x" & Hex(mapVals(((mouseY * 40) + mouseX))))
-                If p1 = mapVals(((mouseY * 40) + mouseX)) Then
-                    mapPropCom.Text = p2
-                End If
-            Next
+            If mode = True Then 'Edit mode
+                mapVals((mouseY * 40) + mouseX) = UInteger.Parse(mapProps(Array.FindIndex(mapProps, Function(s) s = mapPropCom.Text) - 1))
+                updateImg()
+            Else                'View mode
+                For i As UInteger = 0 To mapProps.Length - 1 Step 2
+                    Dim p1 As UInteger = UInteger.Parse(mapProps(i))
+                    Dim p2 As String = mapProps(i + 1)
+                    If p1 = mapVals(((mouseY * 40) + mouseX)) Then
+                        mapPropCom.Text = p2
+                    End If
+                Next
+            End If
         End If
     End Sub
 
+    Public Function getMapVals()
+        Return mapVals
+    End Function
+
     Private Sub mapPropSet_Click(sender As Object, e As EventArgs) Handles mapPropSet.Click
-        mapVals((mouseY * 40) + mouseX) = UInteger.Parse(Array.FindIndex(mapProps, Function(s) s = mapPropCom.Text) - 1)
-        updateImg()
+        If mode = True Then
+            mode = False
+            mapPropSet.Text = "Edit"
+        Else
+            mode = True
+            mapPropSet.Text = "View"
+        End If
     End Sub
 
     Private Sub mapPropSave_Click(sender As Object, e As EventArgs) Handles mapPropSave.Click
-        MessageBox.Show("Not finished.")
+        FrmMain.saveMapProps(mapWidth, mapHeight, mapVals)
     End Sub
 
 #Region "GUI"

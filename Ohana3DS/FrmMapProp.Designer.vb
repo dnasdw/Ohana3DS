@@ -29,9 +29,9 @@ Partial Class FrmMapProp
         Me.mapPropSave = New System.Windows.Forms.Button()
         Me.LblMapProp = New System.Windows.Forms.Label()
         Me.mapCoords = New System.Windows.Forms.Label()
-        Me.Title = New Ohana3DS.MyWindowTitle()
         Me.mapPropCom = New System.Windows.Forms.ComboBox()
         Me.mapPropSet = New System.Windows.Forms.Button()
+        Me.Title = New Ohana3DS.MyWindowTitle()
         CType(Me.mapPicBox, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
@@ -103,18 +103,6 @@ Partial Class FrmMapProp
         Me.mapCoords.Size = New System.Drawing.Size(0, 13)
         Me.mapCoords.TabIndex = 27
         '
-        'Title
-        '
-        Me.Title.AutoSize = True
-        Me.Title.BackColor = System.Drawing.Color.Transparent
-        Me.Title.Font = New System.Drawing.Font("Segoe UI Semibold", 14.25!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.Title.ForeColor = System.Drawing.Color.White
-        Me.Title.Location = New System.Drawing.Point(14, 4)
-        Me.Title.Name = "Title"
-        Me.Title.Size = New System.Drawing.Size(240, 25)
-        Me.Title.TabIndex = 22
-        Me.Title.Text = "OhanaXY - Map Properties"
-        '
         'mapPropCom
         '
         Me.mapPropCom.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
@@ -135,8 +123,20 @@ Partial Class FrmMapProp
         Me.mapPropSet.Name = "mapPropSet"
         Me.mapPropSet.Size = New System.Drawing.Size(56, 23)
         Me.mapPropSet.TabIndex = 29
-        Me.mapPropSet.Text = "Set"
+        Me.mapPropSet.Text = "Edit"
         Me.mapPropSet.UseVisualStyleBackColor = False
+        '
+        'Title
+        '
+        Me.Title.AutoSize = True
+        Me.Title.BackColor = System.Drawing.Color.Transparent
+        Me.Title.Font = New System.Drawing.Font("Segoe UI Semibold", 14.25!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+        Me.Title.ForeColor = System.Drawing.Color.White
+        Me.Title.Location = New System.Drawing.Point(14, 4)
+        Me.Title.Name = "Title"
+        Me.Title.Size = New System.Drawing.Size(240, 25)
+        Me.Title.TabIndex = 22
+        Me.Title.Text = "OhanaXY - Map Properties"
         '
         'FrmMapProp
         '

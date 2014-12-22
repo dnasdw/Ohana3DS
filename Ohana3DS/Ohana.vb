@@ -93,6 +93,7 @@ Public Class Ohana
     Public Rotation As Vector2
     Public Translation As Vector2
 
+    Private Max_X_Neg, Max_X_Pos As Single
     Public Max_Y_Neg, Max_Y_Pos As Single
 
     Public Rendering As Boolean
@@ -105,6 +106,7 @@ Public Class Ohana
     Public Selected_Object As Integer
     Public Selected_Face As Integer
     Public Edit_Mode As Boolean
+    Public Map_Properties_Mode As Boolean
 
     Public Texture_Insertion_Percentage As Single
 
@@ -179,11 +181,17 @@ Public Class Ohana
 
         'Reset
         Total_Vertex = 0
+        Max_X_Neg = 0
+        Max_X_Pos = 0
         Max_Y_Neg = 0
         Max_Y_Pos = 0
         Model_Object = Nothing
         Current_Model = Nothing
         FrmMain.BtnModelMapEditor.Enabled = False
+        FrmMain.BtnModelExport.Enabled = False
+        FrmMain.BtnModelSave.Enabled = False
+        FrmMain.BtnModelVertexEditor.Enabled = False
+        FrmMain.BtnModelTexturesMore.Enabled = False
         If Temp_Model_File <> Nothing Then
             File.Delete(Temp_Model_File)
             Temp_Model_File = Nothing
@@ -210,6 +218,17 @@ Public Class Ohana
             FrmMain.BtnModelMapEditor.Enabled = True
         Else
             Return False
+        End If
+
+        If Magic_2_Bytes = "MM" Or _
+            Magic_2_Bytes = "TM" Or _
+            Magic_2_Bytes = "PC" Or _
+            Magic_2_Bytes = "GR" Or _
+            Magic = "BCH" Then
+            FrmMain.BtnModelExport.Enabled = True
+            FrmMain.BtnModelSave.Enabled = True
+            FrmMain.BtnModelVertexEditor.Enabled = True
+            FrmMain.BtnModelTexturesMore.Enabled = True
         End If
 
         Load_Scale = Scale
@@ -409,6 +428,8 @@ Public Class Ohana
                             .V = BitConverter.ToSingle(Data, Offset + 28)
                     End Select
 
+                    If .X > Max_X_Pos Then Max_X_Pos = .X
+                    If .X < Max_X_Neg Then Max_X_Neg = .X
                     If .Y > Max_Y_Pos Then Max_Y_Pos = .Y
                     If .Y < Max_Y_Neg Then Max_Y_Neg = .Y
                 End With
