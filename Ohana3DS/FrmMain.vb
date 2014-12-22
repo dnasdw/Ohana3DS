@@ -254,8 +254,8 @@ Public Class FrmMain
         Dim OpenDlg As New OpenFileDialog
         OpenDlg.Title = "Open Pokémon BCH model"
         OpenDlg.Filter = "BCH Model|*.*"
-        First_Click = True
         If OpenDlg.ShowDialog = Windows.Forms.DialogResult.OK Then
+            First_Click = True
             If File.Exists(OpenDlg.FileName) Then Open_Model(OpenDlg.FileName)
         End If
     End Sub
@@ -1207,6 +1207,7 @@ Public Class FrmMain
             FrmMapProp.makeMapIMG(MapProps())
         End If
     End Sub
+
     Private Function MapProps() As Byte()
         Dim br As New BinaryReader(System.IO.File.OpenRead(MyOhana.Current_Model))
         Dim buff As Byte() = br.ReadBytes(&H10)
@@ -1215,4 +1216,23 @@ Public Class FrmMain
         br.Close()
         Return buff
     End Function
+
+    Public Sub saveMapProps(ByVal w As Short, ByVal h As Short, ByVal mapVals As UInteger())
+        Using dataStream As FileStream = New FileStream(MyOhana.Current_Model, FileMode.Open)
+            Using bw As New BinaryWriter(dataStream)
+                Try
+                    bw.BaseStream.Position = &H80
+                    bw.Write(w)
+                    bw.Write(h)
+                    For i As Integer = 0 To mapVals.Length - 1
+                        bw.Write(mapVals(i))
+                    Next
+                    bw.Close()
+                Catch ex As Exception
+                    Console.WriteLine(ex.StackTrace)
+                End Try
+            End Using
+            MessageBox.Show("Saved map!")
+        End Using
+    End Sub
 End Class

@@ -229,6 +229,7 @@ Partial Class FrmMain
         '
         'BtnModelSave
         '
+        Me.BtnModelSave.Enabled = False
         Me.BtnModelSave.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
         Me.BtnModelSave.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
         Me.BtnModelSave.FlatStyle = System.Windows.Forms.FlatStyle.Flat
@@ -241,6 +242,7 @@ Partial Class FrmMain
         '
         'BtnModelVertexEditor
         '
+        Me.BtnModelVertexEditor.Enabled = False
         Me.BtnModelVertexEditor.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
         Me.BtnModelVertexEditor.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
         Me.BtnModelVertexEditor.FlatStyle = System.Windows.Forms.FlatStyle.Flat
@@ -285,6 +287,7 @@ Partial Class FrmMain
         '
         'BtnModelExport
         '
+        Me.BtnModelExport.Enabled = False
         Me.BtnModelExport.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
         Me.BtnModelExport.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
         Me.BtnModelExport.FlatStyle = System.Windows.Forms.FlatStyle.Flat
@@ -337,6 +340,7 @@ Partial Class FrmMain
         '
         'BtnModelTexturesMore
         '
+        Me.BtnModelTexturesMore.Enabled = False
         Me.BtnModelTexturesMore.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
         Me.BtnModelTexturesMore.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
         Me.BtnModelTexturesMore.FlatStyle = System.Windows.Forms.FlatStyle.Flat
