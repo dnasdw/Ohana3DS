@@ -98,7 +98,7 @@ Partial Class FrmMapProp
         Me.mapCoords.AutoSize = True
         Me.mapCoords.BackColor = System.Drawing.Color.Transparent
         Me.mapCoords.ForeColor = System.Drawing.Color.White
-        Me.mapCoords.Location = New System.Drawing.Point(12, 41)
+        Me.mapCoords.Location = New System.Drawing.Point(9, 41)
         Me.mapCoords.Name = "mapCoords"
         Me.mapCoords.Size = New System.Drawing.Size(0, 13)
         Me.mapCoords.TabIndex = 27
@@ -132,18 +132,18 @@ Partial Class FrmMapProp
         Me.Title.BackColor = System.Drawing.Color.Transparent
         Me.Title.Font = New System.Drawing.Font("Segoe UI Semibold", 14.25!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.Title.ForeColor = System.Drawing.Color.White
-        Me.Title.Location = New System.Drawing.Point(14, 4)
+        Me.Title.Location = New System.Drawing.Point(101, 4)
         Me.Title.Name = "Title"
-        Me.Title.Size = New System.Drawing.Size(240, 25)
+        Me.Title.Size = New System.Drawing.Size(143, 25)
         Me.Title.TabIndex = 22
-        Me.Title.Text = "OhanaXY - Map Properties"
+        Me.Title.Text = "Map Properties"
         '
         'FrmMapProp
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.BackgroundImage = CType(resources.GetObject("$this.BackgroundImage"), System.Drawing.Image)
-        Me.ClientSize = New System.Drawing.Size(344, 419)
+        Me.ClientSize = New System.Drawing.Size(344, 416)
         Me.Controls.Add(Me.mapPropSet)
         Me.Controls.Add(Me.mapPropCom)
         Me.Controls.Add(Me.mapCoords)
@@ -156,7 +156,7 @@ Partial Class FrmMapProp
         Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None
         Me.Name = "FrmMapProp"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
-        Me.Text = "FrmMapProp"
+        Me.Text = "Map Properties"
         Me.TopMost = True
         CType(Me.mapPicBox, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)

@@ -9,7 +9,6 @@ Public Class FrmMain
 #Region "Declares"
     'Classes de textos, Compressão/Extração
     Dim MyMinko As New Minko
-    Dim MyNako As New Nako
 
     'Movimentação do modelo
     Dim Rot_InitX, Rot_InitY, Rot_FinalX, Rot_FinalY As Integer
@@ -108,6 +107,12 @@ Public Class FrmMain
         MyNako.Fast_Compression = My.Settings.FastCompression
         If MyNako.Fast_Compression Then BtnGARCCompression.Text = "Fast compression"
 
+        Disable_Model_Buttons()
+        Disable_Texture_Buttons()
+        Disable_Text_Buttons()
+        Disable_GARC_Buttons()
+        BtnROMDecrypt.Enabled = False
+
         MyOhana.Initialize(Screen)
         Show()
         MyOhana.Render()
@@ -125,7 +130,7 @@ Public Class FrmMain
                                 Do
                                     Dim CurrFile As String = Input_Files(Index - i).FullName
                                     If IsModel(CurrFile) Then
-                                        If Open_Model(CurrFile, False, False) Then Exit Sub
+                                        If Open_Model(CurrFile, False) Then Exit Sub
                                     End If
                                     i += 1
                                     If Index - i < 1 Then Exit For
@@ -140,7 +145,7 @@ Public Class FrmMain
                                 Do
                                     Dim CurrFile As String = Input_Files(Index + i).FullName
                                     If IsModel(CurrFile) Then
-                                        If Open_Model(CurrFile, False, False) Then Exit Sub
+                                        If Open_Model(CurrFile, False) Then Exit Sub
                                     End If
                                     i += 1
                                     If Index + i > Input_Files.Count - 2 Then Exit Sub
@@ -202,6 +207,7 @@ Public Class FrmMain
         Dim Magic_3_Bytes As String = ReadMagic(Temp, 0, 3)
         Dim Magic_4_Bytes As String = ReadMagic(Temp, 0, 4)
         Dim CLIM_Magic As String = ReadMagic(Temp, Convert.ToInt32(Temp.Length - 40), 4)
+        Dim Text_Check As Boolean = Read32(Temp, 4) = Temp.Length - &H10
         Temp.Close()
 
         If Magic_2_Bytes = "PC" Or Magic_2_Bytes = "MM" Or Magic_2_Bytes = "GR" Or Magic_3_Bytes = "BCH" Then
@@ -213,6 +219,9 @@ Public Class FrmMain
         ElseIf Magic_4_Bytes = "CRAG" Then
             MainTabs.SelectTab(3)
             Open_GARC(File_Name)
+        ElseIf Text_Check Then
+            MainTabs.SelectTab(2)
+            Open_Text(File_Name)
         End If
     End Sub
     Private Function IsModel(File_Name As String) As Boolean
@@ -306,17 +315,8 @@ Public Class FrmMain
             If File.Exists(OpenDlg.FileName) Then Open_Model(OpenDlg.FileName)
         End If
     End Sub
-    Private Function Open_Model(File_Name As String, Optional Show_Warning As Boolean = True, Optional Reset_Info As Boolean = True) As Boolean
+    Private Function Open_Model(File_Name As String, Optional Show_Warning As Boolean = True) As Boolean
         Dim Response As Boolean
-
-        If Reset_Info Then
-            LblModelName.Text = Nothing
-            ModelNameTip.SetToolTip(LblModelName, Nothing)
-            LblInfoVertices.Text = "0"
-            LblInfoTriangles.Text = "0"
-            LblInfoBones.Text = "0"
-            LblInfoTextures.Text = "0"
-        End If
 
         Try
             Current_Model = File_Name
@@ -328,6 +328,7 @@ Public Class FrmMain
                 ModelNameTip.SetToolTip(LblModelName, LblModelName.Text)
 
                 If MyOhana.BCH_Have_Textures Then
+                    Enable_Texture_Buttons()
                     LstTextures.Clear()
                     ImgTexture.Image = Nothing
 
@@ -354,6 +355,14 @@ Public Class FrmMain
                 LblInfoTriangles.Text = MyOhana.Info.Triangles_Count.ToString()
                 LblInfoBones.Text = MyOhana.Info.Bones_Count.ToString()
                 LblInfoTextures.Text = MyOhana.Info.Textures_Count.ToString()
+
+                Enable_Model_Buttons()
+                If MyOhana.Magic.Substring(0, 2) = "GR" Then
+                    BtnModelMapEditor.Enabled = True
+                    If FrmMapProp.IsHandleCreated Then FrmMapProp.makeMapIMG(MapProps())
+                Else
+                    BtnModelMapEditor.Enabled = False
+                End If
             Else
                 If Show_Warning Then MessageBox.Show("This file is not a model file!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
             End If
@@ -363,12 +372,35 @@ Public Class FrmMain
             If Show_Warning Then MessageBox.Show("Sorry, something went wrong.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
 
+        If Not Response Then
+            LblModelName.Text = Nothing
+            ModelNameTip.SetToolTip(LblModelName, Nothing)
+            LblInfoVertices.Text = "0"
+            LblInfoTriangles.Text = "0"
+            LblInfoBones.Text = "0"
+            LblInfoTextures.Text = "0"
+            Disable_Model_Buttons()
+        End If
+
         Application.DoEvents() 'Processa o click que foi para o PictureBox, porém será ignorado devido ao First_Click
         First_Click = False
         Screen.Refresh()
 
         Return Response
     End Function
+    Private Sub Enable_Model_Buttons()
+        BtnModelExport.Enabled = True
+        BtnModelSave.Enabled = True
+        BtnModelVertexEditor.Enabled = True
+        BtnModelTexturesMore.Enabled = True
+    End Sub
+    Private Sub Disable_Model_Buttons()
+        BtnModelExport.Enabled = False
+        BtnModelSave.Enabled = False
+        BtnModelVertexEditor.Enabled = False
+        BtnModelMapEditor.Enabled = False
+        BtnModelTexturesMore.Enabled = False
+    End Sub
     Private Sub BtnModelExport_Click(sender As Object, e As EventArgs) Handles BtnModelExport.Click
         If MyOhana.Model_Object IsNot Nothing Then
             Dim SaveDlg As New SaveFileDialog
@@ -554,13 +586,33 @@ Public Class FrmMain
             ImgTexture.Image = Nothing
 
             MyOhana.Load_Textures(File_Name)
-            For Each Texture As Ohana.OhanaTexture In MyOhana.Model_Texture
-                LstTextures.AddItem(Texture.Name)
-            Next
-            LstTextures.Refresh()
+            If MyOhana.Model_Texture.Count > 0 Then
+                Enable_Texture_Buttons()
+                For Each Texture As Ohana.OhanaTexture In MyOhana.Model_Texture
+                    LstTextures.AddItem(Texture.Name)
+                Next
+                LstTextures.Refresh()
+            Else
+                Disable_Texture_Buttons()
+            End If
         Catch
+            Disable_Texture_Buttons()
             If Show_Warning Then MessageBox.Show("Sorry, something went wrong.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
+    End Sub
+    Private Sub Enable_Texture_Buttons()
+        BtnTextureExport.Enabled = True
+        BtnTextureExportAll.Enabled = True
+        BtnTextureInsert.Enabled = True
+        BtnTextureInsertAll.Enabled = True
+        BtnTextureSave.Enabled = True
+    End Sub
+    Private Sub Disable_Texture_Buttons()
+        BtnTextureExport.Enabled = False
+        BtnTextureExportAll.Enabled = False
+        BtnTextureInsert.Enabled = False
+        BtnTextureInsertAll.Enabled = False
+        BtnTextureSave.Enabled = False
     End Sub
     Private Sub LstTextures_SelectedIndexChanged(Index As Integer) Handles LstTextures.SelectedIndexChanged
         If Index > -1 Then
@@ -898,11 +950,30 @@ Public Class FrmMain
         OpenDlg.Title = "Open Text file"
         If OpenDlg.ShowDialog = DialogResult.OK Then
             If File.Exists(OpenDlg.FileName) Then
-                Current_Opened_Text = OpenDlg.FileName
-                MyMinko.Extract_Strings(OpenDlg.FileName)
-                Update_Texts()
+                Open_Text(OpenDlg.FileName)
             End If
         End If
+    End Sub
+    Private Sub Open_Text(File_Name As String)
+        Current_Opened_Text = File_Name
+        Try
+            MyMinko.Extract_Strings(File_Name)
+            Update_Texts()
+            Enable_Text_Buttons()
+        Catch
+            Disable_Text_Buttons()
+            MessageBox.Show("Sorry, something went wrong.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
+    Private Sub Enable_Text_Buttons()
+        BtnTextExport.Enabled = True
+        BtnTextImport.Enabled = True
+        BtnTextSave.Enabled = True
+    End Sub
+    Private Sub Disable_Text_Buttons()
+        BtnTextExport.Enabled = False
+        BtnTextImport.Enabled = False
+        BtnTextSave.Enabled = False
     End Sub
     Private Sub BtnTextExport_Click(sender As Object, e As EventArgs) Handles BtnTextExport.Click
         Dim SaveDlg As New SaveFileDialog
@@ -974,15 +1045,32 @@ Public Class FrmMain
 #Region "GARC"
     Private Sub BtnOpenGARC_Click(sender As Object, e As EventArgs) Handles BtnGARCOpen.Click
         Dim OpenDlg As New OpenFileDialog
-        OpenDlg.Title = "Open GARC container"
-        OpenDlg.Filter = "GARC file|*.*"
+        OpenDlg.Title = "Open container"
+        OpenDlg.Filter = "GARC/Container file|*.*"
         If OpenDlg.ShowDialog = Windows.Forms.DialogResult.OK Then
             Open_GARC(OpenDlg.FileName)
         End If
     End Sub
     Private Sub Open_GARC(File_Name As String)
-        MyNako.Load(File_Name)
-        Update_GARC_List()
+        If MyNako.Load(File_Name) Then
+            Update_GARC_List()
+            Enable_GARC_Buttons()
+        Else
+            Disable_GARC_Buttons()
+            MessageBox.Show("This is not a container from Pokémon!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End If
+    End Sub
+    Private Sub Enable_GARC_Buttons()
+        BtnGARCExtract.Enabled = True
+        BtnGARCExtractAll.Enabled = True
+        BtnGARCInsert.Enabled = True
+        BtnGARCSave.Enabled = True
+    End Sub
+    Private Sub Disable_GARC_Buttons()
+        BtnGARCExtract.Enabled = False
+        BtnGARCExtractAll.Enabled = False
+        BtnGARCInsert.Enabled = False
+        BtnGARCSave.Enabled = False
     End Sub
     Private Sub Update_GARC_List()
         LstFiles.Clear()
@@ -1167,111 +1255,7 @@ Public Class FrmMain
     End Sub
 #End Region
 
-#Region "Search"
-    Private Sub BtnSearch_Click(sender As Object, e As EventArgs) Handles BtnSearch.Click
-        If TxtSearch.Text <> Nothing Then
-            If Search_Thread IsNot Nothing Then
-                If Search_Thread.IsAlive Then
-                    Search_Thread.Abort()
-                    BtnSearch.Text = "Search"
-                    ProgressSearch.Text = Nothing
-                    ProgressSearch.Percentage = 0
-                    ProgressSearch.Refresh()
-
-                    Exit Sub
-                End If
-            End If
-
-            Dim InputDlg As New FolderBrowserDialog
-            If InputDlg.ShowDialog = Windows.Forms.DialogResult.OK Then
-                LstMatches.Clear()
-                Dim Header As MyListview.ListItem
-                ReDim Header.Text(1)
-                Header.Text(0).Text = "Name"
-                Header.Text(1).Left = 400
-                Header.Text(1).Text = "Offset"
-                Header.Header = True
-                LstMatches.AddItem(Header)
-                LstMatches.Refresh()
-
-                Search_Thread = New Thread(Sub() File_String_Search(InputDlg.SelectedPath, TxtSearch.Text))
-                Search_Thread.Start()
-
-                BtnSearch.Text = "Cancel"
-            End If
-        End If
-    End Sub
-    Private Sub File_String_Search(InFolder As String, Text As String)
-        Dim Index As Integer
-        Dim Input_Files() As FileInfo = New DirectoryInfo(InFolder).GetFiles()
-        Dim Search_Term() As Byte = Encoding.UTF8.GetBytes(Text)
-        For Each CurrFile As FileInfo In Input_Files
-            Update_Progress(ProgressSearch, Convert.ToSingle((Index / Input_Files.Count) * 100), "Searching on file " & CurrFile.Name & "...")
-            Index += 1
-
-            Dim Data() As Byte = File.ReadAllBytes(CurrFile.FullName)
-            Dim Found As Boolean = False
-            For Offset As Integer = 0 To Data.Length - Search_Term.Length
-                For Offset_2 As Integer = 0 To Search_Term.Length - 1
-                    If Data(Offset + Offset_2) <> Search_Term(Offset_2) Then
-                        Exit For
-                    ElseIf Offset_2 = Search_Term.Length - 1 Then
-                        Dim Item As MyListview.ListItem
-                        ReDim Item.Text(1)
-                        Item.Text(0).Text = CurrFile.Name
-                        Item.Text(1).Left = 400
-                        Item.Text(1).Text = "0x" & Hex(Offset)
-                        Add_List_Item(LstMatches, Item, True)
-                        Found = True
-                        Exit For
-                    End If
-                Next
-                If Found Then Exit For
-            Next
-        Next
-
-        Update_Progress(ProgressSearch, 0, Nothing)
-        Update_Button_Text(BtnSearch, "Search")
-    End Sub
-#End Region
-
-#End Region
-
-    Private Sub BtnModelMapEditor_Click(sender As Object, e As EventArgs) Handles BtnModelMapEditor.Click
-        If MyOhana.Magic.Substring(0, 2) = "GR" Then
-            FrmMapProp.Show()
-            FrmMapProp.makeMapIMG(MapProps())
-        End If
-    End Sub
-
-    Private Function MapProps() As Byte()
-        Dim br As New BinaryReader(System.IO.File.OpenRead(MyOhana.Current_Model))
-        Dim buff As Byte() = br.ReadBytes(&H10)
-        br.BaseStream.Position = &H80
-        buff = br.ReadBytes(Read32(buff, 8) - Read32(buff, 4))
-        br.Close()
-        Return buff
-    End Function
-
-    Public Sub saveMapProps(ByVal w As Short, ByVal h As Short, ByVal mapVals As UInteger())
-        Using dataStream As FileStream = New FileStream(MyOhana.Current_Model, FileMode.Open)
-            Using bw As New BinaryWriter(dataStream)
-                Try
-                    bw.BaseStream.Position = &H80
-                    bw.Write(w)
-                    bw.Write(h)
-                    For i As Integer = 0 To mapVals.Length - 1
-                        bw.Write(mapVals(i))
-                    Next
-                    bw.Close()
-                Catch ex As Exception
-                    Console.WriteLine(ex.StackTrace)
-                End Try
-            End Using
-            MessageBox.Show("Saved map!")
-        End Using
-    End Sub
-
+#Region "ROM"
     Private Sub BtnROMOpen_Click(sender As Object, e As EventArgs) Handles BtnROMOpen.Click
         Dim OpenDlg As New OpenFileDialog
         OpenDlg.Title = "Open ROM"
@@ -1282,6 +1266,7 @@ Public Class FrmMain
                 Dim ROM As New FileStream(OpenDlg.FileName, FileMode.Open)
                 Parse_Header(ROM)
                 ROM.Close()
+                If Current_XORPad <> Nothing Then BtnROMDecrypt.Enabled = True
             End If
         End If
     End Sub
@@ -1292,6 +1277,7 @@ Public Class FrmMain
         If OpenDlg.ShowDialog = DialogResult.OK Then
             If File.Exists(OpenDlg.FileName) Then
                 Current_XORPad = OpenDlg.FileName
+                If Current_ROM <> Nothing Then BtnROMDecrypt.Enabled = True
             End If
         End If
     End Sub
@@ -1527,4 +1513,111 @@ Public Class FrmMain
             End If
         End With
     End Sub
+#End Region
+
+#Region "Search"
+    Private Sub BtnSearch_Click(sender As Object, e As EventArgs) Handles BtnSearch.Click
+        If TxtSearch.Text <> Nothing Then
+            If Search_Thread IsNot Nothing Then
+                If Search_Thread.IsAlive Then
+                    Search_Thread.Abort()
+                    BtnSearch.Text = "Search"
+                    ProgressSearch.Text = Nothing
+                    ProgressSearch.Percentage = 0
+                    ProgressSearch.Refresh()
+
+                    Exit Sub
+                End If
+            End If
+
+            Dim InputDlg As New FolderBrowserDialog
+            If InputDlg.ShowDialog = Windows.Forms.DialogResult.OK Then
+                LstMatches.Clear()
+                Dim Header As MyListview.ListItem
+                ReDim Header.Text(1)
+                Header.Text(0).Text = "Name"
+                Header.Text(1).Left = 400
+                Header.Text(1).Text = "Offset"
+                Header.Header = True
+                LstMatches.AddItem(Header)
+                LstMatches.Refresh()
+
+                Search_Thread = New Thread(Sub() File_String_Search(InputDlg.SelectedPath, TxtSearch.Text))
+                Search_Thread.Start()
+
+                BtnSearch.Text = "Cancel"
+            End If
+        End If
+    End Sub
+    Private Sub File_String_Search(InFolder As String, Text As String)
+        Dim Index As Integer
+        Dim Input_Files() As FileInfo = New DirectoryInfo(InFolder).GetFiles()
+        Dim Search_Term() As Byte = Encoding.UTF8.GetBytes(Text)
+        For Each CurrFile As FileInfo In Input_Files
+            Update_Progress(ProgressSearch, Convert.ToSingle((Index / Input_Files.Count) * 100), "Searching on file " & CurrFile.Name & "...")
+            Index += 1
+
+            Dim Data() As Byte = File.ReadAllBytes(CurrFile.FullName)
+            Dim Found As Boolean = False
+            For Offset As Integer = 0 To Data.Length - Search_Term.Length
+                For Offset_2 As Integer = 0 To Search_Term.Length - 1
+                    If Data(Offset + Offset_2) <> Search_Term(Offset_2) Then
+                        Exit For
+                    ElseIf Offset_2 = Search_Term.Length - 1 Then
+                        Dim Item As MyListview.ListItem
+                        ReDim Item.Text(1)
+                        Item.Text(0).Text = CurrFile.Name
+                        Item.Text(1).Left = 400
+                        Item.Text(1).Text = "0x" & Hex(Offset)
+                        Add_List_Item(LstMatches, Item, True)
+                        Found = True
+                        Exit For
+                    End If
+                Next
+                If Found Then Exit For
+            Next
+        Next
+
+        Update_Progress(ProgressSearch, 0, Nothing)
+        Update_Button_Text(BtnSearch, "Search")
+    End Sub
+#End Region
+
+#End Region
+
+    Private Sub BtnModelMapEditor_Click(sender As Object, e As EventArgs) Handles BtnModelMapEditor.Click
+        If MyOhana.Magic.Substring(0, 2) = "GR" Then
+            FrmMapProp.Show()
+            FrmMapProp.makeMapIMG(MapProps())
+        End If
+    End Sub
+
+    Private Function MapProps() As Byte()
+        Dim br As New BinaryReader(System.IO.File.OpenRead(MyOhana.Current_Model))
+        Dim buff As Byte() = br.ReadBytes(&H10)
+        br.BaseStream.Position = &H80
+        buff = br.ReadBytes(Read32(buff, 8) - Read32(buff, 4))
+        br.Close()
+        Return buff
+    End Function
+
+    Public Sub saveMapProps(ByVal w As Short, ByVal h As Short, ByVal mapVals As UInteger())
+        Using dataStream As FileStream = New FileStream(MyOhana.Current_Model, FileMode.Open)
+            Using bw As New BinaryWriter(dataStream)
+                Try
+                    bw.BaseStream.Position = &H80
+                    bw.Write(w)
+                    bw.Write(h)
+                    For i As Integer = 0 To mapVals.Length - 1
+                        bw.Write(mapVals(i))
+                    Next
+                    bw.Close()
+                Catch ex As Exception
+                    Console.WriteLine(ex.StackTrace)
+                End Try
+            End Using
+            MessageBox.Show("Saved map!")
+        End Using
+    End Sub
+
 End Class

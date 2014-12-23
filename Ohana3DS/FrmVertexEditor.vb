@@ -42,28 +42,6 @@ Public Class FrmVertexEditor
         End Select
     End Sub
 
-    Private Sub BtnClose_Click(sender As Object, e As EventArgs) Handles BtnClose.Click
-        MyOhana.Edit_Mode = False
-        Me.Close()
-    End Sub
-    Private Sub BtnMinimize_Click(sender As Object, e As EventArgs) Handles BtnMinimize.Click
-        Me.WindowState = FormWindowState.Minimized
-    End Sub
-    Private Sub Button_MouseEnter(sender As Object, e As EventArgs) Handles BtnMinimize.MouseEnter
-        Dim Lbl As Label = CType(sender, Label)
-        Lbl.BackColor = Color.FromArgb(15, 82, 186)
-        Lbl.ForeColor = Color.White
-    End Sub
-    Private Sub BtnClose_MouseEnter(sender As Object, e As EventArgs) Handles BtnClose.MouseEnter
-        Dim Lbl As Label = CType(sender, Label)
-        Lbl.BackColor = Color.Crimson
-        Lbl.ForeColor = Color.WhiteSmoke
-    End Sub
-    Private Sub Button_MouseLeave(sender As Object, e As EventArgs) Handles BtnClose.MouseLeave, BtnMinimize.MouseLeave
-        Dim Lbl As Label = CType(sender, Label)
-        Lbl.BackColor = Color.Transparent
-        Lbl.ForeColor = Color.White
-    End Sub
     Private Sub FrmVertexEditor_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         LstObjects.Clear()
 
@@ -77,7 +55,9 @@ Public Class FrmVertexEditor
         Next
 
         LstObjects.Refresh()
-
+    End Sub
+    Private Sub FrmMapProp_FormClosing(sender As Object, e As EventArgs) Handles MyBase.FormClosing
+        MyOhana.Edit_Mode = False
     End Sub
 
     Private Sub LstObjects_SelectedIndexChanged(Index As Integer) Handles LstObjects.SelectedIndexChanged
@@ -220,4 +200,29 @@ Public Class FrmVertexEditor
             End If
         End If
     End Sub
+
+#Region "GUI"
+    Private Sub BtnClose_Click(sender As Object, e As EventArgs) Handles BtnClose.Click
+        Me.Close()
+    End Sub
+    Private Sub BtnMinimize_Click(sender As Object, e As EventArgs) Handles BtnMinimize.Click
+        Me.WindowState = FormWindowState.Minimized
+    End Sub
+    Private Sub Button_MouseEnter(sender As Object, e As EventArgs) Handles BtnMinimize.MouseEnter
+        Dim Lbl As Label = CType(sender, Label)
+        Lbl.BackColor = Color.FromArgb(15, 82, 186)
+        Lbl.ForeColor = Color.White
+    End Sub
+    Private Sub BtnClose_MouseEnter(sender As Object, e As EventArgs) Handles BtnClose.MouseEnter
+        Dim Lbl As Label = CType(sender, Label)
+        Lbl.BackColor = Color.Crimson
+        Lbl.ForeColor = Color.WhiteSmoke
+    End Sub
+    Private Sub Button_MouseLeave(sender As Object, e As EventArgs) Handles BtnClose.MouseLeave, BtnMinimize.MouseLeave
+        Dim Lbl As Label = CType(sender, Label)
+        Lbl.BackColor = Color.Transparent
+        Lbl.ForeColor = Color.White
+    End Sub
+#End Region
+
 End Class

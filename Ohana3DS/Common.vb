@@ -1,6 +1,7 @@
 ﻿Imports System.IO
 Module Common
     Public MyOhana As New Ohana
+    Public MyNako As New Nako
 
     Public Power_Of_Two(7) As Byte
     Public Function Read64(Data As FileStream, Address As Integer) As UInt64

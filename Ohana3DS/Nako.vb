@@ -23,50 +23,76 @@ Public Class Nako
 
     Public Compression_Percentage As Single
     Public Fast_Compression As Boolean = False
-    Public Sub Load(File_Name As String)
+    Public Function Load(File_Name As String) As Boolean
         Current_File = File_Name
         Dim InFile As New FileStream(File_Name, FileMode.Open)
 
-        If StrReverse(ReadMagic(InFile, 0, 4)) <> "GARC" Then
-            MessageBox.Show("This file is not a GARC!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
-            Exit Sub
+        If StrReverse(ReadMagic(InFile, 0, 4)) = "GARC" Then
+            Data_Offset = Read32(InFile, &H10)
+            Dim FATO_Length As Integer = Read32(InFile, &H20)
+
+            '+======+
+            '| FATB |
+            '+======+
+            FATB_Offset = &H20 + FATO_Length
+            Dim Total_Files As Integer = Read16(InFile, FATB_Offset + 4)
+            ReDim Files(Total_Files - 1)
+            Dim Offset As Integer = FATB_Offset + 8
+            For Current_File As Integer = 0 To Total_Files - 1
+                With Files(Current_File)
+                    .Bits = Read32(InFile, Offset)
+                    .Start_Offset = Read32(InFile, Offset + 4)
+                    .End_Offset = Read32(InFile, Offset + 8)
+                    .Length = Read32(InFile, Offset + 12)
+                    InFile.Seek(Data_Offset + .Start_Offset, SeekOrigin.Begin)
+                    If InFile.ReadByte() = &H11 Then
+                        .Compressed = True
+                        .Uncompressed_Length = Read24(InFile, Data_Offset + .Start_Offset + 1)
+                    Else
+                        .Uncompressed_Length = .Length
+                    End If
+                    Dim File_Magic As String = ReadMagic(InFile, Data_Offset + .Start_Offset + If(.Compressed, 5, 0), 4)
+                    Dim Format As String = Guess_Format(File_Magic)
+                    .Name = "file_" & Current_File & Format
+                End With
+                Offset += 16
+            Next
+        ElseIf Read32(InFile, 4) = &H80 Then
+            Dim Temp As New List(Of GARC_File)
+            Dim Index As Integer
+            For i As Integer = 4 To &H80 Step 4
+                Dim File As GARC_File
+                With File
+                    .Start_Offset = Read32(InFile, i)
+                    If .Start_Offset = InFile.Length Then Exit For
+                    .End_Offset = Read32(InFile, i + 4)
+                    .Length = .End_Offset - .Start_Offset
+                    InFile.Seek(.Start_Offset, SeekOrigin.Begin)
+                    If InFile.ReadByte() = &H11 Then
+                        .Compressed = True
+                        .Uncompressed_Length = Read24(InFile, .Start_Offset + 1)
+                    Else
+                        .Uncompressed_Length = .Length
+                    End If
+
+                    Dim File_Magic As String = ReadMagic(InFile, .Start_Offset + If(.Compressed, 5, 0), 4)
+                    Dim Format As String = Guess_Format(File_Magic)
+                    .Name = "file_" & Index & Format
+                    Index += 1
+                End With
+                Temp.Add(File)
+            Next
+            Files = Temp.ToArray()
+        Else
+            InFile.Close()
+            Return False
         End If
-
-        Data_Offset = Read32(InFile, &H10)
-        Dim FATO_Length As Integer = Read32(InFile, &H20)
-
-        '+======+
-        '| FATB |
-        '+======+
-        FATB_Offset = &H20 + FATO_Length
-        Dim Total_Files As Integer = Read16(InFile, FATB_Offset + 4)
-        ReDim Files(Total_Files - 1)
-        Dim Offset As Integer = FATB_Offset + 8
-        For Current_File As Integer = 0 To Total_Files - 1
-            With Files(Current_File)
-                .Bits = Read32(InFile, Offset)
-                .Start_Offset = Read32(InFile, Offset + 4)
-                .End_Offset = Read32(InFile, Offset + 8)
-                .Length = Read32(InFile, Offset + 12)
-                InFile.Seek(Data_Offset + .Start_Offset, SeekOrigin.Begin)
-                If InFile.ReadByte() = &H11 Then
-                    .Compressed = True
-                    .Uncompressed_Length = Read24(InFile, Data_Offset + .Start_Offset + 1)
-                Else
-                    .Uncompressed_Length = .Length
-                End If
-
-                Dim File_Magic As String = ReadMagic(InFile, Data_Offset + .Start_Offset + If(.Compressed, 5, 0), 4)
-                Dim Format As String = Guess_Format(File_Magic)
-                .Name = "file_" & Current_File & Format
-            End With
-            Offset += 16
-        Next
 
         InFile.Close()
 
         Inserted_Files = New List(Of Inserted_File)
-    End Sub
+        Return True
+    End Function
     Public Function Guess_Format(File_Magic As String) As String
         Dim Format As String
         Dim Temp As String = File_Magic.Substring(0, 2)
@@ -103,29 +129,52 @@ Public Class Nako
     End Sub
     Public Sub Insert()
         Dim Original_File As New FileStream(Current_File, FileMode.Open)
-        Dim Temp_GARC_File As String = Path.GetTempFileName
-        Dim Output_File As New BinaryWriter(New FileStream(Temp_GARC_File, FileMode.Create))
+        If StrReverse(ReadMagic(Original_File, 0, 4)) = "GARC" Then
+            Original_File.Seek(0, SeekOrigin.Begin)
+            Dim Temp_GARC_File As String = Path.GetTempFileName
+            Dim Output_File As New BinaryWriter(New FileStream(Temp_GARC_File, FileMode.Create))
 
-        Dim Header((FATB_Offset + 8) - 1) As Byte
-        Original_File.Read(Header, 0, Header.Length)
-        Output_File.Write(Header)
+            Dim Header((FATB_Offset + 8) - 1) As Byte
+            Original_File.Read(Header, 0, Header.Length)
+            Output_File.Write(Header)
 
-        Dim Dummy_Place_Holder As Int32 = 0
-        For i As Integer = 0 To Files.Count - 1
-            Output_File.Write(Dummy_Place_Holder) 'Bits
-            Output_File.Write(Dummy_Place_Holder) 'Offset inicial
-            Output_File.Write(Dummy_Place_Holder) 'Offset final
-            Output_File.Write(Dummy_Place_Holder) 'Tamanho
-        Next
+            Dim Dummy_Place_Holder As Int32 = 0
+            For i As Integer = 0 To Files.Count - 1
+                Output_File.Write(Dummy_Place_Holder) 'Bits
+                Output_File.Write(Dummy_Place_Holder) 'Offset inicial
+                Output_File.Write(Dummy_Place_Holder) 'Offset final
+                Output_File.Write(Dummy_Place_Holder) 'Tamanho
+            Next
 
-        Dim File_Index As Integer
-        Dim Offset As Integer
-        For Each File As GARC_File In Files
-            Dim Copy_Original As Boolean = True
-            For i As Integer = 0 To Inserted_Files.Count - 1
-                If Inserted_Files(i).Index = File_Index Then
-                    Dim Data() As Byte = IO.File.ReadAllBytes(Inserted_Files(i).File_Name)
-                    If File.Compressed And Data.Length < &H1000000 Then Data = LZSS_Compress(Data)
+            Dim File_Index As Integer
+            Dim Offset As Integer
+            For Each File As GARC_File In Files
+                Dim Copy_Original As Boolean = True
+                For i As Integer = 0 To Inserted_Files.Count - 1
+                    If Inserted_Files(i).Index = File_Index Then
+                        Dim Data() As Byte = IO.File.ReadAllBytes(Inserted_Files(i).File_Name)
+                        If File.Compressed And Data.Length < &H1000000 Then Data = LZSS_Compress(Data)
+
+                        Output_File.Seek((FATB_Offset + 8) + (File_Index * 16), SeekOrigin.Begin)
+                        Output_File.Write(File.Bits)
+                        Output_File.Write(Convert.ToInt32(Offset))
+                        Output_File.Write(Convert.ToInt32(Offset + Data.Length))
+                        Output_File.Write(Convert.ToInt32(Data.Length))
+
+                        Output_File.Seek(Data_Offset + Offset, SeekOrigin.Begin)
+                        Output_File.Write(Data)
+
+                        Offset += Data.Length
+
+                        Copy_Original = False
+                        Exit For
+                    End If
+                Next
+
+                If Copy_Original Then
+                    Dim Data(File.Length - 1) As Byte
+                    Original_File.Seek(Data_Offset + File.Start_Offset, SeekOrigin.Begin)
+                    Original_File.Read(Data, 0, Data.Length)
 
                     Output_File.Seek((FATB_Offset + 8) + (File_Index * 16), SeekOrigin.Begin)
                     Output_File.Write(File.Bits)
@@ -137,39 +186,67 @@ Public Class Nako
                     Output_File.Write(Data)
 
                     Offset += Data.Length
-
-                    Copy_Original = False
-                    Exit For
                 End If
+
+                File_Index += 1
             Next
 
-            If Copy_Original Then
-                Dim Data(File.Length - 1) As Byte
-                Original_File.Seek(Data_Offset + File.Start_Offset, SeekOrigin.Begin)
-                Original_File.Read(Data, 0, Data.Length)
+            Original_File.Close()
+            Output_File.Close()
 
-                Output_File.Seek((FATB_Offset + 8) + (File_Index * 16), SeekOrigin.Begin)
-                Output_File.Write(File.Bits)
-                Output_File.Write(Convert.ToInt32(Offset))
-                Output_File.Write(Convert.ToInt32(Offset + Data.Length))
-                Output_File.Write(Convert.ToInt32(Data.Length))
+            File.Delete(Current_File)
+            File.Copy(Temp_GARC_File, Current_File)
+        ElseIf Read32(Original_File, 4) = &H80 Then
+            Dim Stream As New MemoryStream
+            Dim New_Data As New BinaryWriter(Stream)
+            New_Data.Write(Read32(Original_File, 0)) 'Magic
+            Dim Out_Offset As Integer = &H80
+            Dim Index As Integer
+            For i As Integer = 4 To &H80 Step 4
+                Dim In_Offset As Integer = Read32(Original_File, i)
+                If In_Offset = Original_File.Length Then
+                    New_Data.Seek(i, SeekOrigin.Begin)
+                    Dim Len As Long = Stream.Length
+                    If (Len And &HFF) > 0 Then Len = (Len And &HFFFFFF00) + &H100
+                    New_Data.Write(Convert.ToInt32(Len))
+                    If Len <> Stream.Length Then
+                        New_Data.Seek(Convert.ToInt32(Len - 1), SeekOrigin.Begin)
+                        New_Data.Write(Convert.ToByte(0))
+                    End If
+                    Exit For
+                End If
+                Dim Length As Integer
+                Dim Copy_Original As Boolean = True
+                For j As Integer = 0 To Inserted_Files.Count - 1
+                    If Inserted_Files(j).Index = Index Then
+                        Dim Data() As Byte = File.ReadAllBytes(Inserted_Files(j).File_Name)
+                        If Files(Index).Compressed Then Data = LZSS_Compress(Data)
+                        Length = Data.Length
+                        If (Length And &HFF) > 0 Then Length = (Length And &HFFFFFF00) + &H100
+                        New_Data.Seek(Out_Offset, SeekOrigin.Begin)
+                        New_Data.Write(Data, 0, Data.Length)
 
-                Output_File.Seek(Data_Offset + Offset, SeekOrigin.Begin)
-                Output_File.Write(Data)
-
-                Offset += Data.Length
-            End If
-
-            File_Index += 1
-        Next
-
-        Original_File.Close()
-        Output_File.Close()
-
-        File.Delete(Current_File)
-        File.Copy(Temp_GARC_File, Current_File)
+                        Copy_Original = False
+                    End If
+                Next
+                If Copy_Original Then
+                    Length = Read32(Original_File, i + 4) - In_Offset
+                    Dim Buff(Length - 1) As Byte
+                    Original_File.Seek(In_Offset, SeekOrigin.Begin)
+                    Original_File.Read(Buff, 0, Buff.Length)
+                    New_Data.Seek(Out_Offset, SeekOrigin.Begin)
+                    New_Data.Write(Buff, 0, Buff.Length)
+                End If
+                New_Data.Seek(i, SeekOrigin.Begin)
+                New_Data.Write(Convert.ToInt32(Out_Offset))
+                Out_Offset += Length
+                Index += 1
+            Next
+            Original_File.Close()
+            File.WriteAllBytes(Current_File, Stream.ToArray())
+        End If
     End Sub
-    Public Shared Function LZSS_Decompress(InData() As Byte) As Byte()
+    Public Function LZSS_Decompress(InData() As Byte) As Byte()
         Dim Decompressed_Size As Integer = (Read32(InData, 0) And &HFFFFFF00) >> 8
         Dim Data(Decompressed_Size - 1) As Byte
         Dim Dic(&HFFF) As Byte
@@ -178,7 +255,7 @@ Public Class Nako
         Dim BitCount As Integer = 8
         Dim Dictionary_Offset As Integer
         Dim BitFlags As Integer
-        While Destination_Offset < Decompressed_Size And Source_Offset < InData.Length
+        While Destination_Offset < Decompressed_Size
             If BitCount = 8 Then
                 BitFlags = InData(Source_Offset)
                 Source_Offset += 1
@@ -236,7 +313,7 @@ Public Class Nako
 
         Return Data
     End Function
-    Private Function LZSS_Compress(InData() As Byte) As Byte()
+    Public Function LZSS_Compress(InData() As Byte) As Byte()
         Dim Dic(&HFFF) As Byte
         Dim Dictionary_Offset As Integer
 

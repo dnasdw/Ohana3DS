@@ -94,13 +94,6 @@ Partial Class FrmMain
         Me.BtnGARCOpen = New System.Windows.Forms.Button()
         Me.GrpFiles = New Ohana3DS.MyGroupbox()
         Me.LstFiles = New Ohana3DS.MyListview()
-        Me.SearchPage = New System.Windows.Forms.TabPage()
-        Me.GrpMatches = New Ohana3DS.MyGroupbox()
-        Me.LstMatches = New Ohana3DS.MyListview()
-        Me.GrpSearchOptions = New Ohana3DS.MyGroupbox()
-        Me.TxtSearch = New System.Windows.Forms.TextBox()
-        Me.ProgressSearch = New Ohana3DS.MyProgressbar()
-        Me.BtnSearch = New System.Windows.Forms.Button()
         Me.ROMPage = New System.Windows.Forms.TabPage()
         Me.GrpROMLog = New Ohana3DS.MyGroupbox()
         Me.LstROMLog = New Ohana3DS.MyListview()
@@ -108,6 +101,13 @@ Partial Class FrmMain
         Me.BtnROMDecrypt = New System.Windows.Forms.Button()
         Me.BtnROMOpenXorPad = New System.Windows.Forms.Button()
         Me.BtnROMOpen = New System.Windows.Forms.Button()
+        Me.SearchPage = New System.Windows.Forms.TabPage()
+        Me.GrpMatches = New Ohana3DS.MyGroupbox()
+        Me.LstMatches = New Ohana3DS.MyListview()
+        Me.GrpSearchOptions = New Ohana3DS.MyGroupbox()
+        Me.TxtSearch = New System.Windows.Forms.TextBox()
+        Me.ProgressSearch = New Ohana3DS.MyProgressbar()
+        Me.BtnSearch = New System.Windows.Forms.Button()
         Me.Title = New Ohana3DS.MyWindowTitle()
         CType(Me.Splash, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.MainTabs.SuspendLayout()
@@ -127,12 +127,12 @@ Partial Class FrmMain
         Me.GARCPage.SuspendLayout()
         Me.GrpGARCOptions.SuspendLayout()
         Me.GrpFiles.SuspendLayout()
-        Me.SearchPage.SuspendLayout()
-        Me.GrpMatches.SuspendLayout()
-        Me.GrpSearchOptions.SuspendLayout()
         Me.ROMPage.SuspendLayout()
         Me.GrpROMLog.SuspendLayout()
         Me.GrpROMOptions.SuspendLayout()
+        Me.SearchPage.SuspendLayout()
+        Me.GrpMatches.SuspendLayout()
+        Me.GrpSearchOptions.SuspendLayout()
         Me.SuspendLayout()
         '
         'BtnClose
@@ -176,8 +176,8 @@ Partial Class FrmMain
         Me.MainTabs.Controls.Add(Me.TexturePage)
         Me.MainTabs.Controls.Add(Me.TextPage)
         Me.MainTabs.Controls.Add(Me.GARCPage)
-        Me.MainTabs.Controls.Add(Me.SearchPage)
         Me.MainTabs.Controls.Add(Me.ROMPage)
+        Me.MainTabs.Controls.Add(Me.SearchPage)
         Me.MainTabs.DrawMode = System.Windows.Forms.TabDrawMode.OwnerDrawFixed
         Me.MainTabs.Font = New System.Drawing.Font("Segoe UI", 8.25!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.MainTabs.ItemSize = New System.Drawing.Size(56, 24)
@@ -833,7 +833,7 @@ Partial Class FrmMain
         Me.GARCPage.Name = "GARCPage"
         Me.GARCPage.Size = New System.Drawing.Size(768, 560)
         Me.GARCPage.TabIndex = 3
-        Me.GARCPage.Text = "GARC"
+        Me.GARCPage.Text = "Container"
         '
         'GrpGARCOptions
         '
@@ -953,83 +953,6 @@ Partial Class FrmMain
         Me.LstFiles.TabIndex = 7
         Me.LstFiles.TileHeight = 16
         '
-        'SearchPage
-        '
-        Me.SearchPage.BackColor = System.Drawing.Color.Transparent
-        Me.SearchPage.Controls.Add(Me.GrpMatches)
-        Me.SearchPage.Controls.Add(Me.GrpSearchOptions)
-        Me.SearchPage.ForeColor = System.Drawing.Color.White
-        Me.SearchPage.Location = New System.Drawing.Point(28, 4)
-        Me.SearchPage.Name = "SearchPage"
-        Me.SearchPage.Size = New System.Drawing.Size(768, 560)
-        Me.SearchPage.TabIndex = 4
-        Me.SearchPage.Text = "Search"
-        '
-        'GrpMatches
-        '
-        Me.GrpMatches.Controls.Add(Me.LstMatches)
-        Me.GrpMatches.ForeColor = System.Drawing.Color.White
-        Me.GrpMatches.Location = New System.Drawing.Point(0, 0)
-        Me.GrpMatches.Name = "GrpMatches"
-        Me.GrpMatches.Size = New System.Drawing.Size(768, 480)
-        Me.GrpMatches.TabIndex = 28
-        Me.GrpMatches.TabStop = False
-        Me.GrpMatches.Text = "Matches"
-        '
-        'LstMatches
-        '
-        Me.LstMatches.Location = New System.Drawing.Point(0, 18)
-        Me.LstMatches.Name = "LstMatches"
-        Me.LstMatches.SelectedIndex = -1
-        Me.LstMatches.Size = New System.Drawing.Size(768, 460)
-        Me.LstMatches.TabIndex = 3
-        Me.LstMatches.TileHeight = 16
-        '
-        'GrpSearchOptions
-        '
-        Me.GrpSearchOptions.BackColor = System.Drawing.Color.Transparent
-        Me.GrpSearchOptions.Controls.Add(Me.TxtSearch)
-        Me.GrpSearchOptions.Controls.Add(Me.ProgressSearch)
-        Me.GrpSearchOptions.Controls.Add(Me.BtnSearch)
-        Me.GrpSearchOptions.ForeColor = System.Drawing.Color.White
-        Me.GrpSearchOptions.Location = New System.Drawing.Point(0, 480)
-        Me.GrpSearchOptions.Name = "GrpSearchOptions"
-        Me.GrpSearchOptions.Size = New System.Drawing.Size(768, 80)
-        Me.GrpSearchOptions.TabIndex = 29
-        Me.GrpSearchOptions.TabStop = False
-        Me.GrpSearchOptions.Text = "Options"
-        '
-        'TxtSearch
-        '
-        Me.TxtSearch.BackColor = System.Drawing.Color.Black
-        Me.TxtSearch.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle
-        Me.TxtSearch.Font = New System.Drawing.Font("Segoe UI", 9.5!)
-        Me.TxtSearch.ForeColor = System.Drawing.Color.White
-        Me.TxtSearch.Location = New System.Drawing.Point(0, 18)
-        Me.TxtSearch.Name = "TxtSearch"
-        Me.TxtSearch.Size = New System.Drawing.Size(150, 24)
-        Me.TxtSearch.TabIndex = 1
-        '
-        'ProgressSearch
-        '
-        Me.ProgressSearch.Location = New System.Drawing.Point(0, 48)
-        Me.ProgressSearch.Name = "ProgressSearch"
-        Me.ProgressSearch.Percentage = 0.0!
-        Me.ProgressSearch.Size = New System.Drawing.Size(228, 24)
-        Me.ProgressSearch.TabIndex = 0
-        '
-        'BtnSearch
-        '
-        Me.BtnSearch.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
-        Me.BtnSearch.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
-        Me.BtnSearch.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        Me.BtnSearch.Location = New System.Drawing.Point(156, 18)
-        Me.BtnSearch.Name = "BtnSearch"
-        Me.BtnSearch.Size = New System.Drawing.Size(72, 24)
-        Me.BtnSearch.TabIndex = 2
-        Me.BtnSearch.Text = "Search"
-        Me.BtnSearch.UseVisualStyleBackColor = True
-        '
         'ROMPage
         '
         Me.ROMPage.BackColor = System.Drawing.Color.Transparent
@@ -1113,17 +1036,94 @@ Partial Class FrmMain
         Me.BtnROMOpen.Text = "Open"
         Me.BtnROMOpen.UseVisualStyleBackColor = True
         '
+        'SearchPage
+        '
+        Me.SearchPage.BackColor = System.Drawing.Color.Transparent
+        Me.SearchPage.Controls.Add(Me.GrpMatches)
+        Me.SearchPage.Controls.Add(Me.GrpSearchOptions)
+        Me.SearchPage.ForeColor = System.Drawing.Color.White
+        Me.SearchPage.Location = New System.Drawing.Point(28, 4)
+        Me.SearchPage.Name = "SearchPage"
+        Me.SearchPage.Size = New System.Drawing.Size(768, 560)
+        Me.SearchPage.TabIndex = 4
+        Me.SearchPage.Text = "Search"
+        '
+        'GrpMatches
+        '
+        Me.GrpMatches.Controls.Add(Me.LstMatches)
+        Me.GrpMatches.ForeColor = System.Drawing.Color.White
+        Me.GrpMatches.Location = New System.Drawing.Point(0, 0)
+        Me.GrpMatches.Name = "GrpMatches"
+        Me.GrpMatches.Size = New System.Drawing.Size(768, 480)
+        Me.GrpMatches.TabIndex = 28
+        Me.GrpMatches.TabStop = False
+        Me.GrpMatches.Text = "Matches"
+        '
+        'LstMatches
+        '
+        Me.LstMatches.Location = New System.Drawing.Point(0, 18)
+        Me.LstMatches.Name = "LstMatches"
+        Me.LstMatches.SelectedIndex = -1
+        Me.LstMatches.Size = New System.Drawing.Size(768, 460)
+        Me.LstMatches.TabIndex = 3
+        Me.LstMatches.TileHeight = 16
+        '
+        'GrpSearchOptions
+        '
+        Me.GrpSearchOptions.BackColor = System.Drawing.Color.Transparent
+        Me.GrpSearchOptions.Controls.Add(Me.TxtSearch)
+        Me.GrpSearchOptions.Controls.Add(Me.ProgressSearch)
+        Me.GrpSearchOptions.Controls.Add(Me.BtnSearch)
+        Me.GrpSearchOptions.ForeColor = System.Drawing.Color.White
+        Me.GrpSearchOptions.Location = New System.Drawing.Point(0, 480)
+        Me.GrpSearchOptions.Name = "GrpSearchOptions"
+        Me.GrpSearchOptions.Size = New System.Drawing.Size(768, 80)
+        Me.GrpSearchOptions.TabIndex = 29
+        Me.GrpSearchOptions.TabStop = False
+        Me.GrpSearchOptions.Text = "Options"
+        '
+        'TxtSearch
+        '
+        Me.TxtSearch.BackColor = System.Drawing.Color.Black
+        Me.TxtSearch.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle
+        Me.TxtSearch.Font = New System.Drawing.Font("Segoe UI", 9.5!)
+        Me.TxtSearch.ForeColor = System.Drawing.Color.White
+        Me.TxtSearch.Location = New System.Drawing.Point(0, 18)
+        Me.TxtSearch.Name = "TxtSearch"
+        Me.TxtSearch.Size = New System.Drawing.Size(150, 24)
+        Me.TxtSearch.TabIndex = 1
+        '
+        'ProgressSearch
+        '
+        Me.ProgressSearch.Location = New System.Drawing.Point(0, 48)
+        Me.ProgressSearch.Name = "ProgressSearch"
+        Me.ProgressSearch.Percentage = 0.0!
+        Me.ProgressSearch.Size = New System.Drawing.Size(228, 24)
+        Me.ProgressSearch.TabIndex = 0
+        '
+        'BtnSearch
+        '
+        Me.BtnSearch.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent
+        Me.BtnSearch.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black
+        Me.BtnSearch.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        Me.BtnSearch.Location = New System.Drawing.Point(156, 18)
+        Me.BtnSearch.Name = "BtnSearch"
+        Me.BtnSearch.Size = New System.Drawing.Size(72, 24)
+        Me.BtnSearch.TabIndex = 2
+        Me.BtnSearch.Text = "Search"
+        Me.BtnSearch.UseVisualStyleBackColor = True
+        '
         'Title
         '
         Me.Title.AutoSize = True
         Me.Title.BackColor = System.Drawing.Color.Transparent
         Me.Title.Font = New System.Drawing.Font("Segoe UI Semibold", 14.25!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.Title.ForeColor = System.Drawing.Color.White
-        Me.Title.Location = New System.Drawing.Point(355, 4)
+        Me.Title.Location = New System.Drawing.Point(349, 4)
         Me.Title.Name = "Title"
-        Me.Title.Size = New System.Drawing.Size(91, 25)
+        Me.Title.Size = New System.Drawing.Size(103, 25)
         Me.Title.TabIndex = 18
-        Me.Title.Text = "OhanaXY"
+        Me.Title.Text = "Ohana3DS"
         '
         'FrmMain
         '
@@ -1143,7 +1143,7 @@ Partial Class FrmMain
         Me.MaximizeBox = False
         Me.Name = "FrmMain"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
-        Me.Text = "OhanaXY by gdkchan"
+        Me.Text = "Ohana3DS"
         CType(Me.Splash, System.ComponentModel.ISupportInitialize).EndInit()
         Me.MainTabs.ResumeLayout(False)
         Me.ModelPage.ResumeLayout(False)
@@ -1164,13 +1164,13 @@ Partial Class FrmMain
         Me.GARCPage.ResumeLayout(False)
         Me.GrpGARCOptions.ResumeLayout(False)
         Me.GrpFiles.ResumeLayout(False)
+        Me.ROMPage.ResumeLayout(False)
+        Me.GrpROMLog.ResumeLayout(False)
+        Me.GrpROMOptions.ResumeLayout(False)
         Me.SearchPage.ResumeLayout(False)
         Me.GrpMatches.ResumeLayout(False)
         Me.GrpSearchOptions.ResumeLayout(False)
         Me.GrpSearchOptions.PerformLayout()
-        Me.ROMPage.ResumeLayout(False)
-        Me.GrpROMLog.ResumeLayout(False)
-        Me.GrpROMOptions.ResumeLayout(False)
         Me.ResumeLayout(False)
         Me.PerformLayout()
 

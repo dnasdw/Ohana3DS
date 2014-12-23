@@ -187,11 +187,6 @@ Public Class Ohana
         Max_Y_Pos = 0
         Model_Object = Nothing
         Current_Model = Nothing
-        FrmMain.BtnModelMapEditor.Enabled = False
-        FrmMain.BtnModelExport.Enabled = False
-        FrmMain.BtnModelSave.Enabled = False
-        FrmMain.BtnModelVertexEditor.Enabled = False
-        FrmMain.BtnModelTexturesMore.Enabled = False
         If Temp_Model_File <> Nothing Then
             File.Delete(Temp_Model_File)
             Temp_Model_File = Nothing
@@ -215,20 +210,8 @@ Public Class Ohana
         ElseIf Magic_2_Bytes = "GR" Then
             BCH_Offset = Read32(Temp, 8)
             Model_Type = ModelType.Map
-            FrmMain.BtnModelMapEditor.Enabled = True
         Else
             Return False
-        End If
-
-        If Magic_2_Bytes = "MM" Or _
-            Magic_2_Bytes = "TM" Or _
-            Magic_2_Bytes = "PC" Or _
-            Magic_2_Bytes = "GR" Or _
-            Magic = "BCH" Then
-            FrmMain.BtnModelExport.Enabled = True
-            FrmMain.BtnModelSave.Enabled = True
-            FrmMain.BtnModelVertexEditor.Enabled = True
-            FrmMain.BtnModelTexturesMore.Enabled = True
         End If
 
         Load_Scale = Scale
@@ -456,7 +439,11 @@ Public Class Ohana
         Dim Name_Table_Length As Integer
         If Version = BCH_Version.XY Then
             If Model_Type = ModelType.Character Then
-                Name_Table_Base_Pointer = 8
+                If Magic_2_Bytes = "MM" Then
+                    Name_Table_Base_Pointer = &HC
+                Else
+                    Name_Table_Base_Pointer = 8
+                End If
             ElseIf Model_Type = ModelType.Map Then
                 Name_Table_Base_Pointer = &H14
             End If
@@ -683,11 +670,7 @@ Public Class Ohana
         Temp_Texture_File = Path.GetTempFileName
         File.WriteAllBytes(Temp_Texture_File, Data)
 
-        Dim CLIM_Magic As String = Nothing
-        For i As Integer = Data.Length - &H28 To Data.Length - &H25
-            CLIM_Magic &= Chr(Data(i))
-        Next
-
+        Dim CLIM_Magic As String = ReadMagic(Data, Data.Length - &H28, 4)
         If CLIM_Magic = "CLIM" Then
             Model_Texture = New List(Of OhanaTexture)
 
@@ -998,9 +981,9 @@ Public Class Ohana
                                 Offset += 2
                             Case 4 'R4G4B4A4
                                 Dim Pixel_Data As Integer = Read16(Data, Offset)
-                                Out(Out_Offset) = Convert.ToByte(((Pixel_Data >> 12) And &HF) * &H11)
+                                Out(Out_Offset + 2) = Convert.ToByte(((Pixel_Data >> 12) And &HF) * &H11)
                                 Out(Out_Offset + 1) = Convert.ToByte(((Pixel_Data >> 8) And &HF) * &H11)
-                                Out(Out_Offset + 2) = Convert.ToByte(((Pixel_Data >> 4) And &HF) * &H11)
+                                Out(Out_Offset) = Convert.ToByte(((Pixel_Data >> 4) And &HF) * &H11)
                                 Out(Out_Offset + 3) = Convert.ToByte((Pixel_Data And &HF) * &H11)
                                 Offset += 2
                             Case 5 'L8A8
@@ -1894,14 +1877,14 @@ Public Class Ohana
                         Switch_Lighting(False)
 
                         Dim Start_X, Start_Y As Single
-                        Start_X = -11.25F
-                        Start_Y = -11.25F
+                        Start_X = -360 / Load_Scale
+                        Start_Y = -360 / Load_Scale
 
                         Dim Verts As Integer = 40 * 40 * 6
                         Dim Vertex_Buffer As New VertexBuffer(GetType(CustomVertex.PositionColored), Verts, Device, Usage.None, CustomVertex.PositionColored.Format, Pool.Managed)
                         Dim Vertices(Verts - 1) As CustomVertex.PositionColored
                         Dim i As Integer = 0
-                        Dim Block_Size As Single = 0.5625F
+                        Dim Block_Size As Single = 18 / Load_Scale
                         For Y As Integer = 0 To 39
                             For X As Integer = 0 To 39
                                 Dim VX1 As Single = Start_X + X * Block_Size

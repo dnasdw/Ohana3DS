@@ -35,11 +35,11 @@ Partial Class FrmTextureInfo
         Me.Title.BackColor = System.Drawing.Color.Transparent
         Me.Title.Font = New System.Drawing.Font("Segoe UI Semibold", 14.25!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.Title.ForeColor = System.Drawing.Color.White
-        Me.Title.Location = New System.Drawing.Point(229, 0)
+        Me.Title.Location = New System.Drawing.Point(278, 0)
         Me.Title.Name = "Title"
-        Me.Title.Size = New System.Drawing.Size(182, 25)
+        Me.Title.Size = New System.Drawing.Size(85, 25)
         Me.Title.TabIndex = 21
-        Me.Title.Text = "OhanaXY - Textures"
+        Me.Title.Text = "Textures"
         '
         'BtnMinimize
         '
@@ -91,7 +91,7 @@ Partial Class FrmTextureInfo
         Me.MaximizeBox = False
         Me.Name = "FrmTextureInfo"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
-        Me.Text = "FrmBonesInfo"
+        Me.Text = "Textures"
         Me.ResumeLayout(False)
         Me.PerformLayout()
 

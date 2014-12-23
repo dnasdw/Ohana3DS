@@ -1,6 +1,5 @@
 ﻿Imports System.Runtime.InteropServices
 Imports System.IO
-
 Public Class FrmMapProp
     <DllImport("dwmapi")> _
     Public Shared Function DwmExtendFrameIntoClientArea(ByVal hWnd As IntPtr, ByRef pMarInset As Margins) As Integer
@@ -30,6 +29,9 @@ Public Class FrmMapProp
         MyOhana.Map_Properties_Mode = True
         mapProps = My.Resources.MapProperties.Split(New Char() {Environment.NewLine, ","}, StringSplitOptions.None)
         mapPropCom.DataSource = MyOhana.getProps()
+    End Sub
+    Private Sub FrmMapProp_FormClosing(sender As Object, e As EventArgs) Handles MyBase.FormClosing
+        MyOhana.Map_Properties_Mode = False
     End Sub
 
     Protected Overrides ReadOnly Property CreateParams() As CreateParams 'Cria sombra (sem Aero)
@@ -132,7 +134,7 @@ Public Class FrmMapProp
         End If
     End Sub
 
-    Public Function getMapVals()
+    Public Function getMapVals() As UInteger()
         Return mapVals
     End Function
 
@@ -152,7 +154,6 @@ Public Class FrmMapProp
 
 #Region "GUI"
     Private Sub BtnClose_Click(sender As Object, e As EventArgs) Handles BtnClose.Click
-        MyOhana.Map_Properties_Mode = False
         Me.Close()
     End Sub
     Private Sub BtnMinimize_Click(sender As Object, e As EventArgs) Handles BtnMinimize.Click
