@@ -1299,7 +1299,7 @@ Public Class FrmMain
         If Current_ROM IsNot Nothing And Current_XORPad IsNot Nothing Then
             Dim FolderDlg As New FolderBrowserDialog
             If FolderDlg.ShowDialog = DialogResult.OK Then
-                Dim Trd As New Thread(Sub() Decrypt_Data(Current_ROM, Current_XORPad, FolderDlg.SelectedPath, Convert.ToInt32(NCCH_Container(0).RomFS_Offset), Convert.ToInt32(NCCH_Container(0).RomFS_Size)))
+                Dim Trd As New Thread(Sub() Decrypt_Data(Current_ROM, Current_XORPad, FolderDlg.SelectedPath & "\out\", Convert.ToInt32(NCCH_Container(0).RomFS_Offset), Convert.ToInt32(NCCH_Container(0).RomFS_Size)))
                 Trd.Start()
             End If
         End If

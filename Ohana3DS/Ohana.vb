@@ -1889,6 +1889,56 @@ Public Class Ohana
                             End With
                         Next
                     Next
+                    ' "HackyCode"
+                    If Map_Properties_Mode Then
+                        Switch_Lighting(False)
+
+                        Dim Start_X, Start_Y As Single
+                        Start_X = -11.25F
+                        Start_Y = -11.25F
+
+                        Dim Verts As Integer = 40 * 40 * 6
+                        Dim Vertex_Buffer As New VertexBuffer(GetType(CustomVertex.PositionColored), Verts, Device, Usage.None, CustomVertex.PositionColored.Format, Pool.Managed)
+                        Dim Vertices(Verts - 1) As CustomVertex.PositionColored
+                        Dim i As Integer = 0
+                        Dim Block_Size As Single = 0.5625F
+                        For Y As Integer = 0 To 39
+                            For X As Integer = 0 To 39
+                                Dim VX1 As Single = Start_X + X * Block_Size
+                                Dim VZ1 As Single = Start_Y + Y * Block_Size
+                                Dim VX2 As Single = Start_X + X * Block_Size + Block_Size
+                                Dim VZ2 As Single = Start_Y + Y * Block_Size + Block_Size
+
+                                Dim v As UInteger() = FrmMapProp.getMapVals()
+                                Dim col As UInteger = v(X + (Y * 40))
+                                Dim c As Color
+                                If col = &H1000021 Then
+                                    c = Color.Transparent
+                                Else
+                                    col = FrmMapProp.LCG(col, 4)
+                                    c = Color.FromArgb(&H7F, &HFF - CByte(col And &HFF), &HFF - CByte((col >> 8) And &HFF), &HFF - CByte(col >> 24 And &HFF))
+                                End If
+
+                                Vertices(i) = New CustomVertex.PositionColored(VX1, Pos_Y, VZ2, c.ToArgb)
+                                Vertices(i + 1) = New CustomVertex.PositionColored(VX2, Pos_Y, VZ2, c.ToArgb)
+                                Vertices(i + 2) = New CustomVertex.PositionColored(VX1, Pos_Y, VZ1, c.ToArgb)
+                                Vertices(i + 3) = New CustomVertex.PositionColored(VX1, Pos_Y, VZ1, c.ToArgb)
+                                Vertices(i + 4) = New CustomVertex.PositionColored(VX2, Pos_Y, VZ1, c.ToArgb)
+                                Vertices(i + 5) = New CustomVertex.PositionColored(VX2, Pos_Y, VZ2, c.ToArgb)
+
+                                i += 6
+                            Next
+                        Next
+
+                        Vertex_Buffer.SetData(Vertices, 0, LockFlags.None)
+                        Device.VertexFormat = CustomVertex.PositionColored.Format
+                        Device.SetStreamSource(0, Vertex_Buffer, 0)
+
+                        Device.DrawPrimitives(PrimitiveType.TriangleList, 0, Vertices.Length \ 3)
+                        Vertex_Buffer.Dispose()
+                        Switch_Lighting(Lighting)
+                    End If
+                    'End HackyCode
                 End If
 
                 Device.EndScene()

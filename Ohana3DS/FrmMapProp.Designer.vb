@@ -157,6 +157,7 @@ Partial Class FrmMapProp
         Me.Name = "FrmMapProp"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
         Me.Text = "FrmMapProp"
+        Me.TopMost = True
         CType(Me.mapPicBox, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)
         Me.PerformLayout()

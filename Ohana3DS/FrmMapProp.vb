@@ -27,6 +27,7 @@ Public Class FrmMapProp
     Dim mode As Boolean = False
 
     Private Sub FrmMapProp_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        MyOhana.Map_Properties_Mode = True
         mapProps = My.Resources.MapProperties.Split(New Char() {Environment.NewLine, ","}, StringSplitOptions.None)
         mapPropCom.DataSource = MyOhana.getProps()
     End Sub
@@ -151,6 +152,7 @@ Public Class FrmMapProp
 
 #Region "GUI"
     Private Sub BtnClose_Click(sender As Object, e As EventArgs) Handles BtnClose.Click
+        MyOhana.Map_Properties_Mode = False
         Me.Close()
     End Sub
     Private Sub BtnMinimize_Click(sender As Object, e As EventArgs) Handles BtnMinimize.Click
