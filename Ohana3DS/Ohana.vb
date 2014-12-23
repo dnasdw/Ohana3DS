@@ -478,7 +478,7 @@ Public Class Ohana
                         If Value <> 0 Then Model_Texture_Name &= Chr(Value) Else Exit Do
                     Loop
 
-                    If Model_Texture_Name <> Nothing Then
+                    If Model_Texture_Name <> Nothing And Model_Texture_Name <> "projection_dummy" Then
                         Model_Texture_Index(Index) = Model_Texture_Name
                     Else 'Workaround
                         Model_Texture_Index(Index) = Texture_Name
