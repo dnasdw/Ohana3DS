@@ -111,8 +111,9 @@ Public Class Nako
         Return Format
     End Function
     Public Sub Extract(InFile As FileStream, Output_File As String, File_Index As Integer)
+        Dim GARC As Boolean = StrReverse(ReadMagic(InFile, 0, 4)) = "GARC"
         With Files(File_Index)
-            InFile.Seek(Data_Offset + .Start_Offset, SeekOrigin.Begin)
+            InFile.Seek(If(GARC, Data_Offset, 0) + .Start_Offset, SeekOrigin.Begin)
             Dim Data(.Length - 1) As Byte
             InFile.Read(Data, 0, .Length)
 

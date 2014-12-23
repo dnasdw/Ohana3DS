@@ -1057,6 +1057,7 @@ Public Class FrmMain
             Enable_GARC_Buttons()
         Else
             Disable_GARC_Buttons()
+            LstFiles.Clear()
             MessageBox.Show("This is not a container from Pokémon!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End If
     End Sub

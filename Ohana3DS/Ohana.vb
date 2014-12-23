@@ -869,7 +869,6 @@ Public Class Ohana
                 If Value <> 0 Then Texture_Name &= Chr(Value) Else Exit Do
             Loop
 
-
             Dim Texture_Description As Integer = Description_Offset + Read32(Data, Header_Offset + Read32(Data, BCH_Texture_Table + (Index * 4)))
             Dim Height As Integer = Read16(Data, Texture_Description)
             Dim Width As Integer = Read16(Data, Texture_Description + 2)
