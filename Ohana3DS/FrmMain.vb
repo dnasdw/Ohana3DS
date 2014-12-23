@@ -591,7 +591,9 @@ Public Class FrmMain
                 For Each Texture As Ohana.OhanaTexture In MyOhana.Model_Texture
                     LstTextures.AddItem(Texture.Name)
                 Next
+                LstTextures.SelectedIndex = 0
                 LstTextures.Refresh()
+                Select_Texture(0)
             Else
                 Disable_Texture_Buttons()
             End If
@@ -615,56 +617,57 @@ Public Class FrmMain
         BtnTextureSave.Enabled = False
     End Sub
     Private Sub LstTextures_SelectedIndexChanged(Index As Integer) Handles LstTextures.SelectedIndexChanged
-        If Index > -1 Then
-            With MyOhana.Model_Texture(Index)
-                ImgTexture.Image = .Image
-                ImgTexture.Refresh()
+        If Index > -1 Then Select_Texture(Index)
+    End Sub
+    Private Sub Select_Texture(Index As Integer)
+        With MyOhana.Model_Texture(Index)
+            ImgTexture.Image = .Image
+            ImgTexture.Refresh()
 
-                LblInfoTextureIndex.Text = Index + 1 & "/" & MyOhana.Model_Texture.Count
-                LblInfoTextureResolution.Text = .Image.Width & "x" & .Image.Height
-                Select Case .Format
-                    Case 0
-                        LblInfoTextureFormat.Text = "32BPP"
-                        LblInfoTextureCD.Text = "32BPP"
-                    Case 1
-                        LblInfoTextureFormat.Text = "24BPP"
-                        LblInfoTextureCD.Text = "24BPP"
-                    Case 2
-                        LblInfoTextureFormat.Text = "RGBA5551"
-                        LblInfoTextureCD.Text = "16BPP"
-                    Case 3
-                        LblInfoTextureFormat.Text = "RGB565"
-                        LblInfoTextureCD.Text = "16BPP"
-                    Case 4
-                        LblInfoTextureFormat.Text = "RGBA4444"
-                        LblInfoTextureCD.Text = "16BPP"
-                    Case 5
-                        LblInfoTextureFormat.Text = "L8A8 (Grayscale)"
-                        LblInfoTextureCD.Text = "16BPP"
-                    Case 6
-                        LblInfoTextureFormat.Text = "HILO8"
-                        LblInfoTextureCD.Text = "8BPP"
-                    Case 7
-                        LblInfoTextureFormat.Text = "L8 (Grayscale)"
-                        LblInfoTextureCD.Text = "8BPP"
-                    Case 8
-                        LblInfoTextureFormat.Text = "A8 (Alpha only)"
-                        LblInfoTextureCD.Text = "8BPP"
-                    Case 9
-                        LblInfoTextureFormat.Text = "L4A4 (Grayscale)"
-                        LblInfoTextureCD.Text = "8BPP"
-                    Case 10
-                        LblInfoTextureFormat.Text = "L4 (Grayscale)"
-                        LblInfoTextureCD.Text = "4BPP"
-                    Case 12
-                        LblInfoTextureFormat.Text = "ETC1 (iPACKMAN)"
-                        LblInfoTextureCD.Text = "24BPP"
-                    Case 13
-                        LblInfoTextureFormat.Text = "ETC1 + Alpha"
-                        LblInfoTextureCD.Text = "32BPP"
-                End Select
-            End With
-        End If
+            LblInfoTextureIndex.Text = Index + 1 & "/" & MyOhana.Model_Texture.Count
+            LblInfoTextureResolution.Text = .Image.Width & "x" & .Image.Height
+            Select Case .Format
+                Case 0
+                    LblInfoTextureFormat.Text = "32BPP"
+                    LblInfoTextureCD.Text = "32BPP"
+                Case 1
+                    LblInfoTextureFormat.Text = "24BPP"
+                    LblInfoTextureCD.Text = "24BPP"
+                Case 2
+                    LblInfoTextureFormat.Text = "RGBA5551"
+                    LblInfoTextureCD.Text = "16BPP"
+                Case 3
+                    LblInfoTextureFormat.Text = "RGB565"
+                    LblInfoTextureCD.Text = "16BPP"
+                Case 4
+                    LblInfoTextureFormat.Text = "RGBA4444"
+                    LblInfoTextureCD.Text = "16BPP"
+                Case 5
+                    LblInfoTextureFormat.Text = "L8A8 (Grayscale)"
+                    LblInfoTextureCD.Text = "16BPP"
+                Case 6
+                    LblInfoTextureFormat.Text = "HILO8"
+                    LblInfoTextureCD.Text = "8BPP"
+                Case 7
+                    LblInfoTextureFormat.Text = "L8 (Grayscale)"
+                    LblInfoTextureCD.Text = "8BPP"
+                Case 8
+                    LblInfoTextureFormat.Text = "A8 (Alpha only)"
+                    LblInfoTextureCD.Text = "8BPP"
+                Case 9
+                    LblInfoTextureFormat.Text = "L4A4 (Grayscale)"
+                    LblInfoTextureCD.Text = "8BPP"
+                Case 10
+                    LblInfoTextureFormat.Text = "L4 (Grayscale)"
+                    LblInfoTextureCD.Text = "4BPP"
+                Case 12
+                    LblInfoTextureFormat.Text = "ETC1 (iPACKMAN)"
+                    LblInfoTextureCD.Text = "24BPP"
+                Case 13
+                    LblInfoTextureFormat.Text = "ETC1 + Alpha"
+                    LblInfoTextureCD.Text = "32BPP"
+            End Select
+        End With
     End Sub
     Private Sub BtnTextureExport_Click(sender As Object, e As EventArgs) Handles BtnTextureExport.Click
         If MyOhana.Model_Texture IsNot Nothing Then
