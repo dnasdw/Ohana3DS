@@ -98,12 +98,16 @@ Public Class FrmVertexEditor
                 Info.NumberDecimalSeparator = "."
                 Info.NumberDecimalDigits = 6
 
+                Out.AppendLine("mtllib " & Path.GetFileName(SaveDlg.FileName) & ".mtl")
+
                 With MyOhana.Model_Object(MyOhana.Selected_Object)
                     For i As Integer = 0 To .Vertice.Length - 1
                         Out.AppendLine("v " & (.Vertice(i).X * MyOhana.Load_Scale).ToString("N", Info) & " " & (.Vertice(i).Y * MyOhana.Load_Scale).ToString("N", Info) & " " & (.Vertice(i).Z * MyOhana.Load_Scale).ToString("N", Info))
                         Out.AppendLine("vn " & (.Vertice(i).NX * MyOhana.Load_Scale).ToString("N", Info) & " " & (.Vertice(i).NY * MyOhana.Load_Scale).ToString("N", Info) & " " & (.Vertice(i).NZ * MyOhana.Load_Scale).ToString("N", Info))
                         Out.AppendLine("vt " & .Vertice(i).U.ToString("N", Info) & " " & .Vertice(i).V.ToString("N", Info))
                     Next
+
+                    Out.AppendLine("usemtl " & MyOhana.Model_Texture_Index(.Texture_ID))
 
                     For i As Integer = 0 To .Index.Length - 1 Step 3
                         Dim a As String = (.Index(i) + 1).ToString()
@@ -112,9 +116,21 @@ Public Class FrmVertexEditor
 
                         Out.AppendLine("f " & a & "/" & a & "/" & a & " " & b & "/" & b & "/" & b & " " & c & "/" & c & "/" & c)
                     Next
-                End With
 
-                File.WriteAllText(SaveDlg.FileName, Out.ToString)
+                    File.WriteAllText(SaveDlg.FileName, Out.ToString)
+
+                    Dim OutMtl As New StringBuilder
+                    OutMtl.AppendLine("newmtl " & MyOhana.Model_Texture_Index(.Texture_ID))
+                    OutMtl.AppendLine("illum 2")
+                    OutMtl.AppendLine("Kd 0.800000 0.800000 0.800000")
+                    OutMtl.AppendLine("Ka 0.200000 0.200000 0.200000")
+                    OutMtl.AppendLine("Ks 0.000000 0.000000 0.000000")
+                    OutMtl.AppendLine("Ke 0.000000 0.000000 0.000000")
+                    OutMtl.AppendLine("Ns 0.000000")
+                    OutMtl.AppendLine("map_Kd " & MyOhana.Model_Texture_Index(.Texture_ID) & ".png")
+
+                    File.WriteAllText(SaveDlg.FileName & ".mtl", OutMtl.ToString)
+                End With
             End If
         Else
             MessageBox.Show("You must select an object first!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
@@ -130,6 +146,8 @@ Public Class FrmVertexEditor
                 Info.NumberDecimalSeparator = "."
                 Info.NumberDecimalDigits = 6
 
+                Out.AppendLine("mtllib " & Path.GetFileName(SaveDlg.FileName) & ".mtl")
+
                 With MyOhana.Model_Object(MyOhana.Selected_Object)
                     Dim Temp As List(Of Integer) = .Per_Face_Index(LstFaces.SelectedIndex).ToList
                     Dim Vertex_Remap(.Vertice.Length - 1) As Integer
@@ -144,6 +162,8 @@ Public Class FrmVertexEditor
                         End If
                     Next
 
+                    Out.AppendLine("usemtl " & MyOhana.Model_Texture_Index(.Texture_ID))
+
                     For i As Integer = 0 To .Per_Face_Index(LstFaces.SelectedIndex).Length - 1 Step 3
                         Dim a As String = (Vertex_Remap(.Per_Face_Index(LstFaces.SelectedIndex)(i)) + 1).ToString()
                         Dim b As String = (Vertex_Remap(.Per_Face_Index(LstFaces.SelectedIndex)(i + 1)) + 1).ToString()
@@ -151,9 +171,21 @@ Public Class FrmVertexEditor
 
                         Out.AppendLine("f " & a & "/" & a & "/" & a & " " & b & "/" & b & "/" & b & " " & c & "/" & c & "/" & c)
                     Next
-                End With
 
-                File.WriteAllText(SaveDlg.FileName, Out.ToString)
+                    File.WriteAllText(SaveDlg.FileName, Out.ToString)
+
+                    Dim OutMtl As New StringBuilder
+                    OutMtl.AppendLine("newmtl " & MyOhana.Model_Texture_Index(.Texture_ID))
+                    OutMtl.AppendLine("illum 2")
+                    OutMtl.AppendLine("Kd 0.800000 0.800000 0.800000")
+                    OutMtl.AppendLine("Ka 0.200000 0.200000 0.200000")
+                    OutMtl.AppendLine("Ks 0.000000 0.000000 0.000000")
+                    OutMtl.AppendLine("Ke 0.000000 0.000000 0.000000")
+                    OutMtl.AppendLine("Ns 0.000000")
+                    OutMtl.AppendLine("map_Kd " & MyOhana.Model_Texture_Index(.Texture_ID) & ".png")
+
+                    File.WriteAllText(SaveDlg.FileName & ".mtl", OutMtl.ToString)
+                End With
             End If
         Else
             MessageBox.Show("You must select an face first!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
