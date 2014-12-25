@@ -65,6 +65,20 @@ Public Class Ohana
         ORAS
     End Enum
 
+    Private Structure Vertex_Face
+        Dim Vtx_A_Coord_Index As Integer
+        Dim Vtx_A_Normal_Index As Integer
+        Dim Vtx_A_UV_Index As Integer
+
+        Dim Vtx_B_Coord_Index As Integer
+        Dim Vtx_B_Normal_Index As Integer
+        Dim Vtx_B_UV_Index As Integer
+
+        Dim Vtx_C_Coord_Index As Integer
+        Dim Vtx_C_Normal_Index As Integer
+        Dim Vtx_C_UV_Index As Integer
+    End Structure
+
     Public Model_Object() As VertexList
     Public Model_Texture As List(Of OhanaTexture)
     Public Model_Bone() As OhanaBone
@@ -1956,123 +1970,55 @@ Public Class Ohana
         Dim Data() As Byte = File.ReadAllBytes(Temp_Model_File)
         Dim Obj As String = File.ReadAllText(File_Name)
 
-        Dim Vertices As MatchCollection = Regex.Matches(Obj, "v\s+([-]?\d+(\.\d+)?)\s+([-]?\d+(\.\d+)?)\s+([-]?\d+(\.\d+)?)")
-        Dim Normals As MatchCollection = Regex.Matches(Obj, "vn\s+([-]?\d+(\.\d+)?)\s+([-]?\d+(\.\d+)?)\s+([-]?\d+(\.\d+)?)")
-        Dim UVs As MatchCollection = Regex.Matches(Obj, "vt\s+([-]?\d+(\.\d+)?)\s+([-]?\d+(\.\d+)?)")
+        Dim Vertices As New List(Of Vector3)
+        Dim Normals As New List(Of Vector3)
+        Dim UVs As New List(Of Vector2)
 
-        Dim Faces As MatchCollection = Regex.Matches(Obj, "f\s+(\d+)/\d+(/\d+)?\s+(\d+)/\d+(/\d+)?\s+(\d+)/\d+(/\d+)?")
+        Dim Faces As New List(Of Vertex_Face)
+
+        Dim Lines() As String = Obj.Split(Convert.ToChar(&HA))
+        For Each ObjLine As String In Lines
+            Dim Line As String = LCase(ObjLine.Trim)
+            Dim Line_Params() As String = Regex.Split(Line, "\s+")
+
+            Select Case Line_Params(0)
+                Case "v", "vn"
+                    Dim Vector As New Vector3
+                    Vector.X = Single.Parse(Line_Params(1), CultureInfo.InvariantCulture)
+                    Vector.Y = Single.Parse(Line_Params(2), CultureInfo.InvariantCulture)
+                    Vector.Z = Single.Parse(Line_Params(3), CultureInfo.InvariantCulture)
+                    If Line_Params(0) = "v" Then Vertices.Add(Vector) Else Normals.Add(Vector)
+                Case "vt"
+                    Dim Vector As New Vector2
+                    Vector.X = Single.Parse(Line_Params(1), CultureInfo.InvariantCulture)
+                    Vector.Y = Single.Parse(Line_Params(2), CultureInfo.InvariantCulture)
+                    UVs.Add(Vector)
+                Case "f"
+                    Dim Vtx_A() As String = Line_Params(1).Split(Convert.ToChar("/"))
+                    Dim Vtx_B() As String = Line_Params(2).Split(Convert.ToChar("/"))
+                    Dim Vtx_C() As String = Line_Params(3).Split(Convert.ToChar("/"))
+
+                    Dim Face As Vertex_Face
+                    Face.Vtx_A_Coord_Index = Integer.Parse(Vtx_A(0)) - 1
+                    If Vtx_A.Length > 1 Then Face.Vtx_A_UV_Index = Integer.Parse(Vtx_A(1)) - 1
+                    If Vtx_A.Length > 2 Then Face.Vtx_A_Normal_Index = Integer.Parse(Vtx_A(2)) - 1
+
+                    Face.Vtx_B_Coord_Index = Integer.Parse(Vtx_B(0)) - 1
+                    If Vtx_B.Length > 1 Then Face.Vtx_B_UV_Index = Integer.Parse(Vtx_B(1)) - 1
+                    If Vtx_B.Length > 2 Then Face.Vtx_B_Normal_Index = Integer.Parse(Vtx_B(2)) - 1
+
+                    Face.Vtx_C_Coord_Index = Integer.Parse(Vtx_C(0)) - 1
+                    If Vtx_C.Length > 1 Then Face.Vtx_C_UV_Index = Integer.Parse(Vtx_C(1)) - 1
+                    If Vtx_C.Length > 2 Then Face.Vtx_C_Normal_Index = Integer.Parse(Vtx_C(2)) - 1
+
+                    Faces.Add(Face)
+            End Select
+        Next
 
         With Model_Object(Selected_Object)
-            'Insere vertices presentes no .obj até onde der
-            Dim All_Vertices_Inserted As Boolean = True
-            Dim Current_Vertex_Offset As Integer = .Vertex_Entry.Offset
-            Dim Vertex_Length As Integer = .Vertex_Entry.Length
-
-            Dim Vertice_Index As Integer
-            Dim Offset As Integer = Current_Vertex_Offset
-            Dim Match_Count As Integer = 1
-            For Each Vertex As Match In Vertices
-                Dim X_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(Vertex.Groups(1).Value, CultureInfo.InvariantCulture))
-                Dim Y_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(Vertex.Groups(3).Value, CultureInfo.InvariantCulture))
-                Dim Z_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(Vertex.Groups(5).Value, CultureInfo.InvariantCulture))
-
-                Buffer.BlockCopy(X_Bytes, 0, Data, Offset, 4)
-                Buffer.BlockCopy(Y_Bytes, 0, Data, Offset + 4, 4)
-                Buffer.BlockCopy(Z_Bytes, 0, Data, Offset + 8, 4)
-
-                With Model_Object(Selected_Object).Vertice(Vertice_Index)
-                    .X = Single.Parse(Vertex.Groups(1).Value, CultureInfo.InvariantCulture) / Load_Scale
-                    .Y = Single.Parse(Vertex.Groups(3).Value, CultureInfo.InvariantCulture) / Load_Scale
-                    .Z = Single.Parse(Vertex.Groups(5).Value, CultureInfo.InvariantCulture) / Load_Scale
-                End With
-
-                Vertice_Index += 1
-                Offset += .Vertex_Entry.Format
-                If Offset - .Vertex_Entry.Offset >= Vertex_Length Then
-                    If Match_Count < Vertices.Count Then All_Vertices_Inserted = False
-                    Exit For
-                End If
-
-                Match_Count += 1
-            Next
-
-            Vertice_Index = 0
-            Offset = Current_Vertex_Offset
-            If Normals.Count = 0 Then
-                If MessageBox.Show("Your OBJ file doesn't have normals..." & Environment.NewLine & "Would like to remove them from the object?", "Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Question) = DialogResult.Yes Then
-                    Dim NX_Bytes() As Byte = BitConverter.GetBytes(Convert.ToSingle(0))
-                    Dim NY_Bytes() As Byte = BitConverter.GetBytes(Convert.ToSingle(0))
-                    Dim NZ_Bytes() As Byte = BitConverter.GetBytes(Convert.ToSingle(0))
-
-                    For Each Vertex As OhanaVertex In Model_Object(Selected_Object).Vertice
-                        Select Case .Vertex_Entry.Format
-                            Case &H20, &H24, &H28, &H2C, &H30, &H34, &H38
-                                Buffer.BlockCopy(NX_Bytes, 0, Data, Offset + 12, 4)
-                                Buffer.BlockCopy(NY_Bytes, 0, Data, Offset + 16, 4)
-                                Buffer.BlockCopy(NZ_Bytes, 0, Data, Offset + 20, 4)
-                        End Select
-
-                        With Model_Object(Selected_Object).Vertice(Vertice_Index)
-                            .NX = 0
-                            .NY = 0
-                            .NZ = 0
-                        End With
-
-                        Vertice_Index += 1
-                        Offset += .Vertex_Entry.Format
-                        If Offset - .Vertex_Entry.Offset >= Vertex_Length Then Exit For
-                    Next
-                End If
-            Else
-                For Each Normal As Match In Normals
-                    Dim NX_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(Normal.Groups(1).Value, CultureInfo.InvariantCulture))
-                    Dim NY_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(Normal.Groups(3).Value, CultureInfo.InvariantCulture))
-                    Dim NZ_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(Normal.Groups(5).Value, CultureInfo.InvariantCulture))
-
-                    Select Case .Vertex_Entry.Format
-                        Case &H20, &H24, &H28, &H2C, &H30, &H34, &H38
-                            Buffer.BlockCopy(NX_Bytes, 0, Data, Offset + 12, 4)
-                            Buffer.BlockCopy(NY_Bytes, 0, Data, Offset + 16, 4)
-                            Buffer.BlockCopy(NZ_Bytes, 0, Data, Offset + 20, 4)
-                    End Select
-
-                    With Model_Object(Selected_Object).Vertice(Vertice_Index)
-                        .NX = Single.Parse(Normal.Groups(1).Value, CultureInfo.InvariantCulture) / Load_Scale
-                        .NY = Single.Parse(Normal.Groups(3).Value, CultureInfo.InvariantCulture) / Load_Scale
-                        .NZ = Single.Parse(Normal.Groups(5).Value, CultureInfo.InvariantCulture) / Load_Scale
-                    End With
-
-                    Vertice_Index += 1
-                    Offset += .Vertex_Entry.Format
-                    If Offset - .Vertex_Entry.Offset >= Vertex_Length Then Exit For
-                Next
-            End If
-
-
-            Vertice_Index = 0
-            Offset = Current_Vertex_Offset
-            For Each UV As Match In UVs
-                Dim U_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(UV.Groups(1).Value, CultureInfo.InvariantCulture))
-                Dim V_Bytes() As Byte = BitConverter.GetBytes(Single.Parse(UV.Groups(3).Value, CultureInfo.InvariantCulture))
-
-                Select Case .Vertex_Entry.Format
-                    Case &H14, &H18, &H1C
-                        Buffer.BlockCopy(U_Bytes, 0, Data, Offset + 12, 4)
-                        Buffer.BlockCopy(V_Bytes, 0, Data, Offset + 16, 4)
-                    Case &H20, &H24, &H28, &H2C, &H30, &H34, &H38
-                        Buffer.BlockCopy(U_Bytes, 0, Data, Offset + 24, 4)
-                        Buffer.BlockCopy(V_Bytes, 0, Data, Offset + 28, 4)
-                End Select
-
-                Model_Object(Selected_Object).Vertice(Vertice_Index).U = Single.Parse(UV.Groups(1).Value, CultureInfo.InvariantCulture)
-                Model_Object(Selected_Object).Vertice(Vertice_Index).V = Single.Parse(UV.Groups(3).Value, CultureInfo.InvariantCulture)
-
-                Vertice_Index += 1
-                Offset += .Vertex_Entry.Format
-                If Offset - .Vertex_Entry.Offset >= Vertex_Length Then Exit For
-            Next
-
             'Insere Faces presentes no .obj até onde der
+            Dim Vtx_OK As Boolean = True
+
             Dim CurrFace As Integer = 0
             Dim Current_Face_Offset As Integer = .Per_Face_Entry(0).Offset
             Dim Face_Length As Integer = .Per_Face_Entry(0).Length
@@ -2095,10 +2041,11 @@ Public Class Ohana
 
             Dim Face_Index As Integer
             Dim Per_Face_Index As Integer
-            For Each Face As Match In Faces
-                Dim a As Integer = Convert.ToInt32(Face.Groups(1).Value) - 1
-                Dim b As Integer = Convert.ToInt32(Face.Groups(3).Value) - 1
-                Dim c As Integer = Convert.ToInt32(Face.Groups(5).Value) - 1
+            For Each Face As Vertex_Face In Faces
+                Dim a As Integer = Face.Vtx_A_Coord_Index
+                Dim b As Integer = Face.Vtx_B_Coord_Index
+                Dim c As Integer = Face.Vtx_C_Coord_Index
+
                 If a < .Vertice.Length And b < .Vertice.Length And c < .Vertice.Length Then
                     If .Per_Face_Entry(CurrFace).Format = 1 Then
                         If a > &HFF Or b > &HFF Or c > &HFF Then
@@ -2140,6 +2087,24 @@ Public Class Ohana
                         Current_Face_Offset += 6
                     End If
 
+                    'Injeta vertices
+                    Vtx_OK = Vtx_OK And Inject_Vertice(Data, a, Vertices(a))
+                    Vtx_OK = Vtx_OK And Inject_Vertice(Data, b, Vertices(b))
+                    Vtx_OK = Vtx_OK And Inject_Vertice(Data, c, Vertices(c))
+
+                    If Face.Vtx_A_UV_Index < UVs.Count Then
+                        Inject_UV(Data, a, UVs(Face.Vtx_A_UV_Index))
+                        Inject_UV(Data, b, UVs(Face.Vtx_B_UV_Index))
+                        Inject_UV(Data, c, UVs(Face.Vtx_C_UV_Index))
+                    End If
+
+                    If Face.Vtx_A_Normal_Index < Normals.Count Then
+                        Inject_Normal(Data, a, Normals(Face.Vtx_A_Normal_Index))
+                        Inject_Normal(Data, b, Normals(Face.Vtx_B_Normal_Index))
+                        Inject_Normal(Data, c, Normals(Face.Vtx_C_Normal_Index))
+                    End If
+
+                    'Atualiza modelo com novas faces
                     Model_Object(Selected_Object).Index(Face_Index) = a
                     Model_Object(Selected_Object).Index(Face_Index + 1) = b
                     Model_Object(Selected_Object).Index(Face_Index + 2) = c
@@ -2164,16 +2129,76 @@ Public Class Ohana
                 End If
             Next
 
-            If Not All_Vertices_Inserted And Face_Index < .Index.Length Then
+            If Not Vtx_OK And Face_Index < .Index.Length Then
                 MessageBox.Show("The inserted object have too much faces and vertices." & Environment.NewLine & "Try limiting it to the original counts.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
             ElseIf Face_Index \ 3 < Faces.Count Then
                 MessageBox.Show("The inserted object have more faces than the original one." & Environment.NewLine & "Some faces couldn't be added.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
-            ElseIf Not All_Vertices_Inserted Then
+            ElseIf Not Vtx_OK Then
                 MessageBox.Show("The inserted object have more vertices than the original one." & Environment.NewLine & "Some vertices couldn't be added.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
             End If
         End With
 
         File.WriteAllBytes(Temp_Model_File, Data)
+    End Sub
+    Private Function Inject_Vertice(Data() As Byte, Index As Integer, Vertice As Vector3) As Boolean
+        Dim Offset As Integer = Model_Object(Selected_Object).Vertex_Entry.Offset + (Index * Model_Object(Selected_Object).Vertex_Entry.Format)
+        If Offset - Model_Object(Selected_Object).Vertex_Entry.Offset >= Model_Object(Selected_Object).Vertex_Entry.Length Then Return False
+
+        Dim X_Bytes() As Byte = BitConverter.GetBytes(Vertice.X)
+        Dim Y_Bytes() As Byte = BitConverter.GetBytes(Vertice.Y)
+        Dim Z_Bytes() As Byte = BitConverter.GetBytes(Vertice.Z)
+
+        Buffer.BlockCopy(X_Bytes, 0, Data, Offset, 4)
+        Buffer.BlockCopy(Y_Bytes, 0, Data, Offset + 4, 4)
+        Buffer.BlockCopy(Z_Bytes, 0, Data, Offset + 8, 4)
+
+        With Model_Object(Selected_Object).Vertice(Index)
+            .X = Vertice.X / Load_Scale
+            .Y = Vertice.Y / Load_Scale
+            .Z = Vertice.Z / Load_Scale
+        End With
+
+        Return True
+    End Function
+    Private Sub Inject_UV(Data() As Byte, Index As Integer, UV As Vector2)
+        Dim Offset As Integer = Model_Object(Selected_Object).Vertex_Entry.Offset + (Index * Model_Object(Selected_Object).Vertex_Entry.Format)
+        If Offset - Model_Object(Selected_Object).Vertex_Entry.Offset >= Model_Object(Selected_Object).Vertex_Entry.Length Then Exit Sub
+
+        Dim U_Bytes() As Byte = BitConverter.GetBytes(UV.X)
+        Dim V_Bytes() As Byte = BitConverter.GetBytes(UV.Y)
+
+        Select Case Model_Object(Selected_Object).Vertex_Entry.Format
+            Case &H14, &H18, &H1C
+                Buffer.BlockCopy(U_Bytes, 0, Data, Offset + 12, 4)
+                Buffer.BlockCopy(V_Bytes, 0, Data, Offset + 16, 4)
+            Case &H20, &H24, &H28, &H2C, &H30, &H34, &H38
+                Buffer.BlockCopy(U_Bytes, 0, Data, Offset + 24, 4)
+                Buffer.BlockCopy(V_Bytes, 0, Data, Offset + 28, 4)
+        End Select
+
+        Model_Object(Selected_Object).Vertice(Index).U = UV.X
+        Model_Object(Selected_Object).Vertice(Index).V = UV.Y
+    End Sub
+    Private Sub Inject_Normal(Data() As Byte, Index As Integer, Normal As Vector3)
+        Dim Offset As Integer = Model_Object(Selected_Object).Vertex_Entry.Offset + (Index * Model_Object(Selected_Object).Vertex_Entry.Format)
+        If Offset - Model_Object(Selected_Object).Vertex_Entry.Offset >= Model_Object(Selected_Object).Vertex_Entry.Length Then Exit Sub
+
+        Dim NX_Bytes() As Byte = BitConverter.GetBytes(Normal.X)
+        Dim NY_Bytes() As Byte = BitConverter.GetBytes(Normal.Y)
+        Dim NZ_Bytes() As Byte = BitConverter.GetBytes(Normal.Z)
+
+        Select Case Model_Object(Selected_Object).Vertex_Entry.Format
+            Case &H20, &H24, &H28, &H2C, &H30, &H34, &H38
+                Buffer.BlockCopy(NX_Bytes, 0, Data, Offset + 12, 4)
+                Buffer.BlockCopy(NY_Bytes, 0, Data, Offset + 16, 4)
+                Buffer.BlockCopy(NZ_Bytes, 0, Data, Offset + 20, 4)
+        End Select
+
+        With Model_Object(Selected_Object).Vertice(Index)
+            .NX = Normal.X / Load_Scale
+            .NY = Normal.Y / Load_Scale
+            .NZ = Normal.Z / Load_Scale
+        End With
     End Sub
 #End Region
 
