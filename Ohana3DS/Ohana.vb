@@ -1967,6 +1967,7 @@ Public Class Ohana
 
 #Region "OBJ Inserter"
     Public Sub Insert_OBJ(File_Name As String)
+        Dim SelObj As Integer = Selected_Object
         Dim Data() As Byte = File.ReadAllBytes(Temp_Model_File)
         Dim Obj As String = File.ReadAllText(File_Name)
 
@@ -2015,7 +2016,7 @@ Public Class Ohana
             End Select
         Next
 
-        With Model_Object(Selected_Object)
+        With Model_Object(SelObj)
             'Insere Faces presentes no .obj até onde der
             Dim Vtx_OK As Boolean = True
 
@@ -2088,30 +2089,30 @@ Public Class Ohana
                     End If
 
                     'Injeta vertices
-                    Vtx_OK = Vtx_OK And Inject_Vertice(Data, a, Vertices(a))
-                    Vtx_OK = Vtx_OK And Inject_Vertice(Data, b, Vertices(b))
-                    Vtx_OK = Vtx_OK And Inject_Vertice(Data, c, Vertices(c))
+                    Vtx_OK = Vtx_OK And Inject_Vertice(Data, a, SelObj, Vertices(a))
+                    Vtx_OK = Vtx_OK And Inject_Vertice(Data, b, SelObj, Vertices(b))
+                    Vtx_OK = Vtx_OK And Inject_Vertice(Data, c, SelObj, Vertices(c))
 
                     If Face.Vtx_A_UV_Index < UVs.Count Then
-                        Inject_UV(Data, a, UVs(Face.Vtx_A_UV_Index))
-                        Inject_UV(Data, b, UVs(Face.Vtx_B_UV_Index))
-                        Inject_UV(Data, c, UVs(Face.Vtx_C_UV_Index))
+                        Inject_UV(Data, a, SelObj, UVs(Face.Vtx_A_UV_Index))
+                        Inject_UV(Data, b, SelObj, UVs(Face.Vtx_B_UV_Index))
+                        Inject_UV(Data, c, SelObj, UVs(Face.Vtx_C_UV_Index))
                     End If
 
                     If Face.Vtx_A_Normal_Index < Normals.Count Then
-                        Inject_Normal(Data, a, Normals(Face.Vtx_A_Normal_Index))
-                        Inject_Normal(Data, b, Normals(Face.Vtx_B_Normal_Index))
-                        Inject_Normal(Data, c, Normals(Face.Vtx_C_Normal_Index))
+                        Inject_Normal(Data, a, SelObj, Normals(Face.Vtx_A_Normal_Index))
+                        Inject_Normal(Data, b, SelObj, Normals(Face.Vtx_B_Normal_Index))
+                        Inject_Normal(Data, c, SelObj, Normals(Face.Vtx_C_Normal_Index))
                     End If
 
                     'Atualiza modelo com novas faces
-                    Model_Object(Selected_Object).Index(Face_Index) = a
-                    Model_Object(Selected_Object).Index(Face_Index + 1) = b
-                    Model_Object(Selected_Object).Index(Face_Index + 2) = c
+                    Model_Object(SelObj).Index(Face_Index) = a
+                    Model_Object(SelObj).Index(Face_Index + 1) = b
+                    Model_Object(SelObj).Index(Face_Index + 2) = c
 
-                    Model_Object(Selected_Object).Per_Face_Index(CurrFace)(Per_Face_Index) = a
-                    Model_Object(Selected_Object).Per_Face_Index(CurrFace)(Per_Face_Index + 1) = b
-                    Model_Object(Selected_Object).Per_Face_Index(CurrFace)(Per_Face_Index + 2) = c
+                    Model_Object(SelObj).Per_Face_Index(CurrFace)(Per_Face_Index) = a
+                    Model_Object(SelObj).Per_Face_Index(CurrFace)(Per_Face_Index + 1) = b
+                    Model_Object(SelObj).Per_Face_Index(CurrFace)(Per_Face_Index + 2) = c
 
                     Face_Index += 3
                     Per_Face_Index += 3
@@ -2140,9 +2141,9 @@ Public Class Ohana
 
         File.WriteAllBytes(Temp_Model_File, Data)
     End Sub
-    Private Function Inject_Vertice(Data() As Byte, Index As Integer, Vertice As Vector3) As Boolean
-        Dim Offset As Integer = Model_Object(Selected_Object).Vertex_Entry.Offset + (Index * Model_Object(Selected_Object).Vertex_Entry.Format)
-        If Offset - Model_Object(Selected_Object).Vertex_Entry.Offset >= Model_Object(Selected_Object).Vertex_Entry.Length Then Return False
+    Private Function Inject_Vertice(Data() As Byte, Index As Integer, SelObj As Integer, Vertice As Vector3) As Boolean
+        Dim Offset As Integer = Model_Object(SelObj).Vertex_Entry.Offset + (Index * Model_Object(SelObj).Vertex_Entry.Format)
+        If Offset - Model_Object(SelObj).Vertex_Entry.Offset >= Model_Object(SelObj).Vertex_Entry.Length Then Return False
 
         Dim X_Bytes() As Byte = BitConverter.GetBytes(Vertice.X)
         Dim Y_Bytes() As Byte = BitConverter.GetBytes(Vertice.Y)
@@ -2152,7 +2153,7 @@ Public Class Ohana
         Buffer.BlockCopy(Y_Bytes, 0, Data, Offset + 4, 4)
         Buffer.BlockCopy(Z_Bytes, 0, Data, Offset + 8, 4)
 
-        With Model_Object(Selected_Object).Vertice(Index)
+        With Model_Object(SelObj).Vertice(Index)
             .X = Vertice.X / Load_Scale
             .Y = Vertice.Y / Load_Scale
             .Z = Vertice.Z / Load_Scale
@@ -2160,14 +2161,14 @@ Public Class Ohana
 
         Return True
     End Function
-    Private Sub Inject_UV(Data() As Byte, Index As Integer, UV As Vector2)
-        Dim Offset As Integer = Model_Object(Selected_Object).Vertex_Entry.Offset + (Index * Model_Object(Selected_Object).Vertex_Entry.Format)
-        If Offset - Model_Object(Selected_Object).Vertex_Entry.Offset >= Model_Object(Selected_Object).Vertex_Entry.Length Then Exit Sub
+    Private Sub Inject_UV(Data() As Byte, Index As Integer, SelObj As Integer, UV As Vector2)
+        Dim Offset As Integer = Model_Object(SelObj).Vertex_Entry.Offset + (Index * Model_Object(SelObj).Vertex_Entry.Format)
+        If Offset - Model_Object(SelObj).Vertex_Entry.Offset >= Model_Object(SelObj).Vertex_Entry.Length Then Exit Sub
 
         Dim U_Bytes() As Byte = BitConverter.GetBytes(UV.X)
         Dim V_Bytes() As Byte = BitConverter.GetBytes(UV.Y)
 
-        Select Case Model_Object(Selected_Object).Vertex_Entry.Format
+        Select Case Model_Object(SelObj).Vertex_Entry.Format
             Case &H14, &H18, &H1C
                 Buffer.BlockCopy(U_Bytes, 0, Data, Offset + 12, 4)
                 Buffer.BlockCopy(V_Bytes, 0, Data, Offset + 16, 4)
@@ -2176,25 +2177,25 @@ Public Class Ohana
                 Buffer.BlockCopy(V_Bytes, 0, Data, Offset + 28, 4)
         End Select
 
-        Model_Object(Selected_Object).Vertice(Index).U = UV.X
-        Model_Object(Selected_Object).Vertice(Index).V = UV.Y
+        Model_Object(SelObj).Vertice(Index).U = UV.X
+        Model_Object(SelObj).Vertice(Index).V = UV.Y
     End Sub
-    Private Sub Inject_Normal(Data() As Byte, Index As Integer, Normal As Vector3)
-        Dim Offset As Integer = Model_Object(Selected_Object).Vertex_Entry.Offset + (Index * Model_Object(Selected_Object).Vertex_Entry.Format)
-        If Offset - Model_Object(Selected_Object).Vertex_Entry.Offset >= Model_Object(Selected_Object).Vertex_Entry.Length Then Exit Sub
+    Private Sub Inject_Normal(Data() As Byte, Index As Integer, SelObj As Integer, Normal As Vector3)
+        Dim Offset As Integer = Model_Object(SelObj).Vertex_Entry.Offset + (Index * Model_Object(SelObj).Vertex_Entry.Format)
+        If Offset - Model_Object(SelObj).Vertex_Entry.Offset >= Model_Object(SelObj).Vertex_Entry.Length Then Exit Sub
 
         Dim NX_Bytes() As Byte = BitConverter.GetBytes(Normal.X)
         Dim NY_Bytes() As Byte = BitConverter.GetBytes(Normal.Y)
         Dim NZ_Bytes() As Byte = BitConverter.GetBytes(Normal.Z)
 
-        Select Case Model_Object(Selected_Object).Vertex_Entry.Format
+        Select Case Model_Object(SelObj).Vertex_Entry.Format
             Case &H20, &H24, &H28, &H2C, &H30, &H34, &H38
                 Buffer.BlockCopy(NX_Bytes, 0, Data, Offset + 12, 4)
                 Buffer.BlockCopy(NY_Bytes, 0, Data, Offset + 16, 4)
                 Buffer.BlockCopy(NZ_Bytes, 0, Data, Offset + 20, 4)
         End Select
 
-        With Model_Object(Selected_Object).Vertice(Index)
+        With Model_Object(SelObj).Vertice(Index)
             .NX = Normal.X / Load_Scale
             .NY = Normal.Y / Load_Scale
             .NZ = Normal.Z / Load_Scale
