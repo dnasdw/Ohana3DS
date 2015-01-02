@@ -12,6 +12,8 @@ Public Class Ohana
 #Region "Declares"
     Private Device As Device
 
+    Const Coll_Debug As Boolean = False
+
     Public Structure Data_Entry
         Dim Offset As Integer
         Dim Length As Integer
@@ -84,6 +86,8 @@ Public Class Ohana
     Public Model_Bone() As OhanaBone
     Public Model_Texture_Index() As String
     Public Model_Bump_Map_Index() As String
+
+    Public Collision() As CustomVertex.PositionOnly
 
     Public Magic As String
     Public Model_Type As ModelType
@@ -232,6 +236,22 @@ Public Class Ohana
         Current_Model = File_Name
         Temp_Model_File = Path.GetTempFileName
         File.WriteAllBytes(Temp_Model_File, Temp)
+
+        If Model_Type = ModelType.Map Then
+            Dim Coll_Offset As Integer = Read32(Temp, &HC) + &H20
+            Dim Length As Integer = Read32(Temp, &H10) - Coll_Offset
+            ReDim Collision(Length \ 16)
+            Dim Index As Integer
+            For Offset As Integer = Coll_Offset To Coll_Offset + Length - 1 Step 16
+                If Read32(Temp, Offset) = 0 Then Exit For
+                With Collision(Index)
+                    .X = BitConverter.ToSingle(Temp, Offset) / Load_Scale
+                    .Y = BitConverter.ToSingle(Temp, Offset + 4) / Load_Scale
+                    .Z = BitConverter.ToSingle(Temp, Offset + 8) / Load_Scale
+                End With
+                Index += 1
+            Next
+        End If
 
         Dim Data(Temp.Length - BCH_Offset) As Byte
         Buffer.BlockCopy(Temp, BCH_Offset, Data, 0, Temp.Length - BCH_Offset)
@@ -685,6 +705,7 @@ Public Class Ohana
         File.WriteAllBytes(Temp_Texture_File, Data)
 
         Dim CLIM_Magic As String = ReadMagic(Data, Data.Length - &H28, 4)
+        Dim CGFX_Magic As String = ReadMagic(Data, 0, 4)
         If CLIM_Magic = "CLIM" Then
             Model_Texture = New List(Of OhanaTexture)
 
@@ -738,12 +759,9 @@ Public Class Ohana
 
                 With MyTex
                     If Create_DX_Texture Then .Texture = Texture
-                    .Name = "bclim_" & Index
-                    Select Case Format
-                        Case 0, 2, 4, 5, 13
-                            .Has_Alpha = True
-                    End Select
 
+                    .Name = "bclim_" & Index
+                    .Has_Alpha = Check_Alpha(Out)
                     .Offset = Offset
                     .Format = Actual_Format
                 End With
@@ -752,6 +770,57 @@ Public Class Ohana
                 Header_Offset -= (Length + &H80)
                 Index += 1
             End While
+        ElseIf CGFX_Magic = "CGFX" Then
+            Model_Texture = New List(Of OhanaTexture)
+
+            Dim DICT_Texture_Block As Integer = &H28 + Read32(Data, &H28)
+            Dim Entries = Read32(Data, DICT_Texture_Block + 8)
+            Dim Base_Offset As Integer = DICT_Texture_Block + &H1C
+            For Offset As Integer = Base_Offset To Base_Offset + (Entries * &H10) - 1 Step &H10
+                Dim Name_Offset As Integer = Offset + 8 + Read32(Data, Offset + 8)
+                Dim TXOB_Offset As Integer = Offset + &HC + Read32(Data, Offset + &HC)
+
+                Dim Texture_Name As String = Nothing
+                Do
+                    Dim Value As Integer = Data(Name_Offset)
+                    Name_Offset += 1
+                    If Value <> 0 Then Texture_Name &= Chr(Value) Else Exit Do
+                Loop
+
+                Dim Height As Integer = Read32(Data, TXOB_Offset + &H18)
+                Dim Width As Integer = Read32(Data, TXOB_Offset + &H1C)
+                Dim Format As Integer = Read32(Data, TXOB_Offset + &H34)
+                Dim Length As Integer = Read32(Data, TXOB_Offset + &H44)
+                Dim Data_Offset As Integer = TXOB_Offset + &H48 + Read32(Data, TXOB_Offset + &H48)
+
+                Dim Out() As Byte = Convert_Texture(Data, Data_Offset, Format, Width, Height)
+
+                Dim MyTex As New OhanaTexture
+                Dim Img As New Bitmap(Width, Height, Imaging.PixelFormat.Format32bppArgb)
+                Dim ImgData As BitmapData = Img.LockBits(New Rectangle(0, 0, Img.Width, Img.Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb)
+                Marshal.Copy(Out, 0, ImgData.Scan0, Out.Length)
+                Img.UnlockBits(ImgData)
+                MyTex.Image = Img
+                MyTex.Image.RotateFlip(RotateFlipType.RotateNoneFlipY)
+
+                Dim Texture As Texture = Nothing
+                If Create_DX_Texture Then
+                    Texture = New Texture(Device, Width, Height, 1, Usage.None, Direct3D.Format.A8R8G8B8, Pool.Managed)
+                    Dim pData As GraphicsStream = Texture.LockRectangle(0, LockFlags.None)
+                    pData.Write(Out, 0, Out.Length)
+                    Texture.UnlockRectangle(0)
+                End If
+
+                With MyTex
+                    If Create_DX_Texture Then .Texture = Texture
+
+                    .Name = Texture_Name
+                    .Has_Alpha = Check_Alpha(Out)
+                    .Offset = Data_Offset
+                    .Format = Format
+                End With
+                Model_Texture.Add(MyTex)
+            Next
         Else
             Dim File_Magic As String = Nothing
             For i As Integer = 0 To 1
@@ -1935,6 +2004,15 @@ Public Class Ohana
                         Switch_Lighting(Lighting)
                     End If
                     'End HackyCode
+
+                    If Coll_Debug Then
+                        Dim Buffer As New VertexBuffer(GetType(CustomVertex.PositionOnly), Collision.Length, Device, Usage.None, CustomVertex.PositionOnly.Format, Pool.Managed)
+                        Buffer.SetData(Collision, 0, LockFlags.None)
+                        Device.VertexFormat = CustomVertex.PositionOnly.Format
+                        Device.SetStreamSource(0, Buffer, 0)
+                        Device.DrawPrimitives(PrimitiveType.LineStrip, 0, Collision.Length - 1)
+                        Buffer.Dispose()
+                    End If
                 End If
 
                 Device.EndScene()
