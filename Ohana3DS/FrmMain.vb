@@ -318,59 +318,59 @@ Public Class FrmMain
     Private Function Open_Model(File_Name As String, Optional Show_Warning As Boolean = True) As Boolean
         Dim Response As Boolean
 
-        'Try
-        Current_Model = File_Name
-        MyOhana.Rendering = False
-        Response = MyOhana.Load_Model(File_Name)
-        If Response Then
-            MyOhana.Rendering = True
-            LblModelName.Text = Path.GetFileName(File_Name)
-            ModelNameTip.SetToolTip(LblModelName, LblModelName.Text)
+        Try
+            Current_Model = File_Name
+            MyOhana.Rendering = False
+            Response = MyOhana.Load_Model(File_Name)
+            If Response Then
+                MyOhana.Rendering = True
+                LblModelName.Text = Path.GetFileName(File_Name)
+                ModelNameTip.SetToolTip(LblModelName, LblModelName.Text)
 
-            If MyOhana.BCH_Have_Textures Then
-                Enable_Texture_Buttons()
-                LstTextures.Clear()
-                ImgTexture.Image = Nothing
+                If MyOhana.BCH_Have_Textures Then
+                    Enable_Texture_Buttons()
+                    LstTextures.Clear()
+                    ImgTexture.Image = Nothing
 
-                For Index As Integer = 0 To MyOhana.Model_Texture.Count - 1
-                    LstTextures.AddItem(MyOhana.Model_Texture(Index).Name)
-                Next
-            End If
+                    For Index As Integer = 0 To MyOhana.Model_Texture.Count - 1
+                        LstTextures.AddItem(MyOhana.Model_Texture(Index).Name)
+                    Next
+                End If
 
-            Rot_InitX = 0
-            Rot_InitY = 0
-            Rot_FinalX = 0
-            Rot_FinalY = 0
-            Mov_InitX = 0
-            Mov_InitY = 0
-            Mov_FinalX = 0
-            Mov_FinalY = 0
+                Rot_InitX = 0
+                Rot_InitY = 0
+                Rot_FinalX = 0
+                Rot_FinalY = 0
+                Mov_InitX = 0
+                Mov_InitY = 0
+                Mov_FinalX = 0
+                Mov_FinalY = 0
 
-            MyOhana.Rotation.X = 0
-            MyOhana.Rotation.Y = 0
-            MyOhana.Translation.X = 0
-            MyOhana.Translation.Y = 0
+                MyOhana.Rotation.X = 0
+                MyOhana.Rotation.Y = 0
+                MyOhana.Translation.X = 0
+                MyOhana.Translation.Y = 0
 
-            LblInfoVertices.Text = MyOhana.Info.Vertex_Count.ToString()
-            LblInfoTriangles.Text = MyOhana.Info.Triangles_Count.ToString()
-            LblInfoBones.Text = MyOhana.Info.Bones_Count.ToString()
-            LblInfoTextures.Text = MyOhana.Info.Textures_Count.ToString()
+                LblInfoVertices.Text = MyOhana.Info.Vertex_Count.ToString()
+                LblInfoTriangles.Text = MyOhana.Info.Triangles_Count.ToString()
+                LblInfoBones.Text = MyOhana.Info.Bones_Count.ToString()
+                LblInfoTextures.Text = MyOhana.Info.Textures_Count.ToString()
 
-            Enable_Model_Buttons()
-            If MyOhana.Magic.Substring(0, 2) = "GR" Then
-                BtnModelMapEditor.Enabled = True
-                If FrmMapProp.IsHandleCreated Then FrmMapProp.makeMapIMG(MapProps())
+                Enable_Model_Buttons()
+                If MyOhana.Magic.Substring(0, 2) = "GR" Then
+                    BtnModelMapEditor.Enabled = True
+                    If FrmMapProp.IsHandleCreated Then FrmMapProp.makeMapIMG(MapProps())
+                Else
+                    BtnModelMapEditor.Enabled = False
+                End If
             Else
-                BtnModelMapEditor.Enabled = False
+                If Show_Warning Then MessageBox.Show("This file is not a model file!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
             End If
-        Else
-            If Show_Warning Then MessageBox.Show("This file is not a model file!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
-        End If
-        'Catch
-        'Response = False
-        'MyOhana.Model_Object = Nothing
-        'If Show_Warning Then MessageBox.Show("Sorry, something went wrong.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
-        'End Try
+        Catch
+            Response = False
+            MyOhana.Model_Object = Nothing
+            If Show_Warning Then MessageBox.Show("Sorry, something went wrong.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
 
         If Not Response Then
             LblModelName.Text = Nothing
