@@ -325,6 +325,7 @@ Public Class Ohana
 
             Face_Offset = Description_Offset + Read32(Data, Face_Offset + (Header_Offset + &H2C))
             Dim Vertex_Data_Offset As Integer = Data_Offset + Read32(Data, Vertex_Offset + &H30)
+
             Dim Vertex_Data_Format As Integer = Data(Vertex_Offset + &H3A)
             Dim Vertex_Flags As Integer = Read32(Data, Face_Offset)
             Dim Vertex_Data_Length As Integer

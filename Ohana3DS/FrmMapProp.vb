@@ -113,7 +113,7 @@ Public Class FrmMapProp
         Return seed
     End Function
 
-    Private Sub mapPicBox_Click(sender As Object, e As EventArgs) Handles mapPicBox.Click
+    Private Sub mapPicBox_Click(sender As Object, e As EventArgs)
         Dim mouseEventArgs = TryCast(e, MouseEventArgs)
         If mouseEventArgs IsNot Nothing Then
             mouseX = Math.Floor(mouseEventArgs.X / 8)
@@ -138,7 +138,7 @@ Public Class FrmMapProp
         Return mapVals
     End Function
 
-    Private Sub mapPropSet_Click(sender As Object, e As EventArgs) Handles mapPropSet.Click
+    Private Sub mapPropSet_Click(sender As Object, e As EventArgs)
         If mode = True Then
             mode = False
             mapPropSet.Text = "Edit"
@@ -148,7 +148,7 @@ Public Class FrmMapProp
         End If
     End Sub
 
-    Private Sub mapPropSave_Click(sender As Object, e As EventArgs) Handles mapPropSave.Click
+    Private Sub mapPropSave_Click(sender As Object, e As EventArgs)
         FrmMain.saveMapProps(mapWidth, mapHeight, mapVals)
     End Sub
 
