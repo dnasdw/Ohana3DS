@@ -121,7 +121,7 @@
   <data name="Splash.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAAyAAAAI4CAYAAACSgo0qAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
-        YQUAAAAJcEhZcwAADsEAAA7BAbiRa+0AAAAHdElNRQfeDBcSKhZow1u/AAD/kklEQVR4Xuy955skxbG3
+        YQUAAAAJcEhZcwAADrwAAA68AZW8ckkAAAAHdElNRQfeDBcSKhZow1u/AAD/kklEQVR4Xuy955skxbG3
         fSTWe++997vjvV0WBKz3LOstQu5IOvJHEsJ7JCEDEgIJbyWd8zzX+/x58UZkVVT/OjqyqrpnZtmF/nBf
         GRkZmVUzzHbXTVZ1/8d//MfXqEmTJk2aNGnSpEmTJk1uD26ySZMmTZo0adKkSZO7ja87ua8i9vdQ9vdy
         u35/brJJkyZNmjRp0qTJ3QVePH5ZL8T158IWsbWxPI7jmKJjtiYvj+M29tBxWxPL23Hbj+W8Ma/10Lle
@@ -9228,6 +9228,9 @@
         /A/eRlzCGXrTGQAAAABJRU5ErkJggg==
 </value>
   </data>
+  <metadata name="colorBG.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>153, 17</value>
+  </metadata>
   <metadata name="$this.TrayHeight" type="System.Int32, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>76</value>
   </metadata>

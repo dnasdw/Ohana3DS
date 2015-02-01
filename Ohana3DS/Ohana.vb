@@ -120,6 +120,7 @@ Public Class Ohana
     Public Temp_Model_File As String
     Public Temp_Texture_File As String
     Public BCH_Have_Textures As Boolean
+    Public bgCol As Color = Color.Black
 
     Public Selected_Object As Integer
     Public Selected_Face As Integer
@@ -1861,8 +1862,8 @@ Public Class Ohana
 
         Do
             If Model_Object IsNot Nothing And Rendering Then
-                Device.Clear(ClearFlags.Target, Color.Black, 1.0F, 0)
-                Device.Clear(ClearFlags.ZBuffer, Color.Black, 1.0F, 0)
+                Device.Clear(ClearFlags.Target, bgCol, 1.0F, 0)
+                Device.Clear(ClearFlags.ZBuffer, bgCol, 1.0F, 0)
                 Device.BeginScene()
 
                 Dim MyMaterial As New Material

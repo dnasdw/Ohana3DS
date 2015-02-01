@@ -118,6 +118,12 @@ Public Class FrmMain
         MyOhana.Render()
     End Sub
     Private Sub FrmMain_KeyDown(sender As Object, e As KeyEventArgs) Handles MyBase.KeyDown
+        If e.KeyCode = Keys.C Then
+            If colorBG.ShowDialog() = Windows.Forms.DialogResult.OK Then
+                Screen.BackColor = colorBG.Color
+                MyOhana.bgCol = colorBG.Color
+            End If
+        End If
         If File.Exists(Current_Model) Then
             If e.KeyCode = Keys.Left Or e.KeyCode = Keys.Right Then
                 Dim Model_Name As String = Path.GetFileName(Current_Model)

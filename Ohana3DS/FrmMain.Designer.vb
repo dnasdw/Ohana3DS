@@ -109,6 +109,7 @@ Partial Class FrmMain
         Me.ProgressSearch = New Ohana3DS.MyProgressbar()
         Me.BtnSearch = New System.Windows.Forms.Button()
         Me.Title = New Ohana3DS.MyWindowTitle()
+        Me.colorBG = New System.Windows.Forms.ColorDialog()
         CType(Me.Splash, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.MainTabs.SuspendLayout()
         Me.ModelPage.SuspendLayout()
@@ -1260,5 +1261,6 @@ Partial Class FrmMain
     Friend WithEvents BtnROMDecrypt As System.Windows.Forms.Button
     Friend WithEvents BtnROMOpenXorPad As System.Windows.Forms.Button
     Friend WithEvents BtnROMOpen As System.Windows.Forms.Button
+    Friend WithEvents colorBG As System.Windows.Forms.ColorDialog
 
 End Class
