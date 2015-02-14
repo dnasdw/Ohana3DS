@@ -219,7 +219,7 @@ Public Class FrmMain
         If Magic_2_Bytes = "PC" Or Magic_2_Bytes = "MM" Or Magic_2_Bytes = "GR" Or Magic_3_Bytes = "BCH" Then
             MainTabs.SelectTab(0)
             Open_Model(File_Name)
-        ElseIf Magic_2_Bytes = "PT" Or CLIM_Magic = "CLIM" Then
+        ElseIf Magic_2_Bytes = "PT" Or CLIM_Magic = "CLIM" Or Magic_4_Bytes = "CGFX" Then
             MainTabs.SelectTab(1)
             Open_Texture(File_Name)
         ElseIf Magic_4_Bytes = "CRAG" Then

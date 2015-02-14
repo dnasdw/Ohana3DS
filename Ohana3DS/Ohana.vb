@@ -289,7 +289,6 @@ Public Class Ohana
             Texture_Table_Offset = &H48 + Read32(Data, Table_Offset)
         End If
         Table_Offset = Header_Offset + Read32(Data, Table_Offset + &H14)
-
         '+==========+
         '| Vertices |
         '+==========+
@@ -527,7 +526,6 @@ Public Class Ohana
             For Index As Integer = 0 To Texture_Entries - 1
                 Dim Texture_Offset As Integer = Texture_Names_Offset + Read32(Data, (Texture_Table_Offset + Index * Name_Table_Length) + Name_Table_Base_Pointer)
                 Dim Normal_Offset As Integer = Texture_Names_Offset + Read32(Data, (Texture_Table_Offset + Index * Name_Table_Length) + Name_Table_Base_Pointer + 8)
-
                 'Textura
                 For i As Integer = 0 To 1
                     Dim Texture_Name As String = Nothing
@@ -885,7 +883,7 @@ Public Class Ohana
                             Dim Height As Integer = Read16(Data, Description_Offset)
                             Dim Format As Integer = Data(Description_Offset + Desc_Texture_Format)
                             Dim Texture_Data_Offset As Integer = Data_Offset + Read32(Data, Description_Offset + Desc_Texture_Pointer)
-
+                            If Width + Height = 0 Then Exit While
                             Dim Out() As Byte = Convert_Texture(Data, Texture_Data_Offset, Format, Width, Height)
 
                             Dim MyTex As New OhanaTexture
@@ -959,7 +957,6 @@ Public Class Ohana
             Dim Width As Integer = Read16(Data, Texture_Description + 2)
             Dim Texture_Offset As Integer = Data_Offset + Read32(Data, Texture_Description + If(Version = BCH_Version.XY, 8, &H10))
             Dim Texture_Format As Integer = Read32(Data, Texture_Description + If(Version = BCH_Version.XY, &H10, &H18))
-
             Dim Out() As Byte = Convert_Texture(Data, Texture_Offset, Texture_Format, Width, Height)
 
             Dim MyTex As New OhanaTexture
